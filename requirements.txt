@@ -1,0 +1,3 @@
+# AIProductBench V0.1 intentionally keeps a one-package dependency surface.
+# Both configured providers are reached over their OpenAI-compatible HTTP APIs.
+requests>=2.31,<3

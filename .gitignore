@@ -1,0 +1,16 @@
+# Local virtual environments
+.venv/
+venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Local secrets — API keys must come from environment variables
+.env
+
+# macOS
+.DS_Store
+
+# Local run artifacts (raw runs and dry runs are not committed)
+results/

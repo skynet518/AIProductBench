@@ -1,0 +1,140 @@
+{
+  "benchmark": "AIProductBench",
+  "version": "0.1",
+  "domains": {
+    "instruction_following": "Follow explicit formatting, length, tone, and negative constraints while staying faithful to the source material.",
+    "product_reasoning": "Make and justify product decisions: prioritization, measurement design, and launch judgment.",
+    "structured_analysis": "Turn messy or tabular input into a fixed, machine-readable structure without inventing facts."
+  },
+  "test_cases": [
+    {
+      "id": "IF-01",
+      "domain": "instruction_following",
+      "title": "Messy request to kickoff problem statement",
+      "prompt": "Turn the messy internal request below into a problem statement for an engineering kickoff.\n\nRules:\n- Output exactly three bullet points and nothing else: no heading, no introduction, no closing line.\n- Every bullet must start with \"- \".\n- Every bullet must be at most 20 words.\n- Do not mention or imply any solution, tool, or technical implementation.\n\nMessy request:\n\"sales keeps complaining that the demo environment keeps dying during customer calls and we lose deals, also onboarding takes two weeks which is way too long, and honestly the docs are super outdated so people just ask us on slack instead\"",
+      "evaluation_criteria": [
+        "The output contains exactly three bullet points and no other text (no heading, preamble, or closing line).",
+        "Every bullet starts with \"- \" and contains at most 20 words.",
+        "The three bullets cover the three distinct issues in the input: demo environment reliability during customer calls, slow onboarding, and outdated documentation.",
+        "No solution, tool, or implementation is proposed, named, or implied."
+      ]
+    },
+    {
+      "id": "IF-02",
+      "domain": "instruction_following",
+      "title": "Release notes under hard constraints",
+      "prompt": "Write release notes for the feature below.\n\nRules:\n- First line must start with exactly \"What's new: \" followed by a 25 to 40 word summary.\n- Then exactly three bullet points, each starting with \"- \".\n- The whole output must be 90 words or fewer.\n- Write in second person (\"you\").\n- No exclamation marks, no emoji, and none of these words: powerful, seamless, revolutionary, game-changing.\n\nFeature:\nUsers can now connect their Slack workspace to the product, so newly created support tickets are automatically posted to a chosen Slack channel and can be updated from Slack threads.",
+      "evaluation_criteria": [
+        "The first line starts with exactly \"What's new: \" and its summary is between 25 and 40 words.",
+        "The output contains exactly three bullet points, each starting with \"- \".",
+        "The total output is 90 words or fewer.",
+        "The text uses second person and contains no exclamation marks, no emoji, and none of the four banned words.",
+        "Both capabilities are stated: automatic posting of newly created tickets to a Slack channel, and updating tickets from Slack threads."
+      ]
+    },
+    {
+      "id": "IF-03",
+      "domain": "instruction_following",
+      "title": "One update, three audiences, facts preserved",
+      "prompt": "Rewrite the internal update below for three audiences, in this exact order: (1) customers, (2) the sales team, (3) the board.\n\nRules:\n- Use exactly these section labels, in order: \"Customers\", \"Sales\", \"Board\".\n- Each section must be 60 words or fewer.\n- Every section must keep all four facts from the original unchanged.\n- Change only emphasis and vocabulary, never the facts.\n- Do not add any fact that is not in the original.\n\nOriginal:\nThe recommendation model v2 rolled out to 100% of traffic on March 3. Click-through rate on the home feed is up 12% versus the v1 baseline over the 14 days since rollout. Ticket volume about irrelevant recommendations is down 30%. Inference cost per request rose from $0.0004 to $0.0006.",
+      "evaluation_criteria": [
+        "The output has exactly three sections labelled \"Customers\", \"Sales\", and \"Board\", in that order and with no other sections.",
+        "Each section is 60 words or fewer.",
+        "All four facts appear in every section: full rollout on March 3, +12% home feed click-through rate versus v1 over 14 days, -30% irrelevant-recommendation tickets, and inference cost per request rising from $0.0004 to $0.0006.",
+        "No fact is altered and no new fact, number, or claim is introduced."
+      ]
+    },
+    {
+      "id": "IF-04",
+      "domain": "instruction_following",
+      "title": "Clarify instead of building",
+      "prompt": "A stakeholder sent the request below. Reply with:\n(a) exactly two clarifying questions, numbered \"1.\" and \"2.\", each under 25 words;\n(b) then one single line beginning \"Assumption: \" stating the assumption you would proceed with if the stakeholder does not reply.\n\nRules:\n- Do not start or draft the requested work.\n- Do not add any other content.\n- Do not use the words: stakeholder, leverage, synergy, just.\n\nStakeholder request:\n\"We want to add an AI summary to the weekly report. Make it good and ship it this quarter.\"",
+      "evaluation_criteria": [
+        "The output contains exactly two numbered questions and exactly one line beginning \"Assumption: \", and nothing else.",
+        "Every clarifying question is under 25 words and is genuinely answerable in a short reply.",
+        "Neither the questions nor the assumption contain the words stakeholder, leverage, synergy, or just.",
+        "The response does not start, outline, or draft the requested weekly-report summary or any plan or specification for it."
+      ]
+    },
+    {
+      "id": "PR-01",
+      "domain": "product_reasoning",
+      "title": "Backlog prioritization with a stated rule",
+      "prompt": "You are the PM for a B2B analytics product. Your team can complete at most two of the five backlog items this quarter.\n\nItems (impact: how much it moves the primary metric, retention of active workspaces; effort: engineering weeks; confidence: how sure you are about the impact estimate):\nA. Saved dashboard views. Impact: medium. Effort: 2 weeks. Confidence: high.\nB. SSO and audit logs. Impact: medium. Effort: 5 weeks. Confidence: high.\nC. Faster query engine. Impact: high. Effort: 8 weeks. Confidence: medium.\nD. CSV import fixes. Impact: low. Effort: 1 week. Confidence: high.\nE. AI insight summaries. Impact: high. Effort: 6 weeks. Confidence: low.\n\nRecommend what to build this quarter.\n\nRequirements:\n- State your decision rule before applying it.\n- Recommend exactly two items.\n- Explain explicitly what you are saying no to this quarter and why.\n- Name the single biggest uncertainty in your recommendation.\n- Do not invent any data that is not given above.",
+      "evaluation_criteria": [
+        "A decision rule is stated explicitly before it is applied, and the recommendation follows from that rule.",
+        "Exactly two items are recommended, and both are chosen from the five given items.",
+        "The response explains what is deferred this quarter and why the deferral follows from the stated rule.",
+        "The single biggest uncertainty is named, and it is tied to a real weakness in the given inputs (for example low confidence on the high-impact items, or the effort ceiling).",
+        "No data, metric, or constraint is invented beyond what the prompt provides."
+      ]
+    },
+    {
+      "id": "PR-02",
+      "domain": "product_reasoning",
+      "title": "Measurement plan with rollback thresholds",
+      "prompt": "You are the PM for \"Smart Reply\" in a B2B helpdesk product. When an agent opens a ticket, the product suggests three replies. The agent can send a suggestion as is, edit it before sending, or dismiss it.\n\nDesign the measurement plan for the first 30 days after launch.\n\nRequirements:\n- Exactly one primary success metric.\n- At most three guardrail metrics.\n- For every metric, state exactly how it is computed from product events, and the threshold that would trigger a rollback.\n- State explicitly what could look like success but would actually be misleading.\n- Every metric must be computable from the product events described above.",
+      "evaluation_criteria": [
+        "Exactly one primary success metric is proposed, and it is clearly distinguished from the guardrails.",
+        "There are no more than three guardrail metrics.",
+        "Every metric has both a concrete computation from product events (such as suggestions shown, sent, edited, dismissed) and an explicit rollback threshold with a number.",
+        "At least one credible false-success trap is identified, such as a rising acceptance rate that hides rising edit rates, falling reply quality, slower handling time, or customer complaints.",
+        "The plan is measurable with the described product events and introduces no metric that the product could not actually observe."
+      ]
+    },
+    {
+      "id": "PR-03",
+      "domain": "product_reasoning",
+      "title": "Go or no-go on the launch data",
+      "prompt": "Your team is deciding whether to ship an AI assistant to all customers next week.\n\nEvidence from the 10-case offline evaluation and a limited pilot:\n- Overall quality score: 78 out of 100.\n- Scores are strong on instruction following and structured extraction.\n- Scores are weak on the two multi-step product-reasoning cases, which averaged 52 out of 100.\n- Average latency: 3.4 seconds per response. Target was under 2.5 seconds.\n- Cost: $0.006 per request. Budget was $0.004.\n- In the pilot, 12 of 40 pilot users stopped using the assistant after the first week, and five said the reasoning felt shallow on planning questions.\n- The assistant is not on any customer-facing critical path; it is an optional helper inside a report editor.\n\nMake a recommendation.\n\nRequirements:\n- Give a clear recommendation: ship, do not ship, or ship in a limited form.\n- Tie every reason to a number or observation given above.\n- If you recommend a limited form, state the exact scope and the condition that would trigger the full rollout.\n- State what additional evidence would make you reverse your decision.\n- Do not invent data that is not given above.",
+      "evaluation_criteria": [
+        "A clear single recommendation is given: ship, do not ship, or ship in a limited form.",
+        "Every stated reason is traceable to a number or observation in the prompt; nothing is invented.",
+        "The two weak reasoning cases, the latency gap (3.4s versus the 2.5s target), the cost gap ($0.006 versus the $0.004 budget), and the pilot churn are all addressed rather than ignored.",
+        "If a limited rollout is recommended, the scope is specific and a concrete condition for full rollout is stated; otherwise the recommendation still names what would have to change first.",
+        "Additional evidence that would reverse the decision is stated concretely."
+      ]
+    },
+    {
+      "id": "SA-01",
+      "domain": "structured_analysis",
+      "title": "Messy support ticket to fixed schema",
+      "prompt": "Extract the structured record from the support ticket below.\n\nReturn only a JSON object, with no prose, no explanation, and no markdown code fences.\n\nThe JSON object must contain exactly these keys:\n- product_area: one of \"reporting\", \"billing\", \"integrations\", \"authentication\", or \"unknown\"\n- severity: one of \"low\", \"medium\", or \"high\"\n- customer_impact: a short string describing who is blocked and from what\n- requested_action: a short string describing what the customer wants\n- blocked_since: the date mentioned in the ticket in YYYY-MM-DD format, or null if no date is mentioned\n- confidence: a number between 0 and 1 for your confidence in this extraction\n\nTicket:\n\"Hi, this is Anja from Northwind Logistics. Since 2026-08-14 our nightly billing export has been producing empty files. Our finance team cannot close the monthly books without those rows, and we are now three days behind. We need the export fixed, or at minimum a manual file pushed to our SFTP drop by tomorrow morning. We are on the Enterprise plan. Please escalate.\"",
+      "evaluation_criteria": [
+        "The output is a single valid JSON object and contains no prose, explanation, or markdown fences.",
+        "The object contains exactly the six required keys.",
+        "severity is one of the three allowed values and product_area is one of the five allowed values.",
+        "blocked_since is \"2026-08-14\" in YYYY-MM-DD format.",
+        "customer_impact and requested_action reflect the ticket: the finance team cannot close the monthly books, and the customer wants the export fixed or a manual file delivered by the next morning.",
+        "confidence is a number between 0 and 1, and no information is invented beyond the ticket."
+      ]
+    },
+    {
+      "id": "SA-02",
+      "domain": "structured_analysis",
+      "title": "Pick a configuration from a results table",
+      "prompt": "Choose the configuration to ship from the evaluation table below.\n\nDecision rule (apply it exactly): choose the configuration with the highest quality score among those that satisfy both constraints, p95 latency at or below 2.5 seconds and cost per request at or below $0.0040. If no configuration satisfies both constraints, choose the one that satisfies the lower number of constraints and say so.\n\nTable:\n- Config A: quality 86, p95 latency 2.1s, cost per request $0.0038\n- Config B: quality 91, p95 latency 3.0s, cost per request $0.0035\n- Config C: quality 88, p95 latency 2.4s, cost per request $0.0046\n- Config D: quality 84, p95 latency 2.2s, cost per request $0.0031\n\nReturn only a JSON object, with no prose and no markdown code fences, containing exactly these keys:\n- recommended_config: the config letter, or null if the rule cannot be applied\n- reasoning: a short string naming the constraint checks you performed\n- tradeoffs: a short string naming the runner-up and what is given up by choosing it\n- constraints_satisfied: an object mapping each config letter to the number of constraints it satisfies\n- confidence: a number between 0 and 1",
+      "evaluation_criteria": [
+        "The output is a single valid JSON object with exactly the five required keys and no prose or markdown fences.",
+        "constraints_satisfied reports 2 for A, 1 for B, 1 for C, and 2 for D.",
+        "recommended_config is \"A\", which is the highest-quality configuration satisfying both constraints.",
+        "reasoning states the constraint checks explicitly, including that B and C each fail one constraint.",
+        "tradeoffs names D as the runner-up and states that it gives up 2 quality points relative to A.",
+        "confidence is a number between 0 and 1 and no value is invented beyond the table."
+      ]
+    },
+    {
+      "id": "SA-03",
+      "domain": "structured_analysis",
+      "title": "Interview transcript to opportunity map",
+      "prompt": "Turn the interview excerpt below into a structured opportunity map.\n\nReturn only a JSON array, with no prose and no markdown code fences. Each element must contain exactly these keys:\n- problem: a short string naming the user problem\n- evidence_quote: a verbatim quote copied from the transcript below\n- segment: who has this problem\n- frequency_signal: what in the transcript suggests how often it happens\n- confidence: a number between 0 and 1\n\nTranscript:\n\"I run the monthly business review for four regional teams. Every month I pull numbers from three different dashboards and paste them into one deck. It takes me most of a day. Last month two of the numbers changed after I had already sent the deck, and I had to send a correction to forty people, which was embarrassing. I also cannot tell who changed what, so when my VP asks where a number came from I have to guess. My analyst has the same problem, and she spends about three hours a month on it. The export button exists but it only exports one dashboard at a time.\"",
+      "evaluation_criteria": [
+        "The output is a single valid JSON array with no prose and no markdown fences.",
+        "Every element contains exactly the five required keys, and every evidence_quote is verbatim text that actually appears in the transcript.",
+        "The problems are grounded in the transcript, such as manual assembly across dashboards, numbers changing after the deck is sent, no change history or provenance, and the single-dashboard export limitation.",
+        "segment and frequency_signal are stated for each problem and are supported by the transcript rather than assumed.",
+        "The response does not propose or design features, and it does not invent facts, numbers, or quotes that are not in the transcript."
+      ]
+    }
+  ]
+}
