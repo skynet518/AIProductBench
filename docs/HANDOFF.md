@@ -28,16 +28,13 @@ benchmark result.
 
 ## CURRENT PHASE
 
-**Phase 2.1 — Consistency patch.** Registry consolidation, fixed-priority judge
-selection, V1 pricing reset, documentation consistency, and the framework
-checkpoint.
+**Phase 3 — Dataset & Evaluation QA.**
 
 ## NEXT
 
-**Phase 3 — Dataset & Evaluation QA.** Build the 50 production cases (10 per
-domain, difficulty 2/5/3 per domain, approximately 40 Chinese-first), write the
-case-level `evaluation_criteria` and `deterministic_checks`, and QA the dataset
-for realism and non-overlap.
+Build the 50 production cases (10 per domain, difficulty 2/5/3 per domain,
+approximately 40 Chinese-first), write the case-level `evaluation_criteria` and
+`deterministic_checks`, and QA the dataset for realism and non-overlap.
 
 ## THEN
 
@@ -78,9 +75,10 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 
 - Branch: `main`
 - Remote: none configured
-- Latest committed state: V0.1 scaffold checkpoint plus the V1 documentation freeze
-- The V1 framework and this Phase 2.1 consistency patch are held in one commit
-  pending external review
+- Latest committed state: the V1 framework, including the Phase 2.1 consistency
+  patch, in commit `84443d9`
+- Phase 2 (framework upgrade) and Phase 2.1 (consistency patch) are complete and
+  committed; no further framework work is pending
 
 ## STILL OPEN (requires human decision)
 
