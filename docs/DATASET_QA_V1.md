@@ -1,9 +1,9 @@
 # AIProductBench CN V1 — Dataset QA Ledger
 
-**Status: Domains 1 and 2 (`instruction_constraint_following`,
-`structured_information_analysis`) are FROZEN / EXTERNALLY APPROVED. Domains 3–5
-are not authored. The full 50-case production dataset (20/50 cases) is NOT
-approved. No live paid benchmark is authorized.**
+**Status: Domains 1, 2, and 3 (`instruction_constraint_following`,
+`structured_information_analysis`, `product_reasoning_decision`) are FROZEN /
+EXTERNALLY APPROVED. Domains 4–5 are not authored. The full 50-case production
+dataset (30/50 cases) is NOT approved. No live paid benchmark is authorized.**
 
 This is the persistent QA ledger for production benchmark case authoring. It
 tracks each of the five frozen domains through the authoring lifecycle. It is
@@ -37,7 +37,7 @@ not be marked `externally-approved` or `frozen` by the authoring agent.
 | --- | --- | --- | --- | --- | --- |
 | 1 | `instruction_constraint_following` | IF | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
 | 2 | `structured_information_analysis` | SA | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
-| 3 | `product_reasoning_decision` | PR | 10 | not started | 2026-09-11 |
+| 3 | `product_reasoning_decision` | PR | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
 | 4 | `chinese_business_communication` | BC | 10 | not started | 2026-09-11 |
 | 5 | `agent_workflow_planning` | AW | 10 | not started | 2026-09-11 |
 
@@ -330,14 +330,99 @@ semantic revision.
 
 | Field | Value |
 | --- | --- |
-| Domain status | not started |
-| Case IDs | PR-01 … PR-10 (planned) |
-| Authoring date | — |
-| Validation result | — |
-| External review status | not submitted |
-| Final approval status | **not approved** |
+| Domain status | FROZEN / EXTERNALLY APPROVED |
+| Case IDs | PR-01 … PR-10 |
+| Authoring date | 2026-09-11 |
+| Authoring agent | External canonical authorship; Codex/DeepSeek performed integration only (Phase 3B-3 integration, Phase 3B-3.1 patch round) |
+| Dataset file | `data/cases_v1.json` |
+| Validation result | PASS — `python3 run_benchmark.py --validate-only --production-cases` exits 0; schema errors 0; all 10 PR cases' deterministic declarations validate; no new operator was required (operator count remains 21) |
+| External review status | Final external review PASSED on all 10 cases, after the Phase 3B-3.1 patches to PR-01, PR-05, PR-06, PR-07, and PR-10. No PR case requires further semantic revision. |
+| Final approval status | **APPROVED — Domain 3 frozen (10/10 cases PASS)** |
 
-No known issues. Not started.
+### Case status
+
+| ID | Status |
+| --- | --- |
+| PR-01 | PASS |
+| PR-02 | PASS |
+| PR-03 | PASS |
+| PR-04 | PASS |
+| PR-05 | PASS |
+| PR-06 | PASS |
+| PR-07 | PASS |
+| PR-08 | PASS |
+| PR-09 | PASS |
+| PR-10 | PASS |
+
+### External Gate 3B-3 result (2026-09-11)
+
+| ID | Gate result | Action | Current status |
+| --- | --- | --- | --- |
+| PR-01 | PATCH | replaced with externally authored canonical full object (exactly-two scope + no hidden feature pair) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| PR-02 | PASS | none | PASS |
+| PR-03 | PASS | none | PASS |
+| PR-04 | PASS | none | PASS |
+| PR-05 | PATCH | replaced with externally authored canonical full object (unambiguous contribution formula) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| PR-06 | PATCH | replaced with externally authored canonical full object (explicit week-8 time-to-learning) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| PR-07 | PATCH | replaced with externally authored canonical full object (strategy-neutral output heading) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| PR-08 | PASS | none | PASS |
+| PR-09 | PASS | none | PASS |
+| PR-10 | PATCH | replaced with externally authored canonical full object (buffer-vs-option-value trade-off) | REVISED — EXTERNAL RE-REVIEW PENDING |
+
+The five PATCH cases were replaced with externally authored canonical full
+objects and were **not** rewritten by the executing agent. The five PASS cases
+(PR-02, PR-03, PR-04, PR-08, PR-09) are unchanged. Domain 3 remains **EXTERNAL
+RE-REVIEW PENDING** at that point in the history (this PATCH round is preserved
+as QA provenance).
+
+### Final external approval (after Phase 3B-3.1)
+
+| ID | Final status |
+| --- | --- |
+| PR-01 | PASS |
+| PR-02 | PASS |
+| PR-03 | PASS |
+| PR-04 | PASS |
+| PR-05 | PASS |
+| PR-06 | PASS |
+| PR-07 | PASS |
+| PR-08 | PASS |
+| PR-09 | PASS |
+| PR-10 | PASS |
+
+The final external review passed after the Phase 3B-3.1 patches. Domain 3
+(`product_reasoning_decision`, PR-01 … PR-10) is **FROZEN / EXTERNALLY
+APPROVED**. No PR case requires further semantic revision.
+
+**Scope.** This approval covers **Domain 3 only**. Domains 4–5 are not authored,
+and the full 50-case production dataset is **not** approved.
+
+### Integration provenance
+
+- The canonical case definitions (prompts, evaluation criteria, deterministic
+  checks, reference facts, tags, titles, test intents, and notes) were authored
+  **externally** and treated as authoritative.
+- The execution agent performed **integration only**: no semantic rewriting,
+  paraphrasing, rebalancing, or case redesign was permitted.
+- Every deterministic declaration validated against the existing 21-operator
+  schema. **No new operator was required** and no operator's runtime semantics
+  changed (operator count remains 21).
+- **Open product recommendations were deliberately not converted into
+  deterministic winner checks.** PR-04, PR-05, PR-06, and PR-10 declare only
+  their canonical quantitative-baseline regex plus the supplied structural
+  (section presence/order) checks; no winner regex was added. In particular,
+  PR-10 does not deterministically require `A+D` or `A+C+D`: both portfolios may
+  be defensible when the reasoning correctly handles the explicit
+  buffer-vs-option-value trade-off. The final product decision remains
+  judge-evaluated, exactly as the canonical JSON specifies.
+- The integrated PR objects were verified object-for-object against the supplied
+  canonical definitions, and the 20 frozen IF/SA objects were verified unchanged
+  by hash before and after integration.
+
+### Known issues
+
+No known issues recorded. Domain 3 is frozen; no PR case requires further
+semantic revision.
 
 ---
 
@@ -386,3 +471,7 @@ No known issues. Not started.
 | 2026-09-11 | External Gate 3B-2 completed: SA-01/02/03/04/06/07 PASS; SA-05/08/09/10 PATCH; 0 REJECT. Domain 2 moved to EXTERNAL RE-REVIEW PENDING. |
 | 2026-09-11 | Phase 3B-2.1 executed: the four PATCH cases were replaced with externally authored canonical patches (integration only; no semantic rewriting, no new operator). SA-05/08/09/10 set to REVISED — EXTERNAL RE-REVIEW PENDING; the six PASS cases retained. Domain 2 remains EXTERNAL RE-REVIEW PENDING; not approved or frozen. |
 | 2026-09-11 | Final external review PASSED on all 10 SA cases after the Phase 3B-2.1 patches. Domain 2 (`structured_information_analysis`, SA-01…SA-10) set to FROZEN / EXTERNALLY APPROVED. Domains 3–5 remain not authored; the full 50-case dataset is not approved. |
+| 2026-09-11 | Phase 3B-3 integrated the externally authored canonical PR-01…PR-10 (integration only; no semantic rewriting, no new operator, no winner regexes added). Domain 3 (`product_reasoning_decision`) set to AUTHORED — EXTERNAL REVIEW PENDING. Dataset is now 30/50 cases. Domains 1–2 remain FROZEN. PR is not approved. |
+| 2026-09-11 | External Gate 3B-3 completed: PR-02/03/04/08/09 PASS; PR-01/05/06/07/10 PATCH; 0 REJECT. Domain 3 moved to EXTERNAL RE-REVIEW PENDING. |
+| 2026-09-11 | Phase 3B-3.1 executed: the five PATCH cases were replaced with externally authored canonical full objects (integration only; no semantic rewriting, no new operator, no winner regexes). PR-01/05/06/07/10 set to REVISED — EXTERNAL RE-REVIEW PENDING; the five PASS cases retained. Domain 3 remains EXTERNAL RE-REVIEW PENDING; not approved or frozen. |
+| 2026-09-11 | Final external review PASSED on all 10 PR cases after the Phase 3B-3.1 patches. Domain 3 (`product_reasoning_decision`, PR-01…PR-10) set to FROZEN / EXTERNALLY APPROVED. Domains 4–5 remain not authored; the full 50-case dataset is not approved. |

@@ -149,19 +149,20 @@ class TestSaDomainShape(unittest.TestCase):
         cls.doc = load_document()
         cls.cases = {c["id"]: c for c in cls.doc["test_cases"]}
 
-    def test_twenty_production_cases(self):
-        self.assertEqual(len(self.doc["test_cases"]), 20)
+    def test_sa_block_is_exactly_ten_cases(self):
+        ids = [c["id"] for c in self.doc["test_cases"]]
+        self.assertEqual([i for i in ids if i.startswith("SA-")], SA_IDS)
 
     def test_exactly_sa_01_through_sa_10_once(self):
         ids = [c["id"] for c in self.doc["test_cases"]]
         self.assertEqual(ids[:10], IF_IDS)
-        self.assertEqual(ids[10:], SA_IDS)
+        self.assertEqual(ids[10:20], SA_IDS)
         self.assertEqual(len(ids), len(set(ids)))
 
-    def test_no_pr_bc_aw_production_cases(self):
+    def test_no_bc_or_aw_production_cases(self):
         ids = [c["id"] for c in self.doc["test_cases"]]
         self.assertFalse(
-            [i for i in ids if i.startswith(("PR-", "BC-", "AW-"))], msg=ids
+            [i for i in ids if i.startswith(("BC-", "AW-"))], msg=ids
         )
 
     def test_sa_cases_are_all_structured_information_analysis(self):

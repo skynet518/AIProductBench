@@ -1007,3 +1007,63 @@ only 20 of 50 cases exist. No live paid benchmark is authorized.
 PR-01 … PR-10 definitions, which execution agents integrate but do not author or
 redesign. The same externally controlled semantic authorship applies to the
 remaining domains.
+
+---
+
+## D-042 — Freeze Product Reasoning & Decision after external final review
+**Date:** 2026-09-11
+
+**Decision.** The final external semantic review passed on all ten
+`product_reasoning_decision` cases (PR-01 through PR-10) after the Phase 3B-3.1
+canonical patch round. Domain 3 is **FROZEN / EXTERNALLY APPROVED**. The frozen
+cases are recorded in `data/cases_v1.json` and the QA ledger
+(`docs/DATASET_QA_V1.md`). The earlier Gate 3B-3 PASS/PATCH history and the
+Phase 3B-3.1 revision provenance are preserved in the ledger.
+
+**Deterministic vs. judged split.** Objective arithmetic and explicit
+constraints remain deterministically checked where appropriate (the
+quantitative baselines in PR-04, PR-05, PR-06, and PR-10, plus the supplied
+section presence/order checks). Open product recommendations remain
+judge-evaluated: **no deterministic hidden winner is permitted for an open
+product decision.** In particular, PR-10 does not deterministically require
+`A+D` or `A+C+D`.
+
+**Phase 3B-3.1 corrections recorded.** The Gate 3B-3 review found five cases
+whose wording admitted unintended readings; the Phase 3B-3.1 canonical full
+objects closed each one:
+
+- **PR-01** — the exact-two-feature requirement is now explicit in the
+  evaluation criteria, and the author note no longer suggests a preferred
+  hidden feature pair.
+- **PR-05** — the unit-economics formula now unambiguously subtracts the
+  *combined* average monthly infra-and-support cost; the earlier ambiguous
+  "average infra + support cost" phrasing was removed. The baseline is
+  unchanged: Flat 25920, Usage 21840.
+- **PR-06** — engineering effort vs. calendar time is disambiguated: self-build
+  earliest usable version is explicitly stated as week 8 with no
+  parallel-compression path; the year-1 arithmetic is unchanged.
+- **PR-07** — the output structure was made strategy-neutral: the heading is
+  now `【风险控制与退出条件】`, and the structure no longer presupposes a
+  whitelist Beta as the mandatory strategy.
+- **PR-10** — residual engineering capacity now has an explicit competing value
+  as an A/D delivery buffer (unused weeks are the only buffer; scheduling C
+  consumes it), creating a real buffer-vs-option-value trade-off between A+D
+  and A+C+D. The portfolio choice remains judge-evaluated.
+
+**Rationale.** The Gate 3B-3 review found five cases already correct and five
+whose wording admitted an unintended reading. The Phase 3B-3.1 canonical
+patches supplied authoritative full replacement objects without expanding the
+deterministic framework: no new operator was required and the operator count
+remains 21.
+
+**Scope.** The approval covers **Domain 3 only**. It does not approve the
+50-case dataset, any later domain, any model ID, any price, or any benchmark
+result. `data/cases_v1.json` remains `production_status: "authoring"` because
+only 30 of 50 cases exist. No live paid benchmark is authorized.
+
+**Consequences.** Domain 3 is committed as the Domain 3 freeze checkpoint
+(`feat: freeze product-reasoning benchmark cases`). Phase 3B-4
+(`chinese_business_communication`) proceeds only with externally authored
+canonical BC-01 … BC-10 definitions; the same externally controlled semantic
+authorship applies to BC and AW. Execution agents integrate canonical
+definitions but do not author or redesign them.

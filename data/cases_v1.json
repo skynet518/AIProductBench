@@ -3,7 +3,7 @@
   "dataset_version": "v1-authoring-2026-09-11",
   "synthetic": false,
   "production_status": "authoring",
-  "authoring_note": "Phase 3B production dataset, authored domain by domain. Domain 1 (instruction_constraint_following, IF-01 through IF-10) is frozen and externally approved. Domain 2 (structured_information_analysis, SA-01 through SA-10) is frozen and externally approved after the Phase 3B-2.1 patch round. Domains 3-5 are not yet authored, so this file contains 20 of 50 cases and is NOT a complete V1 production benchmark dataset. Production case semantics are externally authored; integration agents do not author or redesign cases.",
+  "authoring_note": "Phase 3B production dataset, authored domain by domain. Domain 1 (instruction_constraint_following, IF-01 through IF-10) is frozen and externally approved. Domain 2 (structured_information_analysis, SA-01 through SA-10) is frozen and externally approved. Domain 3 (product_reasoning_decision, PR-01 through PR-10) is frozen and externally approved after the Phase 3B-3.1 patch round. Domains 4-5 (chinese_business_communication, agent_workflow_planning) are not yet authored, so this file contains 30 of 50 cases and is NOT a complete V1 production benchmark dataset. Production case semantics are externally authored; integration agents do not author or redesign cases.",
   "domains": [
     "instruction_constraint_following",
     "structured_information_analysis",
@@ -1370,6 +1370,590 @@
       "expected_structure": "四行候选评分排名表，加一行方法说明；最终排名为C、B、D、A。",
       "ambiguity_notes": "四张表故意采用不同候选顺序，必须按候选ID连接。B与C最终同分，必须应用题目给出的质量分tie-break。",
       "author_notes": "This hard case now exercises every declared rule: ID-based join, weighted aggregation, final-step ROUND_HALF_UP, and a real tie-break. No generic math-engine extension is required."
+    },
+    {
+      "id": "PR-01",
+      "title": "MVP 范围取舍",
+      "domain": "product_reasoning_decision",
+      "difficulty": "easy",
+      "language": "zh",
+      "tags": [
+        "product_reasoning",
+        "mvp",
+        "prioritization",
+        "scope_tradeoff",
+        "zh"
+      ],
+      "test_intent": "检验模型能否根据用户问题强度、开发成本和风险，在有限研发容量内形成有依据的MVP范围，而不是简单选择功能最多或最便宜的组合。",
+      "prompt": "我们准备在 4 周后上线团队协作产品的新用户激活页 MVP。本轮前端与后端合计最多只能投入 10 个工程日，而且不能新增计费或权限系统。\n\n最近 20 次新用户访谈中：\n- 14 人不知道第一次进入产品后应该怎样邀请队友。\n- 11 人在第一次 CSV 数据导入时卡住。\n- 5 人希望一开始就有行业模板。\n- 3 人提到希望支持深色主题。\n\n候选功能：\nA. 队友邀请引导：4 工程日，低技术风险。\nB. CSV 导入向导：5 工程日，中等技术风险。\nC. 示例 workspace：3 工程日，低技术风险。\nD. 主题选择器：2 工程日，低技术风险。\nE. 行业模板市场：6 工程日，高技术风险，并需要后续内容运营。\n\n本轮首要目标是提高用户首次会话成功完成核心激活动作的概率，而不是提高功能丰富度。\n\n请选择恰好两个功能进入 MVP，并说明一个最容易让团队心动、但你仍会推迟的功能。\n\n严格按顺序输出：\n【MVP选择】\n【取舍理由】\n【验证方式】",
+      "evaluation_criteria": [
+        "恰好选择两个功能；两者总工程量不超过10个工程日，并且不依赖题目明确禁止新增的计费或权限系统。",
+        "MVP选择优先响应首次激活阶段最强的用户问题信号，而不是主要依据功能数量、视觉吸引力或最低开发成本。",
+        "取舍理由同时讨论用户价值、工程成本和至少一项实现或产品风险。",
+        "被推迟的功能有明确理由，并没有把“推迟”等同于“永远不做”。",
+        "验证方式能够检验所选功能是否改善首次激活，而不是只统计功能点击量。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "三个部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【MVP选择】",
+            "【取舍理由】",
+            "【验证方式】"
+          ]
+        },
+        {
+          "name": "三个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【MVP选择】",
+            "【取舍理由】",
+            "【验证方式】"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "研发容量最多10个工程日",
+        "首要目标是提高首次会话成功完成核心激活动作的概率",
+        "20次访谈中14人遇到邀请队友问题，11人遇到CSV首次导入问题",
+        "A需要4日且低风险，B需要5日且中等风险",
+        "C需要3日，D需要2日，E需要6日且具有高风险和持续运营成本",
+        "本轮不能新增计费或权限系统"
+      ],
+      "expected_structure": "三个指定小节，包含两个MVP功能的选择、取舍理由和验证方式。",
+      "ambiguity_notes": "题目存在明显强弱不同的产品信号，但不通过固定评分公式定义唯一答案。推荐必须能够由候选可见证据支撑。",
+      "author_notes": "Judges should score whether the chosen two-feature scope is defensible against activation evidence, capacity, and risk; do not exact-match a hidden feature pair."
+    },
+    {
+      "id": "PR-02",
+      "title": "大客户定制请求是否插队",
+      "domain": "product_reasoning_decision",
+      "difficulty": "easy",
+      "language": "zh",
+      "tags": [
+        "product_reasoning",
+        "customer_request",
+        "roadmap",
+        "commitment",
+        "opportunity_cost",
+        "zh"
+      ],
+      "test_intent": "检验模型面对潜在大客户的单点定制需求时，能否区分已承诺事项和未验证机会，并提出既保护当前承诺又保留商业机会的产品决策。",
+      "prompt": "销售希望产品团队立刻插入一个客户定制需求。\n\n背景：\n- 潜在客户星港集团的预计年合同金额为 60 万元，但合同尚未签署。\n- 对方希望增加一种专用 XML 导出格式，销售认为它“可能是成交关键”。\n- 过去 20 个企业客户中只有这一个客户提出过这种 XML 格式。\n- 实现专用 XML 导出预计需要 8 个工程日。\n- 当前两周 Sprint 总容量为 10 个工程日。\n- 其中 5 个工程日已经用于必须在外部审计前上线的安全补丁。\n- 另有一个已签约客户的 SSO 缺陷修复需要 4 个工程日，并已承诺本 Sprint 完成。\n- 现有 CSV 导出可以由运营人工转换为客户需要的 XML，每次约需 30 分钟；预计客户在签约决策前最多需要 4 次导出。\n\n你现在是负责这个产品的 PM。请做产品决策，不要只重复数据。\n\n严格输出：\n【决策】\n【为什么】\n【下一步验证】",
+      "evaluation_criteria": [
+        "没有为了尚未签署且需求复用性未经验证的机会，轻率破坏安全审计或已签约客户承诺。",
+        "能够识别现有人工转换方案的成本有限，并把它作为短期保留商业机会的可行手段进行评估。",
+        "明确区分潜在60万元合同价值与已经确认的产品需求证据，不能把销售的“可能是关键”当成确定事实。",
+        "下一步验证能够帮助判断XML需求是否值得进入正式产品路线图，例如成交条件、其他客户复用性或实际使用频率。",
+        "决策能够说明何时应重新评估，而不是永久拒绝或无条件立即开发。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "三个部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【决策】",
+            "【为什么】",
+            "【下一步验证】"
+          ]
+        },
+        {
+          "name": "三个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【决策】",
+            "【为什么】",
+            "【下一步验证】"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "潜在合同60万元但尚未签署",
+        "只有1/20企业客户提出专用XML需求",
+        "XML开发需要8个工程日",
+        "Sprint总容量10日，其中安全补丁5日、已承诺SSO修复4日",
+        "人工CSV转XML每次约30分钟，预计决策前最多4次",
+        "销售只表示XML可能是成交关键，并非已确认成交条件"
+      ],
+      "expected_structure": "三个指定小节，形成明确产品决策、依据和重新评估条件。",
+      "ambiguity_notes": "商业机会真实存在，但成交依赖性和需求复用性尚未验证；这是产品取舍问题而不是固定算术题。",
+      "author_notes": "A strong answer usually preserves committed work and uses the low-cost workaround while validating the opportunity, but the case is judged on defensible product reasoning."
+    },
+    {
+      "id": "PR-03",
+      "title": "高风险功能如何灰度上线",
+      "domain": "product_reasoning_decision",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "product_reasoning",
+        "rollout",
+        "risk_management",
+        "guardrails",
+        "experimentation",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在功能价值和错误成本不对称的情况下设计风险可控的上线策略，而不是在全量上线与完全不上线之间二选一。",
+      "prompt": "我们做了一个 AI 工单优先级自动分类器，希望减少客服人工分诊工作。\n\n已知情况：\n- 每天约有 10,000 张新工单。\n- 其中约 8% 来自 VIP 客户。\n- 离线评测总体分类准确率为 94%。\n- 普通客户的严重误分类率约为 1.1%。\n- VIP 客户的严重误分类率约为 3.2%。\n- VIP 工单被错误降级的业务损失明显高于普通工单误分类。\n- 人工复核团队每天最多额外审核 600 张工单。\n- 系统支持按客户类型和流量比例灰度，并有即时 kill switch。\n- 目前没有真实生产流量下的性能数据。\n\n产品目标是减少人工分诊量，但不能为了自动化率牺牲 VIP 服务风险。\n\n请设计前两周的上线方案。\n\n严格按顺序输出：\n【首批范围】\n【保护措施】\n【扩大条件】\n【停止条件】",
+      "evaluation_criteria": [
+        "上线范围反映VIP误分类损失更高且VIP严重误分类率更高的事实，没有无保护地直接全量自动处理VIP工单。",
+        "方案利用已有的按客户类型/比例灰度、人工复核和kill switch能力形成真正可执行的风险控制。",
+        "人工复核设计尊重每日600张的容量约束；不能设计明显超过容量的全量复核方案。",
+        "扩大条件包含生产环境中的质量与运营证据，而不是仅以时间到期作为扩大理由。",
+        "停止条件针对高损失错误、异常趋势或生产质量恶化，能够触发回退而非继续扩大。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "四个部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【首批范围】",
+            "【保护措施】",
+            "【扩大条件】",
+            "【停止条件】"
+          ]
+        },
+        {
+          "name": "四个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【首批范围】",
+            "【保护措施】",
+            "【扩大条件】",
+            "【停止条件】"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "每天约10000张工单，其中VIP约8%",
+        "总体离线准确率94%",
+        "普通客户严重误分类率1.1%，VIP为3.2%",
+        "VIP错误降级损失高于普通客户",
+        "人工复核新增容量最多600张/天",
+        "系统支持按客户类型和比例灰度以及即时kill switch",
+        "目前缺少真实生产数据"
+      ],
+      "expected_structure": "四个指定小节，形成风险控制型上线方案。",
+      "ambiguity_notes": "不存在要求所有优秀回答使用同一个灰度百分比。核心是风险暴露、复核容量和扩大/停止机制是否自洽。",
+      "author_notes": "No deterministic keyword proxy is used for rollout quality. Judges evaluate whether the proposed exposure and guardrails form a coherent product decision."
+    },
+    {
+      "id": "PR-04",
+      "title": "量化收益与不确定性下的优先级",
+      "domain": "product_reasoning_decision",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "product_reasoning",
+        "prioritization",
+        "quantitative_baseline",
+        "confidence",
+        "capacity",
+        "zh"
+      ],
+      "test_intent": "检验模型能否先正确建立量化收益基线，再把预测置信度和研发容量纳入产品优先级判断，而不是机械按照单个最大uplift排序。",
+      "prompt": "下季度我们只有 5 个工程周可以投入留存优化。三个候选项目来自不同实验或研究阶段。\n\n为了做统一的量化基线，先用：\n预计新增月留存用户 = 可影响用户数 × 预计留存提升百分点。\n例如 10,000 用户 × 2 个百分点 = 200 人。\n\n假设三个项目的用户群在本轮规划中不重叠。\n\n| 项目 | 可影响用户 | 预计留存提升 | 证据置信度 | 工程成本 |\n| --- | --- | --- | --- | --- |\n| A 新手引导清单 | 40000 | +1.5个百分点 | 高 | 3工程周 |\n| B 团队模板 | 15000 | +4.0个百分点 | 中 | 4工程周 |\n| C 邮件召回提醒 | 25000 | +1.2个百分点 | 低 | 2工程周 |\n\n下季度首要产品目标是减少整体用户流失，而不是只优化某一个高价值客户群。预测数字都是估计值，不应被当成确定结果。\n\n第一行严格输出：\n量化基线：A=600；B=600；C=300；A+C=900\n\n然后输出：\n【推荐方案】\n【关键取舍】\n【下一步证据】",
+      "evaluation_criteria": [
+        "量化基线计算正确：A=600、B=600、C=300，并识别A+C在5工程周内的模型化合计为900。",
+        "推荐方案不超过5工程周，并理解A与B单项模型化收益相同但工程成本和证据置信度不同。",
+        "产品判断同时考虑整体留存目标、组合收益、置信度和机会成本，而不是把预测值当成确定事实。",
+        "如果采用A+C，应明确C的低置信度风险；如果放弃模型化收益更高的A+C组合，应给出候选数据能够支撑的明确理由。",
+        "下一步证据能够缩小真正影响决策的不确定性，而不是泛泛要求更多数据。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "量化基线正确",
+          "type": "required_regex",
+          "pattern": "(?m)^量化基线：\\s*A=600；B=600；C=300；A\\+C=900\\s*$"
+        },
+        {
+          "name": "三个分析部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【推荐方案】",
+            "【关键取舍】",
+            "【下一步证据】"
+          ]
+        },
+        {
+          "name": "分析部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【推荐方案】",
+            "【关键取舍】",
+            "【下一步证据】"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "A预计新增月留存用户40000×1.5%=600，证据置信度高，成本3工程周",
+        "B预计新增月留存用户15000×4%=600，证据置信度中，成本4工程周",
+        "C预计新增月留存用户25000×1.2%=300，证据置信度低，成本2工程周",
+        "A+C成本5工程周，模型化合计900人",
+        "下季度容量5工程周",
+        "预测值是估计而不是确定结果"
+      ],
+      "expected_structure": "固定量化基线行，加三个产品判断小节。",
+      "ambiguity_notes": "量化基线唯一，但最终产品决策并不完全由算术决定；模型必须处理置信度与机会成本。",
+      "author_notes": "This intentionally separates reproducible arithmetic from product judgment."
+    },
+    {
+      "id": "PR-05",
+      "title": "Pricing a learning-stage beta",
+      "domain": "product_reasoning_decision",
+      "difficulty": "medium",
+      "language": "en",
+      "tags": [
+        "product_reasoning",
+        "pricing",
+        "adoption_tradeoff",
+        "quantitative_baseline",
+        "learning",
+        "english"
+      ],
+      "test_intent": "Test whether the model can combine unit economics with an explicitly stated learning objective and customer pricing concerns instead of simply choosing the option with the highest contribution.",
+      "prompt": "We are choosing pricing for a 90-day beta of a new analytics add-on.\n\nThe beta's primary product goal is to learn from as many qualified paying teams as practical. Finance will stop the beta if expected monthly contribution falls below 20000 USD.\n\nTwo packages were tested:\n\n| Package | Expected paying teams | Avg monthly revenue per team | Avg monthly infra + support cost per team |\n| --- | ---: | ---: | ---: |\n| Flat | 180 | $199 | $55 |\n| Usage | 260 | $169 | $85 |\n\nExpected monthly contribution = expected paying teams × (average monthly revenue per team - combined average monthly infra-and-support cost per team).\n\nAdditional research:\n- 22% of interviewed teams said unpredictable bills are a concern with usage-based pricing.\n- 8% said the flat price feels too expensive before they have proven value.\n- These are stated-preference interviews, not observed churn behavior.\n\nFirst output exactly:\nQuant baseline: Flat=25920; Usage=21840\n\nThen write exactly three labeled lines:\nDecision: ...\nTrade-off: ...\nGuardrail: ...",
+      "evaluation_criteria": [
+        "The quantitative baseline is correct: Flat contribution is 25920 USD and Usage contribution is 21840 USD.",
+        "The recommendation recognizes that both options clear the 20000 USD finance floor, so the decision is not incorrectly framed as one option being financially infeasible.",
+        "The reasoning weighs the beta's primary learning objective, the difference between 180 and 260 expected paying teams, contribution economics, and pricing predictability.",
+        "Interview concerns are treated as evidence with uncertainty rather than as proven future churn rates.",
+        "The proposed guardrail addresses a material risk of the chosen pricing strategy and can be observed during the beta."
+      ],
+      "deterministic_checks": [
+        {
+          "name": "Quantitative baseline correct",
+          "type": "required_regex",
+          "pattern": "(?m)^Quant baseline:\\s*Flat=25920;\\s*Usage=21840\\s*$"
+        },
+        {
+          "name": "Decision line present",
+          "type": "required_regex",
+          "pattern": "(?m)^Decision:"
+        },
+        {
+          "name": "Trade-off line present",
+          "type": "required_regex",
+          "pattern": "(?m)^Trade-off:"
+        },
+        {
+          "name": "Guardrail line present",
+          "type": "required_regex",
+          "pattern": "(?m)^Guardrail:"
+        }
+      ],
+      "reference_facts": [
+        "Flat expected contribution = 180 × (199 - 55) = 25920 USD",
+        "Usage expected contribution = 260 × (169 - 85) = 21840 USD",
+        "Both packages exceed the 20000 USD finance floor",
+        "Usage is expected to attract 260 paying teams versus 180 for Flat",
+        "22% stated concern about unpredictable usage bills; 8% stated concern about the flat entry price",
+        "Interview statements are not observed churn outcomes"
+      ],
+      "expected_structure": "One fixed quantitative-baseline line followed by Decision, Trade-off, and Guardrail lines.",
+      "ambiguity_notes": "The numbers do not define a mandatory winner. The case evaluates how the model reconciles the learning objective with economics and pricing risk.",
+      "author_notes": "Do not judge a package choice in isolation; judge whether the choice is consistent with the stated objective and evidence."
+    },
+    {
+      "id": "PR-06",
+      "title": "自研还是采购：先学到东西还是先降长期成本",
+      "domain": "product_reasoning_decision",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "product_reasoning",
+        "build_vs_buy",
+        "quantitative_baseline",
+        "time_to_learning",
+        "reversibility",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在短期试点速度与长期TCO之间做阶段化build-vs-buy决策，而不是只比较一年成本。",
+      "prompt": "我们准备验证 OCR 自动录入功能，已经有 3 家 design partner 同意参加试点。业务要求 4 周内拿到真实使用反馈。\n\n方案一：自研\n- 预计需要 8 个工程周，而且关键路径无法通过并行压缩；按当前团队配置，最早第 8 周才能达到可试用版本。\n- 研发机会成本按每工程周 5 天、每工程日 2500 元计算。\n- 上线后基础设施与维护成本约 8000 元/月。\n- 优点是控制力高、没有供应商锁定。\n\n方案二：供应商\n- 2 周可以接入试点。\n- 一次性接入费 15000 元。\n- 服务费 18000 元/月。\n- 已完成当前公司的安全和采购审查。\n- 可先签 3 个月试点，之后决定是否继续，不要求自动续约。\n\n为方便长期比较，假设如果任一方案持续使用满12个月：\n自研第一年成本 = 研发机会成本 + 12个月运行成本。\n供应商第一年成本 = 接入费 + 12个月服务费。\n\n第一行严格输出：\n成本基线：自研=196000元；供应商=231000元；差额=35000元\n\n然后输出：\n【当前建议】\n【为什么不是只看一年成本】\n【三个月后的转向条件】",
+      "evaluation_criteria": [
+        "正确计算自研第一年196000元、供应商231000元，供应商高35000元。",
+        "产品决策明确处理4周反馈目标与自研最早第8周才能试用之间的冲突。",
+        "没有因为供应商长期成本较高就忽略其2周可试点和方案可在3个月后退出的可逆性。",
+        "也没有把供应商试点自动等同于永久采购；能够区分短期学习决策和长期架构决策。",
+        "三个月后的转向条件包含真实使用效果、成本/规模或控制能力等能够改变build-vs-buy判断的证据。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "成本基线正确",
+          "type": "required_regex",
+          "pattern": "(?m)^成本基线：\\s*自研=196000元；供应商=231000元；差额=35000元\\s*$"
+        },
+        {
+          "name": "三个产品判断部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【当前建议】",
+            "【为什么不是只看一年成本】",
+            "【三个月后的转向条件】"
+          ]
+        },
+        {
+          "name": "三个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【当前建议】",
+            "【为什么不是只看一年成本】",
+            "【三个月后的转向条件】"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "自研研发机会成本=8×5×2500=100000元",
+        "自研第一年成本=100000+12×8000=196000元",
+        "供应商第一年成本=15000+12×18000=231000元",
+        "两者第一年差额35000元",
+        "真实反馈目标为4周内；自研关键路径决定最早第8周才可试用",
+        "供应商2周可接入，并已完成安全采购审查",
+        "供应商可以先签3个月试点且不自动续约"
+      ],
+      "expected_structure": "固定成本基线行，加三个阶段化产品决策小节。",
+      "ambiguity_notes": "长期成本偏向自研，短期time-to-learning偏向供应商；题目已明确自研最早第8周可试用，因此不存在把8工程周通过并行压缩到4周的解释空间。",
+      "author_notes": "The arithmetic is fixed; the product insight is that pilot architecture and long-term architecture need not be the same decision."
+    },
+    {
+      "id": "PR-07",
+      "title": "销售、安全与路线图冲突下的发布决策",
+      "domain": "product_reasoning_decision",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "product_reasoning",
+        "stakeholder_conflict",
+        "security",
+        "enterprise",
+        "phased_delivery",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在销售机会、安全底线、现有客户承诺和支持痛点同时存在时找到可执行的阶段化产品决策。",
+      "prompt": "企业客户不断要求「管理员代成员操作」能力，团队对怎么做有分歧。\n\n销售：\n- 当前有 3 个企业机会，总年合同金额约 140 万元。\n- 其中 2 家明确说管理员代操作是签约前必须解决的问题。\n\n客服：\n- 现有客户每月约有 35 张工单与管理员无法代操作有关。\n\n安全团队：\n- 现有权限模型中，如果直接加一个管理员开关，可能导致跨部门数据暴露。\n- 因此安全团队不会批准这种快速开关直接全量上线。\n\n工程给出三个实现路径：\nA. 快速管理员开关：2周；安全团队明确不会批准生产全量。\nB. 白名单Beta + 操作审计日志：4周；安全团队同意最多给5家design partner使用。\nC. 完整RBAC重构：8周；但会使已经向20家现有客户承诺的报表版本延后约5周。\n\n你是PM，需要决定接下来8周怎么推进，而不是只替某一个stakeholder站队。\n\n输出：\n【产品决策】\n【各方取舍】\n【风险控制与退出条件】\n【后续路线图条件】",
+      "evaluation_criteria": [
+        "不会选择安全团队明确拒绝生产批准的快速开关作为无保护全量方案。",
+        "决策同时考虑企业机会、现有支持痛点、安全风险以及20家现有客户的报表承诺，而不是只优化单一stakeholder目标。",
+        "风险控制与退出条件必须与所选路径一致：如果采用白名单Beta，应尊重最多5家design partner的边界并使用审计日志等安全控制；如果采用其他路径，也必须说明相应的发布边界、回退或停止条件。",
+        "如果推动完整RBAC，能够解释为什么其价值足以承担对既有路线图承诺的机会成本，而不是默认长期架构一定优先。",
+        "后续路线图条件基于Beta证据、真实需求复用性或安全需求，而不是把临时方案自动演变成永久架构。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "四个部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【产品决策】",
+            "【各方取舍】",
+            "【风险控制与退出条件】",
+            "【后续路线图条件】"
+          ]
+        },
+        {
+          "name": "四个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【产品决策】",
+            "【各方取舍】",
+            "【风险控制与退出条件】",
+            "【后续路线图条件】"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "3个企业机会合计约140万元年合同金额，其中2家将管理员代操作列为签约前条件",
+        "现有客户每月约35张相关支持工单",
+        "快速管理员开关存在跨部门数据暴露风险且安全团队拒绝批准生产全量",
+        "白名单Beta需要4周且最多5家design partner，带操作审计日志",
+        "完整RBAC需要8周，并会使已向20家客户承诺的报表版本延后约5周"
+      ],
+      "expected_structure": "四个指定小节的产品决策备忘录，风险控制部分不预设必须采用Beta。",
+      "ambiguity_notes": "白名单Beta是明显可考虑的中间路径，但输出结构不预设必须选择B；长期RBAC时机及8周策略仍需基于证据权衡。",
+      "author_notes": "This case should discriminate models that can reason across stakeholder incentives instead of collapsing the problem to revenue or architecture quality alone."
+    },
+    {
+      "id": "PR-08",
+      "title": "客户定制还是平台化",
+      "domain": "product_reasoning_decision",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "product_reasoning",
+        "platform_strategy",
+        "bespoke",
+        "option_value",
+        "architecture_tradeoff",
+        "zh"
+      ],
+      "test_intent": "检验模型面对短期签约交付和长期平台化诱惑时，能否根据证据成熟度、可逆性和未来复用价值设计阶段化策略。",
+      "prompt": "我们正在做企业工作流产品，3 个已签约客户要求在 6 周内接入各自的审批系统。\n\n未来6周团队总容量：12个工程周。\n\n目前三个技术方向：\n\nA. 三套客户定制连接器\n- 每家约3工程周，总计9工程周。\n- 最快、需求最明确。\n- 预计以后每个客户每月需要约1工程日维护。\n- 三家接口结构并不完全相同。\n\nB. 完整可配置规则平台\n- 平台本身约10工程周。\n- 每个客户还需要约1工程周配置，总计约13工程周。\n- 预计至少到第6周才可能出现第一个可用客户版本。\n- 理论复用性最高，但目前还没有足够客户数据证明通用抽象是否正确。\n\nC. 薄适配层 + 客户配置\n- 公共适配框架约6工程周。\n- 每家客户约1.5工程周，总计约10.5工程周。\n- 当前估计可覆盖三家需求约80%的共同部分，其余仍需要少量客户特定逻辑。\n- 架构风险中等。\n\n销售管道另外有6家潜在客户：只有2家目前表现出与这3个签约客户相似的审批模式，其余4家的需求仍不明确。\n\n产品目标：先兑现3个已签约客户的6周交付承诺，同时避免在证据不足时做很难逆转的过度平台化投资。\n\n请给出阶段化产品策略，严格输出：\n【0-6周】\n【6-12周】\n【平台化触发条件】\n【明确不做什么】",
+      "evaluation_criteria": [
+        "0-6周方案能够在12工程周容量和6周客户承诺下实际执行，而不是选择明显超出容量的计划。",
+        "能够区分已签约客户的确定需求与6家pipeline客户中尚未验证的需求，避免把潜在需求当成已证实平台共性。",
+        "决策考虑短期交付速度、未来维护成本、抽象错误风险和方案可逆性。",
+        "6-12周策略利用首批客户产生的证据来决定是否继续抽象，而不是在没有新证据的情况下自动升级到完整平台。",
+        "平台化触发条件可观察，例如共同规则覆盖率、后续客户复用率或维护成本，而不是笼统写“需求增加时”。",
+        "明确不做的事项能够防止同时建设定制、薄适配和完整平台造成范围失控。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "四个阶段部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【0-6周】",
+            "【6-12周】",
+            "【平台化触发条件】",
+            "【明确不做什么】"
+          ]
+        },
+        {
+          "name": "四个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【0-6周】",
+            "【6-12周】",
+            "【平台化触发条件】",
+            "【明确不做什么】"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "3个已签约客户要求6周内完成接入",
+        "6周团队总容量12工程周",
+        "三套定制连接器共9工程周但长期维护成本较高",
+        "完整平台加三家配置约13工程周，超过当前容量且抽象证据不足",
+        "薄适配层加三家配置约10.5工程周，预计覆盖约80%共同部分",
+        "6家潜在客户中只有2家表现出相似审批模式，其余需求未明确"
+      ],
+      "expected_structure": "四阶段产品策略，分别覆盖近期交付、后续演进、平台触发条件和明确排除项。",
+      "ambiguity_notes": "题目故意不规定必须选择C。核心是策略是否尊重承诺、容量、证据成熟度和未来option value。",
+      "author_notes": "Hard case: strong answers should avoid both bespoke-forever thinking and premature platformization."
+    },
+    {
+      "id": "PR-09",
+      "title": "Cross-region launch sequencing",
+      "domain": "product_reasoning_decision",
+      "difficulty": "hard",
+      "language": "mixed",
+      "tags": [
+        "product_reasoning",
+        "regional_launch",
+        "risk",
+        "sequencing",
+        "mixed_language"
+      ],
+      "test_intent": "检验模型能否在两个地区成熟度、数据边界和运营准备程度不同的情况下制定差异化发布决策，而不是为了日期一致而强行同步全量上线。",
+      "prompt": "我们准备上线 AI 通话总结功能。中国区和新加坡区的准备度不同，但销售希望两个地区同一天宣布 full launch。\n\n中国区：\n- 已有 200 名 Beta 用户。\n- 92% 的 Beta 用户把生成的总结标记为“有用”。\n- 中文模板和帮助中心已经完成。\n- 客服覆盖时间为北京时间 09:00–18:00。\n- 已经运行了 4 周真实流量，没有出现数据驻留问题。\n\nSingapore：\n- 目前只有 3 家 design partner 明确希望使用。\n- English UI is ready.\n- English-summary quality evaluation currently contains only 50 manually reviewed calls.\n- The DPA is signed.\n- Customer data must remain in the Singapore region; region-local storage is already available.\n- Support coverage is 10:00–18:00 SGT with no after-hours on-call during the first month.\n- No production customer traffic has been run yet.\n\n产品原则：两个地区可以采用不同发布阶段；签署DPA或技术上可以存储数据，不等于产品已经达到full-launch readiness。\n\n请做发布决策。\n\n【内部决策】部分用中文。\n## Singapore partner brief 部分用英文，内容是可以发给3家design partner的简短说明。\n【扩大Gate】部分用中文。\n\n严格按照以上三个部分输出。",
+      "evaluation_criteria": [
+        "没有为了满足同一天full launch的销售偏好而忽略两个地区明显不同的真实使用证据和运营准备度。",
+        "中国区决策合理利用已有200名Beta用户、4周真实流量和92%有用率，同时仍承认这些数据不是绝对质量保证。",
+        "新加坡决策正确区分DPA/本地存储合规准备与产品质量、生产流量和支持准备；不会把前者自动视为full-launch证据。",
+        "Singapore partner brief与内部决策一致，并能诚实描述当前阶段而不虚构产品成熟度。",
+        "扩大Gate针对真实生产质量、地区数据驻留、支持运营或样本覆盖等缺口，能够决定何时从design-partner阶段扩大。",
+        "没有引入题目未提供的法律要求、监管结论或外部市场事实。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "三个部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【内部决策】",
+            "## Singapore partner brief",
+            "【扩大Gate】"
+          ]
+        },
+        {
+          "name": "三个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【内部决策】",
+            "## Singapore partner brief",
+            "【扩大Gate】"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "中国区已有200名Beta用户、4周真实流量和92%有用率",
+        "中国区中文模板与帮助中心已完成",
+        "新加坡目前只有3家design partner",
+        "新加坡英文质量评估只有50通人工复核电话",
+        "DPA已签署且Singapore本地存储已可用",
+        "新加坡首月没有非工作时段on-call",
+        "新加坡尚无生产客户流量",
+        "产品原则允许两个地区采用不同发布阶段"
+      ],
+      "expected_structure": "中文内部决策、英文Singapore partner brief、中文扩大Gate三个部分。",
+      "ambiguity_notes": "题目没有要求两个地区采用同一阶段。核心是成熟度差异、证据边界和发布风险判断。",
+      "author_notes": "Mixed-language complexity is secondary; judges should primarily assess launch sequencing and calibrated readiness reasoning."
+    },
+    {
+      "id": "PR-10",
+      "title": "容量、依赖与机会价值下的季度组合决策",
+      "domain": "product_reasoning_decision",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "product_reasoning",
+        "portfolio",
+        "dependency",
+        "quantitative_baseline",
+        "option_value",
+        "capacity",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在固定季度容量下正确建立风险调整价值基线，再结合依赖关系、现有收入保护和未来option value形成组合级产品决策。",
+      "prompt": "下季度团队最多有 9 个工程周用于下面四个项目。\n\n为了统一比较，先计算：\n风险调整价值 = 预计年价值 × 置信度。\n\n这个数字只是规划基线，不代表唯一的产品优先级。为了本题计算，可假设不同项目的直接价值彼此独立、可相加。\n\n| 项目 | 预计年价值 | 置信度 | 工程成本 | 说明 |\n| --- | ---: | ---: | ---: | --- |\n| A 结账延迟治理 | 120万元现有收入保护 | 90% | 3周 | 已有客户投诉，主要保护现有收入 |\n| B AI智能增购 | 240万元新增收入 | 45% | 5周 | 高增长潜力，但必须先完成C才能上线实验 |\n| C 实验与归因基础设施 | 0万元直接价值 | 100% | 2周 | 是B的前置依赖，也能支持以后增长实验 |\n| D 企业导出稳定性 | 110万元续约收入保护 | 80% | 4周 | 已有两个续约客户明确提出稳定性问题 |\n\n执行不确定性：\n- A 和 D 的工程成本都是当前计划值。过去同类「现有收入保护」项目中，约 30% 会因为生产问题额外消耗 1 个工程周。\n- 团队没有季度外的备用研发资源。未分配的工程周可以作为 A/D 的交付缓冲；一旦工程周排给 C，就不能同时作为缓冲。\n\n管理层给出的产品方向是：保护已有收入比未经验证的新增收入更重要；但如果不会显著增加 A/D 的交付风险，希望保留未来增长实验的 option value。\n\nB只有在同一季度同时选择C时才是有效组合。\n\n第一行严格输出：\n量化基线：A=108万；B=108万；C=0万；D=88万\n\n然后输出：\n【季度组合】\n【组合总成本与直接风险调整价值】\n【为什么不选另一个最有诱惑力的组合】\n【下季度重新排序的触发条件】",
+      "evaluation_criteria": [
+        "风险调整价值计算正确：A=108万、B=108万、C=0万、D=88万。",
+        "推荐组合不超过9工程周，并正确处理B必须与C同时选择的依赖关系。",
+        "产品判断区分现有收入保护、新增收入预测和无直接价值但具有option value的基础设施，不把风险调整价值当作唯一评分公式。",
+        "能够显式比较 A+D（7周、保留2周交付缓冲）与 A+C+D（9周、没有剩余缓冲）的真实取舍，不能把C描述成没有机会成本的“免费option”。",
+        "组合总成本和直接风险调整价值与所推荐项目一致，没有对C虚构直接收入。",
+        "重新排序触发条件能够真正改变B的低置信度、A/D的收入风险或C的未来复用价值。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "量化基线正确",
+          "type": "required_regex",
+          "pattern": "(?m)^量化基线：\\s*A=108万；B=108万；C=0万；D=88万\\s*$"
+        },
+        {
+          "name": "四个分析部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【季度组合】",
+            "【组合总成本与直接风险调整价值】",
+            "【为什么不选另一个最有诱惑力的组合】",
+            "【下季度重新排序的触发条件】"
+          ]
+        },
+        {
+          "name": "四个分析部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【季度组合】",
+            "【组合总成本与直接风险调整价值】",
+            "【为什么不选另一个最有诱惑力的组合】",
+            "【下季度重新排序的触发条件】"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "A风险调整价值=120×90%=108万元，成本3工程周，主要保护现有收入",
+        "B风险调整价值=240×45%=108万元，成本5工程周，属于新增收入且必须依赖C",
+        "C直接价值为0万元，成本2工程周，是B的依赖并提供未来实验option value",
+        "D风险调整价值=110×80%=88万元，成本4工程周，主要保护续约收入",
+        "季度总容量9工程周",
+        "A+D成本7周、直接风险调整价值196万元，并留下2个工程周作为潜在交付缓冲",
+        "A+C+D成本9周、直接风险调整价值仍为196万元，增加C的未来增长option value，但不再保留剩余工程周作为A/D交付缓冲",
+        "过去同类现有收入保护项目约30%会因生产问题额外消耗1个工程周，且团队没有季度外备用研发资源",
+        "A+B+C需要10工程周，超过容量",
+        "管理层方向优先保护已有收入，但只有在不会显著增加A/D交付风险时才希望保留增长option value"
+      ],
+      "expected_structure": "固定量化基线，加组合选择、组合成本/价值、机会成本和未来触发条件四个小节。",
+      "ambiguity_notes": "A+D与A+C+D形成真实可辩护的取舍：前者保留2周执行缓冲，后者用掉缓冲换取C的未来增长option value。最终评分不匹配隐藏组合，而看模型是否正确处理这一机会成本。",
+      "author_notes": "Hard portfolio case. Quantitative baseline is deterministic; portfolio choice remains judge-evaluated because residual capacity now has an explicit competing use as execution buffer."
     }
   ]
 }
