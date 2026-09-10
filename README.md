@@ -106,6 +106,17 @@ Full detail in [docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md).
   `overall_score`, `avg`/`p50`/`p95` latency, input/output/reasoning tokens,
   `candidate_inference_cost`, `judge_evaluation_cost`, `cost_per_100_tasks`,
   `quality_per_cny`, `judge_agreement`.
+- **Incomplete runs are not silently averaged.** When a run is incomplete,
+  diagnostics are kept (`actual_spend_cny`, `calls_completed`,
+  `cases_completed`, partial tokens and latency) while cross-model comparative
+  metrics (`cost_per_100_tasks`, `quality_per_cny`, Pareto eligibility, rank)
+  are reported as **unavailable** rather than computed over a reduced
+  denominator.
+- **Self-contained cases, no private chain-of-thought.** Every source fact a
+  task needs is in the candidate-visible prompt; `reference_facts` holds only
+  visible facts, invariants, or values derivable from visible input. Reasoning
+  is judged from the observable answer and its stated justification — the
+  benchmark never requires hidden reasoning.
 - **RMB presentation.** Native provider price and currency are preserved;
   `normalized_cost_cny` is produced only when it can be produced honestly.
 
@@ -163,8 +174,9 @@ pipeline and are never presented as published values.
   scientific one. V1 does not perform repeated sampling or significance testing.
 - Two cross-family judges reduce judge-family bias and make it measurable; they
   do not eliminate it.
-- Human calibration of roughly 10% of responses is planned, not yet performed.
-  No agreement figures are published until real human review exists.
+- Human calibration is planned as a base stratified sample of 50 responses plus
+  a risk-based extension of roughly 10–20 (about 50–70 in practice), not yet
+  performed. No agreement figures are published until real human review exists.
 - Pricing is a dated manual snapshot, not a live billing feed.
 - Models whose API model ID is not a dated snapshot are not reproducible against
   the same weights.

@@ -77,6 +77,22 @@ machine-checkable constraints:
 Cases declare checks; cases that need none declare none. The evaluator reports
 `null` for a case with no checks rather than a fabricated pass rate.
 
+**Check-quality rule.** A deterministic check must test the intended
+constraint, not a superficial proxy. Requiring the word "risk" is not evidence
+of risk analysis; requiring a fixed phrase is not evidence of correct
+prioritisation; and confirming that a number appears is not evidence that a
+computation is correct. Prefer structural, exact, enum, count, invariant, or
+objectively derived checks, and leave genuinely subjective or semantic
+constraints to judges. The rewrite and audit of the planned Strong/Partial
+labels is recorded in `CASE_MATRIX_V1.md` §7 and `DECISIONS.md` D-034.
+
+**Language rule for length checks.** `max_words` / `min_words` count
+whitespace-separated tokens, which is meaningless for Chinese. Cases with
+`language: "zh"` must use `max_chars` / `min_chars`; a word-count check on a
+Chinese case is a validation error. English cases may use word counts.
+Mixed-language cases may use word counts only with an explicit
+`word_count_justification` recorded on the case. See `DECISIONS.md` D-024.
+
 Deterministic evaluation produces:
 
 ```
@@ -94,12 +110,22 @@ Three shared judge dimensions, each scored as an integer from 1 to 5:
 | Dimension | Question |
 | --- | --- |
 | `task_completion` | Did the response fully do what the case asked, using only the information given? |
-| `reasoning_quality` | Is the reasoning correct, specific, and decision-ready? |
+| `reasoning_quality` | Is the *observable* answer correct, specific, and decision-ready, and is its stated justification supported? |
 | `instruction_following` | Did it obey every explicit constraint, including negative ones? |
 
 Judges receive **both** the shared rubric and the case-level
 `evaluation_criteria`. Case-specific criteria are authoritative where they are
 more concrete.
+
+**No private chain-of-thought.** V1 never asks a candidate to expose hidden
+reasoning and never scores one. `reasoning_quality` is judged from what the
+candidate actually delivered: a concise decision rationale, evidence cited from
+the supplied facts, trade-offs, stated assumptions, and the basis of a
+recommendation. A prompt or criterion must not request "show your reasoning",
+"step-by-step reasoning", or "transparent reasoning". A correct answer with no
+stated basis is not automatically high-scoring, and a fluent but unsupported
+rationale is not high-scoring; both are judged on the observable answer. See
+`CASE_DESIGN_STANDARD_V1.md` §6.
 
 Judge output must be strict, machine-readable JSON. Invalid judge output is
 rejected, never repaired.
@@ -155,20 +181,42 @@ score depends on the judge.
 
 ### D. Human calibration
 
-A stratified human review sample of approximately 10% of candidate responses is
-planned. Sampling covers:
+V1 does **not** cap human review at a fixed 10% of responses. The planned
+calibration is a base stratified sample plus a risk-based extension.
+
+**Base sample: 50 candidate responses.** The base sample covers:
 
 - all candidate models
 - all five domains
 - easy, medium, and hard cases
+
+**Risk-based extension: approximately 10–20 additional responses when
+warranted.** Oversampling prioritises:
+
+- hard cases
+- cases with no deterministic checks
+- responses with high Judge A / Judge B disagreement
+- Kimi, MiniMax, and Doubao responses, because those three families share the
+  same judge pair (Qwen flagship + DeepSeek flagship)
+- responses near a close ranking boundary
+- anomalous or surprising failures
+
+Expected practical review size is therefore **approximately 50–70 responses**.
+The base sample guarantees coverage of models, domains, and difficulty; the
+extension spends additional review where judge error is most likely to change a
+conclusion. Kimi, MiniMax, and Doubao coverage is mandatory in the base sample
+so the correlated-judge risk in §7 is checked against human judgment rather than
+merely disclosed.
 
 Future reporting should include:
 
 - Judge A vs Judge B agreement
 - Human vs Judge agreement
 
-Calibration data must not be fabricated. If human review has not been performed,
-the report says so and publishes no agreement figures.
+The sampling *policy* is defined here. Executing the sample is a Phase 3/4 task.
+Calibration data must not be fabricated; no agreement figures are invented, and
+if human review has not been performed the report says so and publishes none.
+See `DECISIONS.md` D-037.
 
 ---
 
@@ -190,6 +238,50 @@ constraint_pass_rate = passed deterministic checks / total deterministic checks
 task_success_rate    = scored cases with every deterministic check passed / scored cases
 judge_agreement      = agreement between the two judges (see §4)
 ```
+
+### Equal-denominator rule
+
+Official rankings require **equal denominators**. A candidate model holds an
+official rank only when it has a valid scored result for every production
+benchmark case — for a 50-case dataset, exactly 50 case-level scores.
+
+If any case is judge-unavailable, permanently failed, or otherwise lacks a
+required evaluation result after the allowed retry policy:
+
+- the model/run is marked **INCOMPLETE**
+- the case is never silently dropped
+- no official overall ranking is computed from a reduced denominator
+- the model is excluded from `ranked_models` and from the Pareto frontier
+
+Partial diagnostic results remain visible for debugging, but an incomplete model
+does not appear as a valid ranked model. This is enforced in `src/runner.py` and
+covered by `tests/test_ranking_invariant.py`. See `DECISIONS.md` D-021 and D-022.
+
+### Incomplete-run comparative metrics
+
+An incomplete candidate run keeps its diagnostics and suppresses every metric
+that only means something across equal denominators.
+
+**Kept as diagnostics:** `actual_spend_cny` (real candidate spend), and
+`calls_completed`, `cases_completed`, partial token usage (`tokens`), and
+partial latency (`latency`) for the work that did complete.
+
+**Suppressed for the incomplete run (reported as `null` / N/A):**
+
+- `cost_per_100_tasks_cny`
+- `quality_per_cny`
+- official Pareto eligibility (`pareto_quality_cost`,
+  `pareto_quality_cost_latency`)
+- official rank (`rank`, and membership in `ranked_models`)
+
+The reason is the same as the equal-denominator rule: these quantities are
+comparisons between models, so a reduced or unequal base makes them
+non-comparable rather than approximately comparable. The report must say the
+metric is unavailable **because the run is incomplete**, not publish a number
+computed over a smaller denominator. The summary carries a
+`metric_availability` block naming the suppressed metrics and the affected
+models. Enforced in `src/runner.py`, rendered by `src/leaderboard.py`, and
+covered by `tests/test_ranking_invariant.py`. See `DECISIONS.md` D-036.
 
 ---
 
@@ -214,7 +306,9 @@ judge_agreement      = agreement between the two judges (see §4)
 | `judge_agreement` | Agreement between the two judges for the same response |
 
 Custom-defined or absent metrics are reported as `null`. They are never
-estimated into the result.
+estimated into the result. Cross-model comparative metrics are additionally
+`null` for any model in an incomplete run (see the incomplete-run rule above):
+availability, not just value, is part of the honest report.
 
 ---
 
@@ -262,12 +356,19 @@ weights at a later date.
   not perform.
 - Judge-family bias cannot be eliminated. Two cross-family judges reduce it and
   make it measurable; they do not remove it.
+- **Correlated judges for tail families.** Kimi, MiniMax, and Doubao candidates
+  are all scored by the same judge pair (Qwen flagship + DeepSeek flagship). If
+  those two judges share a systematic bias, the three families' scores are
+  correlated with each other rather than independent. This is disclosed rather
+  than corrected, and human calibration sampling targets these families
+  explicitly. See `DECISIONS.md` D-023.
 - Pricing is a dated manual snapshot, not a live billing feed. Real invoices
   differ.
 - Latency depends on provider load, region, and network path, and is not a
   controlled laboratory measurement.
-- Human calibration covers roughly 10% of responses, so it bounds judge error
-  rather than proving judge correctness.
+- Human calibration covers a base sample of 50 responses plus a risk-based
+  extension of roughly 10-20 when warranted (about 50-70 in practice), so it
+  bounds judge error rather than proving judge correctness.
 - Any model that cannot be pinned to a dated snapshot may change between runs.
 
 ---
@@ -278,10 +379,17 @@ weights at a later date.
 language composition, three judge dimensions, the 1-5 integer scale, the
 dual-judge cross-family rule, leave-one-provider-out, fixed-priority judge
 selection over one shared registry, the deterministic-then-LLM hybrid, RMB
-presentation, Pareto presentation.
+presentation, Pareto presentation, the equal-denominator ranking rule, the
+incomplete-run comparative-metric suppression rule, the deterministic
+check-quality rule, the no-private-chain-of-thought rule, the human calibration
+sampling policy (base 50 plus risk-based extension), and the Chinese
+length-check rule.
 
 **Open for Phase 3/4:** the literal content of the 50 cases, the literal judge
 model IDs, the literal candidate model IDs, and the pricing and FX values.
+
+Case authoring is governed by `CASE_DESIGN_STANDARD_V1.md`; the planned coverage
+of all 50 slots is in `CASE_MATRIX_V1.md`.
 
 **Active V1 pricing is currently unresolved for every model.** V0.1-era prices
 were retired rather than reused, because they were verified for different model

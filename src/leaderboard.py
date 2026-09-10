@@ -32,6 +32,17 @@ def _cny(value) -> str:
     return f"¥{value:,.4f}" if isinstance(value, (int, float)) else "unpriced"
 
 
+def _comparative_cny(row: dict) -> str:
+    """Cost per 100 tasks.
+
+    For an incomplete model the metric is suppressed rather than computed over
+    a reduced denominator, and the cell says why (see runner.metric_availability).
+    """
+    if not row.get("rank_eligible", True):
+        return "<span class='muted'>n/a — run incomplete</span>"
+    return _cny(row.get("cost_per_100_tasks_cny"))
+
+
 def render(document: dict, *, banner: str | None = None) -> str:
     summary = document["summary"]
     model_rows = summary["models"]
@@ -49,6 +60,8 @@ def render(document: dict, *, banner: str | None = None) -> str:
             for dimension in config.RUBRIC_DIMENSIONS
         )
         flags = []
+        if not row.get("rank_eligible", True):
+            flags.append("<span class='pill warn'>INCOMPLETE</span>")
         if row.get("pareto_quality_cost"):
             flags.append("<span class='pill ok'>Q×C</span>")
         if row.get("pareto_quality_cost_latency"):
@@ -59,7 +72,7 @@ def render(document: dict, *, banner: str | None = None) -> str:
             )
         leaderboard_rows.append(
             "<tr>"
-            f"<td class='rank'>{row['rank']}</td>"
+            f"<td class='rank'>{row['rank'] if row.get('rank') is not None else '—'}</td>"
             f"<td class='model'>{_escape(row['model_name'])}"
             f"<span class='model-id'>{_escape(row['model_id'] or 'model ID unverified')}"
             f" · {_escape(row['provider'])} · {_escape(row['product_tier'])}</span></td>"
@@ -68,7 +81,7 @@ def render(document: dict, *, banner: str | None = None) -> str:
             f"<td class='num'>{_score(row['constraint_pass_rate'])}</td>"
             f"<td class='num'>{_ms(row['latency']['p50_latency_ms'])}</td>"
             f"<td class='num'>{_ms(row['latency']['p95_latency_ms'])}</td>"
-            f"<td class='num'>{_cny(row['cost_per_100_tasks_cny'])}</td>"
+            f"<td class='num'>{_comparative_cny(row)}</td>"
             f"<td class='num'>{_number(row['tokens']['total'])}</td>"
             f"<td class='flags'>{' '.join(flags) or '—'}</td>"
             "</tr>"
@@ -133,6 +146,30 @@ def render(document: dict, *, banner: str | None = None) -> str:
             "CNY value. Costs are never converted silently."
         )
 
+    official = summary.get("official_ranking") or {}
+    if official and not official.get("complete_run", True):
+        incomplete = official.get("incomplete_models") or []
+        items = "".join(
+            f"<li>{_escape(item['model_key'])} — {_escape(item['reason'])}</li>"
+            for item in incomplete[:10]
+        )
+        ranking_notice = (
+            "<div class='banner'>OFFICIAL RANKING INCOMPLETE — "
+            f"{len(incomplete)} model(s) lack a valid score for all "
+            f"{_escape(official.get('required_cases'))} benchmark cases. Incomplete models "
+            "remain visible as diagnostics but are excluded from the official ranking and "
+            "the Pareto frontier. Cross-model comparative metrics (cost per 100 tasks, "
+            "quality per CNY) are reported as unavailable for those models rather than "
+            f"computed over a reduced denominator.<ul>{items}</ul></div>"
+        )
+    elif official:
+        ranking_notice = (
+            "<p class='meta'>Equal-denominator rule: every ranked model has a valid score "
+            f"for all {_escape(official.get('required_cases'))} benchmark cases.</p>"
+        )
+    else:
+        ranking_notice = ""
+
     synthetic_notice = ""
     if document.get("synthetic"):
         synthetic_notice = (
@@ -177,6 +214,7 @@ def render(document: dict, *, banner: str | None = None) -> str:
   table.cases td, table.cases th {{ padding: 6px 8px; font-size: 13px; }}
   .pill {{ display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 11px; }}
   .pill.ok {{ background: var(--okbg); color: var(--ok); }}
+  .pill.warn {{ background: #fdecea; color: #b3261e; }}
   .muted-pill {{ background: var(--soft); color: var(--muted); }}
   code {{ background: var(--soft); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; font-size: 12px; }}
   ul {{ margin: 6px 0 0; padding-left: 20px; }}
@@ -213,6 +251,7 @@ def render(document: dict, *, banner: str | None = None) -> str:
   <p class="meta">Overall is the equal-weight mean of the three rubric dimensions, normalised to 0-100.
   Constraints is the deterministic check pass rate. Cost is candidate inference cost only;
   judge cost is reported separately below.</p>
+  {ranking_notice}
 
   <h2>Score per test case</h2>
   <p class="meta">Each cell shows the judge mean score (1-5), the normalised score (0-100), and the

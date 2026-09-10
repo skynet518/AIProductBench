@@ -426,3 +426,456 @@ regression.
 
 **Consequences.** `METHODOLOGY_V1.md` §2A and `ARCHITECTURE.md` §2 now state the
 count and list the types. No check behavior changed.
+
+---
+
+## D-021 — Official rankings require equal case denominators
+**Date:** 2026-09-11
+
+**Decision.** A candidate model holds an official rank only when it has a valid
+scored result for every production benchmark case — for a 50-case dataset,
+exactly 50 case-level scores.
+
+**Rationale.** A mean computed over a reduced denominator is not comparable to a
+mean computed over the full set. If one model's score silently averages 47 cases
+and another's averages 50, any apparent ranking difference is partly an artefact
+of which cases happened to fail. Publishing that as a ranking would be
+misleading, and the failure would be invisible to the reader.
+
+**Alternatives considered.** Ranking all models on available cases with a
+footnote; imputing missing scores; dropping incomplete models entirely and not
+reporting them.
+
+**Consequences.** Ranking is now a gate, not just an average. Per-model records
+carry `cases_required`, `cases_scored`, `rank_eligible`, and `incomplete_reason`;
+the summary carries an `official_ranking` block listing ranked and incomplete
+models; the leaderboard shows `INCOMPLETE` instead of a rank. `rank` is `null`
+for ineligible models, and ranks stay contiguous across eligible models.
+
+---
+
+## D-022 — Incomplete candidate runs cannot enter the official ranking
+**Date:** 2026-09-11
+
+**Decision.** A model that is judge-unavailable, permanently failed, or otherwise
+missing a required evaluation result for any case is marked INCOMPLETE. Its
+partial results remain visible as diagnostics, but it is excluded from the
+official ranking, from the Pareto frontier, and from `ranked_models`.
+
+**Rationale.** The honest response to an incomplete run is to say so. Silently
+dropping the case hides a failure; ranking from the remainder misstates
+confidence. Keeping the partial numbers visible as diagnostics preserves the
+useful information without implying it is comparable.
+
+**Alternatives considered.** Excluding incomplete models from the report
+entirely; ranking with a visible warning; retrying indefinitely until a score
+exists.
+
+**Consequences.** Partial metrics such as `overall_score` still appear for
+incomplete models but carry no rank and no Pareto flags. Cost and latency
+diagnostics remain available for debugging. Retry behaviour stays bounded by the
+existing provider retry policy; exhaustion produces an explicit incomplete
+state rather than an unbounded retry loop.
+
+---
+
+## D-023 — Retain fixed judge pairs and disclose correlated-judge risk
+**Date:** 2026-09-11
+
+**Decision.** Keep the fixed-priority judge policy from D-018 unchanged. Kimi,
+MiniMax, and Doubao candidates are all scored by Qwen flagship + DeepSeek
+flagship. Document correlated-judge bias as a known limitation, and ensure
+human calibration sampling explicitly covers Kimi, MiniMax, and Doubao
+responses.
+
+**Rationale.** Fixed pairs keep every candidate family comparable, which was the
+reason hash rotation was removed. The cost is that three families share the same
+two judges: if Qwen and DeepSeek share a systematic bias, those three families'
+scores move together. That is a real limitation, but disclosing it is more
+honest than reintroducing per-candidate pair variation, which trades a
+disclosed, measurable bias for an undisclosed, unmeasurable confound.
+
+**Alternatives considered.** Reintroducing rotation for pool balance; adding a
+fourth judge family so tail families get a distinct pair; rotating judge pairs
+per domain instead of per candidate.
+
+**Consequences.** Two judges remain sufficient because at most one family is
+excluded per candidate. The correlation is named in the methodology limitations
+and must appear wherever results are published. Human calibration must sample
+Kimi, MiniMax, and Doubao explicitly so the correlated-pair bias can be checked
+against human judgment. If a fourth judge family is added later, the priority
+list extends without changing the selection rule.
+
+---
+
+## D-024 — Chinese cases cannot use whitespace word-count constraints
+**Date:** 2026-09-11
+
+**Decision.** Production cases with `language: "zh"` must use `max_chars` /
+`min_chars` for length constraints and must not declare `max_words` /
+`min_words`. English cases may use word counts. Mixed-language cases may use
+word counts only with an explicit `word_count_justification`. Violations are
+validation errors, not warnings.
+
+**Rationale.** The `max_words` / `min_words` checks split on whitespace. Chinese
+text is not whitespace-delimited, so a word count on Chinese output measures
+segmentation artefacts rather than length. A 200-character Chinese answer can
+report as a handful of "words", making the constraint both trivially passing and
+meaningless. Character counts are the correct length measure for Chinese.
+
+**Alternatives considered.** Leaving it to author discipline with a documented
+recommendation; counting CJK characters as words automatically; dropping length
+checks entirely for Chinese cases.
+
+**Consequences.** `src/cases.py` rejects a `zh` case with a word-count check and
+requires a justification for `mixed`. Existing fixtures were verified compliant.
+Test coverage locks the rule in. Authors writing Chinese cases must express
+length budgets in characters, which is also how Chinese writers naturally think
+about length.
+
+---
+
+## D-025 — Benchmark case design uses a design-matrix-first workflow
+**Date:** 2026-09-11
+
+**Decision.** Production cases are planned as a 50-slot coverage matrix
+(`CASE_MATRIX_V1.md`) before any prompt is written, under the rules in
+`CASE_DESIGN_STANDARD_V1.md`. Authoring fills planned slots; it does not invent
+new ones.
+
+**Rationale.** Writing 50 prompts first and auditing coverage afterwards makes
+duplication and gaps expensive to fix: by then the prompts exist and carry
+sunk effort that biases the audit toward keeping them. Planning intent, shape,
+and difficulty per slot first makes imbalance visible while it is still cheap to
+correct, and it makes the distinctiveness of each case an explicit design
+decision rather than a retrospective claim.
+
+**Alternatives considered.** Authoring prompts directly and auditing after;
+planning only per domain without per-slot intent; generating candidates with a
+model and filtering.
+
+**Consequences.** The matrix fixes 5 domains × 10 cases, 2/5/3 difficulty per
+domain, and roughly 40 Chinese-first cases, with a recorded output shape and
+deterministic-check opportunity per slot. Its Coverage Audit section reports the
+actual distributions and the accepted trade-offs. Phase 3B may not silently
+change a slot's difficulty, language, or shape.
+
+---
+
+## D-026 — Final production prompts are deferred until matrix review
+**Date:** 2026-09-11
+
+**Decision.** Phase 3A produces the design standard and the coverage matrix
+only. No production prompt is written until both documents pass external review.
+
+**Rationale.** The matrix is the cheapest artefact to change. Once 50 prompts
+exist, editing the plan means editing 50 texts and re-reviewing each. Reviewing
+the plan on its own keeps the correction cost proportional to the size of the
+evaluation decision.
+
+**Alternatives considered.** Writing prompts alongside the matrix; writing one
+domain as a pilot before review.
+
+**Consequences.** The dataset remains empty at the end of Phase 3A. The
+framework continues to validate only synthetic fixtures. Any prompt authored
+before review cannot be considered part of the production dataset.
+
+---
+
+## D-027 — Cases must be self-contained; `reference_facts` cannot hide source evidence
+**Date:** 2026-09-11
+
+**Decision.** Any source fact required to perform a task must be available in
+the candidate-visible prompt/input. `reference_facts` may contain normalized
+copies of already-visible facts, factual invariants extracted from the visible
+material, ground-truth values derivable from candidate-visible data, and grader
+metadata used to verify preservation. It must never contain hidden source
+evidence required for a correct answer.
+
+**Rationale.** A benchmark that grades a candidate against information the
+candidate was never given is measuring clairvoyance, not capability. The earlier
+standard said reference facts live in `reference_facts` "not in the prompt",
+which could be read as licensing exactly that.
+
+**Alternatives considered.** Allow hidden reference material with a disclosure;
+require all facts verbatim in the prompt; drop `reference_facts` entirely.
+
+**Consequences.** A hidden expected answer or derived grader value is acceptable
+only when the candidate could derive it from visible input. Deliberately
+under-specified cases reward stating the gap, and that behaviour is written into
+`evaluation_criteria`. Recorded in `CASE_DESIGN_STANDARD_V1.md` §3 and §7.
+
+---
+
+## D-028 — Do not require private chain-of-thought; judge observable justification
+**Date:** 2026-09-11
+
+**Decision.** V1 never requires a candidate to expose private chain-of-thought
+and never scores it. Prompts and criteria must not use "show your reasoning",
+"step-by-step reasoning", or "transparent reasoning". `reasoning_quality` is
+judged from the observable answer and its stated justification: a concise
+decision rationale, cited evidence, trade-offs, assumptions, and the basis of a
+recommendation.
+
+**Rationale.** Requiring hidden reasoning traces is both unnecessary for
+scoring and unreliable to produce. The correct target is a decision-ready
+answer whose basis is inspectable in the response the judge actually receives.
+
+**Alternatives considered.** Require an explicit reasoning section; score only
+the final answer with no justification; keep "transparent reasoning" as an
+informal criterion.
+
+**Consequences.** `CASE_MATRIX_V1.md` IF-06 dropped "transparent reasoning" as a
+secondary capability, and `METHODOLOGY_V1.md` §2B states the observable-only
+rule. A correct answer with no stated basis is not automatically high-scoring.
+
+---
+
+## D-029 — Audience adaptation preserves facts, not wording (IF-03)
+**Date:** 2026-09-11
+
+**Decision.** IF-03 and any comparable audience case require **material factual
+claims to remain invariant** — numerical values, dates, named entities,
+commitments, and statuses must not change — while wording, terminology,
+sentence structure, and information density may change per audience.
+
+**Rationale.** The prior wording ("facts preserved verbatim") described a
+copying task and would pass a mechanical duplicate while failing genuine
+audience adaptation. The purpose is adaptation without factual drift.
+
+**Alternatives considered.** Verbatim fact preservation; free rewriting judged
+only on tone; separate cases per audience.
+
+**Consequences.** Fact preservation is checked on named entities, numbers,
+dates, commitments, and statuses, not on literal sentences. This interacts with
+D-032, which fixes how the audience difference is scored.
+
+---
+
+## D-030 — Conflict resolution is judged by outcome and precedence, not keywords (IF-06)
+**Date:** 2026-09-11
+
+**Decision.** IF-06 evaluates three things: the correct instruction wins
+according to the supplied precedence rule, the actual output follows that
+winning instruction, and a concise rationale identifies the applicable
+precedence. The presence of a literal phrase is not evidence of correct
+resolution.
+
+**Rationale.** A required-phrase check can pass while the output obeys the
+wrong instruction, and can fail a correct resolution phrased differently. The
+capability is what the output does, not how it is worded.
+
+**Alternatives considered.** Keep a required priority-statement phrase;
+deterministic-only keyword check; drop the case.
+
+**Consequences.** IF-06's planned deterministic opportunity is `None`; the
+matrix's Strong/Partial/None distribution changed accordingly (see D-034).
+
+---
+
+## D-031 — Authority judgment must never reward unsupported speculation (SA-08)
+**Date:** 2026-09-11
+
+**Decision.** SA-08 distinguishes **detectable contradiction** (the statements
+differ), **resolvable contradiction** (supplied provenance/priority rules settle
+it), and **unresolved contradiction** (nothing establishes authority). The
+authored case must either provide candidate-visible provenance / priority rules
+sufficient to resolve authority, and/or deliberately include conflicts that
+cannot be resolved and reward an explicit statement that the conflict is
+unresolved. Confident guessing is never rewarded.
+
+**Rationale.** The earlier design rewarded "judgment about which source is
+likely authoritative", which invites unsupported speculation when no
+information establishes precedence.
+
+**Alternatives considered.** Always supply an authority rule; always leave
+authority open; remove the authority component.
+
+**Consequences.** Only the count of detectable contradictions is mechanically
+bounded; resolvability and authority are judge-evaluated against the visible
+provenance rules or the honest "unresolved" answer.
+
+---
+
+## D-032 — Score audience adaptation against stated roles, not cultural stereotypes (BC-07)
+**Date:** 2026-09-11
+
+**Decision.** Remove scoring based on "Chinese hierarchy conventions". BC-07
+compares two explicit audience roles — a business-unit / management decision
+maker and an execution / project team. The higher-level version emphasizes,
+where appropriate, the conclusion, business impact, material risk, and the
+decision or resource ask. The execution version emphasizes, where appropriate,
+operational context, dependencies, owners, next actions, and implementation
+detail. Facts remain invariant. The same anti-stereotype rule applies across
+the Chinese business domain: score observable business-communication outcomes,
+not vague cultural style.
+
+**Rationale.** "Hierarchy conventions" is not an observable requirement: two
+reviewers cannot reliably mark it met or unmet, and it risks rewarding
+stereotypes about how Chinese business writing is assumed to work.
+
+**Alternatives considered.** Keep hierarchy-based scoring with a disclaimer;
+score only on formatting; drop the two-audience case.
+
+**Consequences.** `CASE_MATRIX_V1.md` domain 4 now carries an explicit
+anti-stereotype rule, and BC-03's "hierarchy and politeness" criterion was
+replaced with stated-register and question-precision criteria.
+
+---
+
+## D-033 — Retry planning must be side-effect aware (AW-04)
+**Date:** 2026-09-11
+
+**Decision.** AW-04 tests side-effect-aware retry planning. The case
+distinguishes safe/idempotent read retries, operations whose completion state
+is uncertain after a failure, and irreversible or high-impact side effects. The
+plan must reason about bounded retries, idempotency, duplicate-side-effect
+prevention, verification before retry, and fallback/escalation. No universal
+"correct retry count" is assumed unless the prompt explicitly supplies such a
+policy.
+
+**Rationale.** Blanket retries are the failure mode the case exists to detect.
+The hard judgment is not "how many retries" but whether retrying is safe for
+that operation.
+
+**Alternatives considered.** A fixed maximum-retry number as the scoring rule;
+a pure error-taxonomy question; dropping the case.
+
+**Consequences.** Deterministic checks may verify that retry budgets are bounded
+and required fields exist; the risk judgment stays judge-evaluated. AW-04 moved
+from Strong to Partial.
+
+---
+
+## D-034 — Deterministic checks must test the intended constraint, not a proxy
+**Date:** 2026-09-11
+
+**Decision.** Add a general rule: a deterministic check must test the intended
+constraint, not a superficial proxy. Weak proxies include requiring the word
+"risk", requiring a fixed phrase to prove correct prioritisation, and checking
+that a number appears without checking the computation. Prefer structural,
+exact, enum, count, invariant, or objectively derived checks. Where correctness
+cannot be robustly checked mechanically, leave it to case-level criteria and
+judges. Audit the planned Strong/Partial labels in `CASE_MATRIX_V1.md` and
+downgrade any opportunity relying primarily on keyword presence.
+
+**Rationale.** A weak check is worse than no check: it makes
+`constraint_pass_rate` look like evidence while rewarding keyword gaming and
+failing correct answers.
+
+**Alternatives considered.** Keep proxy checks with a documented caveat; remove
+all content checks; defer the audit to Phase 3B.
+
+**Consequences.** Six planned opportunities changed on audit: IF-01, IF-09,
+PR-05, AW-04, and AW-06 moved Strong → Partial, and IF-06 moved Partial → None.
+The revised distribution is 14 Strong / 25 Partial / 11 None across the
+unchanged 50 slots. No slot count, domain, difficulty, or language target
+changed.
+
+---
+
+## D-035 — Quantitative cases must establish how correctness is checked
+**Date:** 2026-09-11
+
+**Decision.** Every quantitatively grounded case (SA-03, SA-10, PR-04, PR-05,
+PR-06, PR-10) documents how correctness is established: objectively derivable
+expected values, factual invariants, stated decision rules, and tolerances
+where rounding applies. A number merely appearing is not evidence of
+arithmetic correctness. If the deterministic framework cannot honestly verify a
+planned numeric constraint, that component is marked for judge/reference
+evaluation rather than presented as deterministic. No generic math engine is
+built.
+
+**Rationale.** Numeric answers are the easiest place to create a check that
+looks rigorous and proves nothing. Closing the derivation over candidate-visible
+data is what makes a numeric check meaningful.
+
+**Alternatives considered.** Build a general arithmetic engine; rely on judges
+for all numerics; rely on expected-number string matching.
+
+**Consequences.** `CASE_MATRIX_V1.md` §7 records the per-case plan. A small
+framework extension — a named-field numeric value check with an explicit
+tolerance — is recorded as a Phase 3/4 candidate, not implemented now.
+
+---
+
+## D-036 — Incomplete runs suppress comparative metrics but keep diagnostics
+**Date:** 2026-09-11
+
+**Decision.** For an incomplete candidate run, keep diagnostic fields
+(`actual_spend_cny`, `calls_completed`, `cases_completed`, partial token usage,
+partial latency) and suppress cross-model comparative metrics that require
+equal denominators: `cost_per_100_tasks_cny`, `quality_per_cny`, official Pareto
+eligibility, and official rank are returned `null`. The report identifies them
+as unavailable because the run is incomplete.
+
+**Rationale.** This implements the equal-denominator decision (D-021, D-022)
+for the remaining comparative metrics. Cost per 100 tasks and quality per CNY
+computed from a reduced run are non-comparable, not approximately comparable.
+Suppressing rank but publishing a comparative cost would be internally
+inconsistent.
+
+**Alternatives considered.** Publish comparative metrics with a footnote;
+scale cost to the planned case count; hide incomplete models entirely.
+
+**Consequences.** The summary carries a `metric_availability` block naming the
+comparative metrics, the diagnostic metrics, and the affected models. The
+leaderboard renders `n/a — run incomplete` for a suppressed cell. Covered by new
+tests in `tests/test_ranking_invariant.py`.
+
+---
+
+## D-037 — Human calibration: base 50 responses plus a risk-based extension
+**Date:** 2026-09-11
+
+**Decision.** Replace the rigid "approximately 10%" calibration target with a
+base stratified sample of **50 candidate responses** plus a **risk-based
+extension of approximately 10–20** responses when warranted, for a practical
+review of roughly 50–70. The base sample covers all candidate models, all five
+domains, and easy/medium/hard. The extension prioritises hard cases, cases with
+no deterministic checks, high Judge A / Judge B disagreement, Kimi / MiniMax /
+Doubao responses, responses near close ranking boundaries, and anomalous
+failures.
+
+**Rationale.** A flat percentage scales with total response count rather than
+with where judge error is likely, and at 10% of a 500-response run it under- or
+over-samples the wrong cells. A fixed base guarantees coverage; the risk-based
+extension concentrates review where it can change a conclusion.
+
+**Alternatives considered.** Keep 10%; fixed 10% floor with no extension;
+sample everything (infeasible).
+
+**Consequences.** The sampling *policy* is frozen in `METHODOLOGY_V1.md` §2D;
+executing the sample remains a Phase 3/4 task. No agreement result is
+fabricated, and none is published before real human review exists.
+
+---
+
+## D-038 — Gate 3A.1 passed: the design standard and matrix are approved for Phase 3B
+**Date:** 2026-09-11
+
+**Decision.** The external Gate 3A.1 review of
+`CASE_DESIGN_STANDARD_V1.md` and `CASE_MATRIX_V1.md` passed. Both documents are
+approved as the authoritative basis for production case authoring and now carry
+the status **APPROVED FOR PHASE 3B AUTHORING**. Phase 3B-1 (domain 1,
+`instruction_constraint_following`) is authorized to begin.
+
+**Rationale.** The Phase 3A.1 corrections resolved the review findings:
+self-containment and `reference_facts` (D-027), no private chain-of-thought
+(D-028), audience adaptation over verbatim copying (D-029), outcome-based
+conflict resolution (D-030), authority judgment without guessing (D-031),
+observable audience roles (D-032), side-effect-aware retry planning (D-033), the
+deterministic-check quality rule and its Strong→Partial audit (D-034),
+quantitative correctness planning (D-035), incomplete-run comparative-metric
+suppression (D-036), and the base-50 plus risk-based calibration policy
+(D-037).
+
+**Alternatives considered.** Approve with follow-up corrections; hold Phase 3B
+pending a second review round; approve the matrix but not the standard.
+
+**Consequences.** The approval covers the **design documents only**. It does not
+approve the production dataset, any individual case, or any benchmark result.
+Authored cases are reviewed per domain before freezing; the 50-case dataset is
+not approved until it is complete. Authoring progress and per-domain review
+state are tracked in `docs/DATASET_QA_V1.md`. No live paid benchmark is
+authorized.

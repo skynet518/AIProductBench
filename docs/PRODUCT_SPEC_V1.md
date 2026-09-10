@@ -78,7 +78,7 @@ The following is frozen for V1. Changes require an explicit decision logged in
 | Capability domains | 5 |
 | Evaluation | Hybrid: deterministic checks + LLM evaluation |
 | Judges | Cross-family dual-judge |
-| Human calibration | Stratified sample of approximately 10% of responses |
+| Human calibration | Base stratified sample of 50 responses plus a risk-based extension of 10–20 (≈50–70 total) |
 | Quality metrics | Score, constraint pass rate, task success rate |
 | Cost metrics | Per-call cost, cost per 100 tasks, quality per CNY |
 | Latency metrics | Average, P50, P95 |

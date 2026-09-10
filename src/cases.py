@@ -1,10 +1,12 @@
 """Case loading and V1 schema validation.
 
-Canonical schema reference: docs/METHODOLOGY_V1.md §1.
+Canonical references: docs/METHODOLOGY_V1.md §1 and
+docs/CASE_DESIGN_STANDARD_V1.md.
 
-The production 50-case dataset is a Phase 3 deliverable. Phase 2 ships only
-synthetic fixtures that exercise the framework; the validator does not require
-the production size to be present.
+The production 50-case dataset is a Phase 3B deliverable. Until then the
+validator runs against synthetic fixtures; it does not require the production
+size to be present, but it enforces the full production schema so fixtures and
+production cases cannot drift apart.
 """
 
 from __future__ import annotations
@@ -14,7 +16,23 @@ from pathlib import Path
 
 from src import config
 
-REQUIRED_FIELDS = ("id", "domain", "difficulty", "language", "prompt", "evaluation_criteria")
+REQUIRED_FIELDS = (
+    "id",
+    "title",
+    "domain",
+    "difficulty",
+    "language",
+    "test_intent",
+    "prompt",
+    "evaluation_criteria",
+    "tags",
+)
+
+# Word counting splits on whitespace, which is meaningless for Chinese text.
+WORD_COUNT_CHECKS = ("max_words", "min_words")
+
+# Languages for which a whitespace word count is a valid length measure.
+WORD_COUNT_LANGUAGES = ("en",)
 
 
 def load_cases(path: Path | None = None) -> dict:
@@ -72,6 +90,10 @@ def validate_cases(document: dict) -> dict:
         if criteria is not None and (not isinstance(criteria, list) or not criteria):
             errors.append(f"Case {label} must have a non-empty 'evaluation_criteria' list.")
 
+        tags = case.get("tags")
+        if tags is not None and (not isinstance(tags, list) or not tags):
+            errors.append(f"Case {label} must have a non-empty 'tags' list.")
+
         checks = case.get("deterministic_checks")
         if checks is not None:
             if not isinstance(checks, list):
@@ -83,6 +105,7 @@ def validate_cases(document: dict) -> dict:
                             f"Case {label} deterministic check {check_index} must be an object "
                             "with a 'type'."
                         )
+                errors.extend(_validate_length_checks(case, checks, label))
 
     present_domains = {case.get("domain") for case in cases if case.get("domain")}
     missing_domains = [domain for domain in config.DOMAINS if domain not in present_domains]
@@ -102,6 +125,44 @@ def validate_cases(document: dict) -> dict:
         warnings.append(str(document.get("synthetic_notice", "This case file is synthetic.")))
 
     return {"errors": errors, "warnings": warnings}
+
+
+def _validate_length_checks(case: dict, checks: list, label: str) -> list[str]:
+    """Enforce the language rule for whitespace word-count constraints.
+
+    `max_words` / `min_words` count whitespace-separated tokens. That is a valid
+    length measure for English and a meaningless one for Chinese, where words
+    are not whitespace-delimited. Chinese cases must use `max_chars` /
+    `min_chars`. Mixed-language cases may use word counts only with an explicit
+    author justification recorded on the case.
+    """
+    language = case.get("language")
+    word_checks = [
+        check.get("type") for check in checks if check.get("type") in WORD_COUNT_CHECKS
+    ]
+    if not word_checks:
+        return []
+
+    if language in WORD_COUNT_LANGUAGES:
+        return []
+
+    if language == "zh":
+        return [
+            f"Case {label} is Chinese (language 'zh') but declares word-count checks "
+            f"{sorted(set(word_checks))}. Whitespace word counts are meaningless for Chinese; "
+            "use 'max_chars' / 'min_chars' instead."
+        ]
+
+    if language == "mixed":
+        justification = case.get("word_count_justification")
+        if not isinstance(justification, str) or not justification.strip():
+            return [
+                f"Case {label} is mixed-language and declares word-count checks "
+                f"{sorted(set(word_checks))}. Mixed cases require an explicit "
+                "'word_count_justification' explaining why a whitespace word count is "
+                "valid for the expected answer."
+            ]
+    return []
 
 
 def distribution(cases: list[dict], field: str) -> dict[str, int]:

@@ -50,8 +50,8 @@ leaderboard / reports
 | `src/judge.py` | Judge role, fixed-priority selection, leave-one-provider-out exclusion, strict JSON parsing, dual-judge aggregation | Repair or clamp invalid scores; mix judge metrics with candidate metrics |
 | `src/pricing.py` | Native price lookup, tier and time-of-day rules, currency normalisation to CNY | Silently convert currencies |
 | `src/analytics.py` | Latency percentiles, cost metrics, quality per CNY, Pareto frontier | Write files |
-| `src/runner.py` | Orchestrate the pipeline and assemble the versioned results document | Contain provider-specific behavior |
-| `src/leaderboard.py` | Render one self-contained HTML report | Require a network, CDN, or build step |
+| `src/runner.py` | Orchestrate the pipeline, assemble the versioned results document, gate cross-model comparative metrics on equal denominators | Contain provider-specific behavior |
+| `src/leaderboard.py` | Render one self-contained HTML report, labelling metrics that are unavailable because a run is incomplete | Require a network, CDN, or build step |
 | `run_benchmark.py` | CLI: validate, estimate, dry-run, confirm | Spend money without explicit confirmation |
 
 ---
@@ -75,9 +75,14 @@ leaderboard / reports
 8. **Score aggregation** averages the two judges and normalises to 0-100 while
    preserving each judge's scores for agreement analysis.
 9. **Cost / latency analytics** compute averages, P50, P95, cost per 100 tasks,
-   and quality per CNY.
+   and quality per CNY. Cross-model metrics require equal denominators: when a
+   model is incomplete, `actual_spend_cny`, `calls_completed`,
+   `cases_completed`, partial tokens, and partial latency are kept as
+   diagnostics while `cost_per_100_tasks_cny`, `quality_per_cny`, Pareto
+   eligibility, and rank are suppressed to `null`. The summary records this in
+   its `metric_availability` block.
 10. **Pareto analysis** marks non-dominated models on quality × cost, and
-    optionally quality × cost × latency.
+    optionally quality × cost × latency. Incomplete models are excluded.
 11. **Snapshot results** are written as one versioned JSON document containing
     dataset version, model IDs, pricing snapshot, FX snapshot, and judge pool.
 12. **Leaderboard / reports** render a single self-contained HTML file.

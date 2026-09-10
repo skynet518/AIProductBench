@@ -247,7 +247,18 @@ def _sum(values: list) -> float | None:
     return round(sum(present), 8) if present else None
 
 
-def summarize(results: list[dict], pool: dict) -> dict:
+def summarize(results: list[dict], pool: dict, required_cases: int | None = None) -> dict:
+    """Aggregate results.
+
+    `required_cases` is the number of production benchmark cases. A model may
+    only enter the official ranking when it has a valid scored result for every
+    one of them (see docs/METHODOLOGY_V1.md §3). Partial results remain visible
+    as diagnostics but never produce an official rank from a reduced
+    denominator.
+    """
+    if required_cases is None:
+        required_cases = len({row["case_id"] for row in results})
+
     model_rows = []
 
     for model in models.candidates(pool):
@@ -283,6 +294,7 @@ def summarize(results: list[dict], pool: dict) -> dict:
                 "cases_total": len(rows),
                 "cases_scored": len(scored),
                 "cases_failed": len(rows) - len(scored),
+                "cases_required": required_cases,
                 "overall_score": _mean([row["aggregate"]["overall_score"] for row in scored]),
                 "quality_score": _mean([row["aggregate"]["quality_score"] for row in scored]),
                 "dimension_scores": {
@@ -341,25 +353,65 @@ def summarize(results: list[dict], pool: dict) -> dict:
             }
         )
 
+    # Equal-denominator rule: only a model with a valid score for every required
+    # case may enter the official ranking or the official Pareto frontier.
     for row in model_rows:
-        row["cost_per_100_tasks_cny"] = analytics.cost_per_100_tasks(
-            row["candidate_cost_cny"], row["cases_total"]
-        )
-        row["quality_per_cny"] = analytics.quality_per_cny(
-            row["overall_score"], row["candidate_cost_cny"]
-        )
+        row["rank_eligible"] = row["cases_scored"] == required_cases and required_cases > 0
+        if row["rank_eligible"]:
+            row["incomplete_reason"] = None
+        else:
+            reasons = [f"{row['cases_scored']} of {required_cases} cases have a valid score"]
+            if row["judge_unavailable_cases"]:
+                reasons.append(
+                    f"{row['judge_unavailable_cases']} case(s) were judge-unavailable"
+                )
+            if row["cases_failed"]:
+                reasons.append(f"{row['cases_failed']} case(s) failed")
+            row["incomplete_reason"] = "; ".join(reasons)
+
+    # Cross-model comparative metrics require equal denominators. For an
+    # incomplete run they are suppressed rather than computed over a reduced
+    # or unequal base. Per-model diagnostics (actual spend, completed calls and
+    # cases, partial tokens, partial latency) stay visible.
+    for row in model_rows:
+        if row["rank_eligible"]:
+            row["cost_per_100_tasks_cny"] = analytics.cost_per_100_tasks(
+                row["candidate_cost_cny"], row["cases_total"]
+            )
+            row["quality_per_cny"] = analytics.quality_per_cny(
+                row["overall_score"], row["candidate_cost_cny"]
+            )
+            row["comparative_metrics_available"] = True
+            row["unavailable_metrics"] = []
+        else:
+            row["cost_per_100_tasks_cny"] = None
+            row["quality_per_cny"] = None
+            row["comparative_metrics_available"] = False
+            row["unavailable_metrics"] = [
+                "cost_per_100_tasks_cny",
+                "quality_per_cny",
+                "official_rank",
+                "official_pareto_eligibility",
+            ]
+        row["actual_spend_cny"] = row["candidate_cost_cny"]
+        row["calls_completed"] = sum(1 for row_result in results
+                                     if row_result["model_key"] == row["model_key"]
+                                     and row_result.get("error") is None)
+        row["cases_completed"] = row["cases_scored"]
+
+    eligible_rows = [row for row in model_rows if row["rank_eligible"]]
 
     quality_cost = analytics.pareto_frontier(
-        model_rows, [("overall_score", "max"), ("cost_per_100_tasks_cny", "min")]
+        eligible_rows, [("overall_score", "max"), ("cost_per_100_tasks_cny", "min")]
     )
     three_axis_rows = [
-        row for row in model_rows if row["latency"]["p95_latency_ms"] is not None
+        row for row in eligible_rows if row["latency"]["p95_latency_ms"] is not None
     ]
     if three_axis_rows:
         quality_cost_latency = analytics.pareto_frontier(
             [
                 {**row, "p95_latency_ms": row["latency"]["p95_latency_ms"]}
-                for row in model_rows
+                for row in eligible_rows
             ],
             [
                 ("overall_score", "max"),
@@ -371,6 +423,11 @@ def summarize(results: list[dict], pool: dict) -> dict:
         quality_cost_latency = {"objectives": [], "frontier": [], "dominated": {}, "not_evaluated": []}
 
     for row in model_rows:
+        if not row["rank_eligible"]:
+            row["pareto_quality_cost"] = False
+            row["pareto_quality_cost_latency"] = False
+            row["dominated_by"] = None
+            continue
         row["pareto_quality_cost"] = row["model_key"] in quality_cost["frontier"]
         row["pareto_quality_cost_latency"] = (
             row["model_key"] in quality_cost_latency["frontier"]
@@ -381,8 +438,14 @@ def summarize(results: list[dict], pool: dict) -> dict:
         model_rows,
         key=lambda row: (row["overall_score"] is None, -(row["overall_score"] or 0)),
     )
-    for index, row in enumerate(ranked, start=1):
-        row["rank"] = index
+
+    rank = 0
+    for row in ranked:
+        if row["rank_eligible"]:
+            rank += 1
+            row["rank"] = rank
+        else:
+            row["rank"] = None
 
     verdict_rows = [verdict for row in results for verdict in row["judgements"]]
     judge_overhead = {
@@ -406,6 +469,51 @@ def summarize(results: list[dict], pool: dict) -> dict:
         "pareto": {
             "quality_cost": quality_cost,
             "quality_cost_latency": quality_cost_latency,
+        },
+        "official_ranking": {
+            "rule": (
+                "A model holds an official rank only when it has a valid scored result "
+                "for every production benchmark case. Partial results are diagnostic "
+                "only and are never ranked from a reduced denominator."
+            ),
+            "required_cases": required_cases,
+            "ranked_models": [row["model_key"] for row in ranked if row["rank_eligible"]],
+            "incomplete_models": [
+                {
+                    "model_key": row["model_key"],
+                    "model_name": row["model_name"],
+                    "cases_scored": row["cases_scored"],
+                    "cases_required": required_cases,
+                    "reason": row["incomplete_reason"],
+                }
+                for row in ranked
+                if not row["rank_eligible"]
+            ],
+            "complete_run": all(row["rank_eligible"] for row in ranked) and bool(ranked),
+        },
+        "metric_availability": {
+            "rule": (
+                "Cross-model comparative metrics need equal denominators. When a run is "
+                "incomplete they are reported as null rather than computed over a reduced "
+                "or unequal base. Diagnostic metrics remain visible."
+            ),
+            "run_complete": all(row["rank_eligible"] for row in ranked) and bool(ranked),
+            "comparative_metrics": [
+                "cost_per_100_tasks_cny",
+                "quality_per_cny",
+                "official_rank",
+                "official_pareto_eligibility",
+            ],
+            "diagnostic_metrics": [
+                "actual_spend_cny",
+                "calls_completed",
+                "cases_completed",
+                "tokens",
+                "latency",
+            ],
+            "suppressed_for_incomplete_models": [
+                row["model_key"] for row in ranked if not row["rank_eligible"]
+            ],
         },
         "totals": {
             "candidate_calls": sum(row["cases_total"] for row in model_rows),
@@ -519,7 +627,7 @@ def build_document(
         },
         "results": results,
         "failures": failures,
-        "summary": summarize(results, pool),
+        "summary": summarize(results, pool, required_cases=len(case_list)),
     }
 
 
@@ -568,18 +676,22 @@ def print_summary(document: dict) -> None:
             if row["constraint_pass_rate"] is not None
             else "n/a"
         )
-        per_100 = (
-            f"{row['cost_per_100_tasks_cny']:.4f}"
-            if row["cost_per_100_tasks_cny"] is not None
-            else "unpriced"
-        )
+        if row["cost_per_100_tasks_cny"] is not None:
+            per_100 = f"{row['cost_per_100_tasks_cny']:.4f}"
+        elif not row["rank_eligible"]:
+            per_100 = "n/a"
+        else:
+            per_100 = "unpriced"
         flags = []
         if row["pareto_quality_cost"]:
             flags.append("QxC")
         if row["pareto_quality_cost_latency"]:
             flags.append("QxCxL")
+        rank_display = str(row["rank"]) if row["rank"] is not None else "-"
+        if not row["rank_eligible"]:
+            flags.append("INCOMPLETE")
         print(
-            f"{row['rank']:>2}  {row['model_name']:<24} {score:>7}  {p50:>8}  {p95:>8}  "
+            f"{rank_display:>2}  {row['model_name']:<24} {score:>7}  {p50:>8}  {p95:>8}  "
             f"{constraint:>7}  {per_100:>10}  {','.join(flags) or '-'}"
         )
 
@@ -615,4 +727,22 @@ def print_summary(document: dict) -> None:
     if unavailable:
         print(
             f"  note: {unavailable} response(s) had fewer than two eligible cross-family judges."
+        )
+
+    official = summary["official_ranking"]
+    if not official["complete_run"]:
+        print()
+        print(
+            f"  !! OFFICIAL RANKING INCOMPLETE: {len(official['incomplete_models'])} model(s) "
+            f"lack a valid score for all {official['required_cases']} case(s)."
+        )
+        for item in official["incomplete_models"][:10]:
+            print(f"     {item['model_key']}: {item['reason']}")
+        print(
+            "     Incomplete models stay visible as diagnostics but are excluded from the "
+            "official ranking and the Pareto frontier."
+        )
+        print(
+            "     Comparative metrics (cost per 100 tasks, quality per CNY) are shown as "
+            "n/a for those models because the run is incomplete."
         )

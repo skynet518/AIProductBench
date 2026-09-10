@@ -24,19 +24,39 @@ benchmark result.
 - V1 framework implemented: one shared model registry, deterministic evaluator
   (18 check types), fixed-priority cross-family dual-judge selection, pricing /
   CNY normalization framework, Pareto analytics, standalone leaderboard
-- Test suite and network-isolated dry run passing (144 tests)
+- Test suite and network-isolated dry run passing (168 tests)
+- Phase 3A case design standard and 50-slot coverage matrix (awaiting external
+  review; no production prompt written)
+- Case Design Standard approved for Phase 3B authoring (Gate 3A.1 passed)
+- 50-slot Case Matrix approved for Phase 3B authoring (Gate 3A.1 passed)
+- Phase 3A.1 methodology corrections approved
+- Phase 3A.1 semantic/methodology correction: self-containment / `reference_facts`
+  rule, no-private-chain-of-thought rule, IF-03 audience adaptation without
+  factual drift, IF-06 outcome-based conflict resolution, SA-08 authority
+  judgment, BC-07 observable audience roles, AW-04 side-effect-aware retry,
+  deterministic-check quality audit (14 Strong / 25 Partial / 11 None),
+  quantitative correctness plan, incomplete-run comparative-metric suppression,
+  and the base-50 + risk-based human calibration policy
 
 ## CURRENT PHASE
 
-**Phase 3 — Dataset & Evaluation QA.**
+**Phase 3B-1 — Instruction & Constraint Following authoring.** Authoring IF-01
+through IF-10 against the approved standard and matrix. No live paid benchmark
+is authorized.
 
 ## NEXT
 
-Build the 50 production cases (10 per domain, difficulty 2/5/3 per domain,
-approximately 40 Chinese-first), write the case-level `evaluation_criteria` and
-`deterministic_checks`, and QA the dataset for realism and non-overlap.
+**External review of IF-01 through IF-10** (domain 1,
+`instruction_constraint_following`). The authored cases stay uncommitted and
+are not frozen until that review passes.
 
 ## THEN
+
+**Phase 3B-2 — remaining domains.** Author the structured information analysis,
+product reasoning decision, Chinese business communication, and agent workflow
+planning domains against the same approved standard and matrix.
+
+## AFTER THAT
 
 **Phase 4 — Native APIs & Live Benchmark.** Verify literal model IDs against
 provider-native documentation, verify active pricing and an FX snapshot, obtain
@@ -63,6 +83,8 @@ credentials, run a cost projection, and only then execute a paid run.
 | [METHODOLOGY_V1.md](METHODOLOGY_V1.md) | Frozen evaluation design: dataset, judges, metrics, Pareto |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Pipeline, modules, shared registry, data flow |
 | [DECISIONS.md](DECISIONS.md) | Chronological decision log with rationale |
+| [CASE_DESIGN_STANDARD_V1.md](CASE_DESIGN_STANDARD_V1.md) | Binding rules for authoring production cases |
+| [CASE_MATRIX_V1.md](CASE_MATRIX_V1.md) | Planned coverage of all 50 production slots |
 
 ## VERSION NOTES
 
@@ -77,8 +99,10 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 - Remote: none configured
 - Latest committed state: the V1 framework, including the Phase 2.1 consistency
   patch, in commit `84443d9`
-- Phase 2 (framework upgrade) and Phase 2.1 (consistency patch) are complete and
-  committed; no further framework work is pending
+- Phase 3A/3A.1 changes (equal-denominator ranking gate, incomplete-run
+  comparative-metric suppression, Chinese length-check rule, full production
+  case schema, the Phase 3A.1 semantic corrections, and the two design
+  documents) are **uncommitted** pending final external review
 
 ## STILL OPEN (requires human decision)
 
@@ -89,4 +113,5 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 | 3 | Provider credentials for Moonshot, MiniMax, Zhipu, and Volcano Ark are not configured |
 | 4 | No FX snapshot (USD/CNY) is configured, so USD-priced models would have no CNY-normalized cost |
 | 5 | Human calibration protocol and reviewer assignment are undefined |
-| 6 | The 50-case production dataset does not exist yet (Phase 3) |
+| 6 | The 50-case production dataset does not exist yet; the design matrix is awaiting final external Gate 3A.1 review before Phase 3B authoring |
+| 7 | The Phase 3A.1 patch (docs, metric-availability framework change, new tests) is uncommitted pending final external review |
