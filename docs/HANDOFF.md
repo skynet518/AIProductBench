@@ -1,98 +1,85 @@
-# AIProductBench V0.1 — Handoff
+# AIProductBench — Handoff
 
-## Current Objective
+Read this file first at the start of every working session.
 
-Ship AIProductBench V0.1 quickly as a credible public GitHub portfolio project.
+## CURRENT TARGET
 
-The implementation should be small, functional, understandable, reproducible, and visually presentable.
+**AIProductBench CN V1** — a practical model-selection benchmark for Chinese
+LLMs, for AI product teams choosing under real quality, cost, and latency
+constraints. RMB-native presentation, Pareto-based selection analysis.
 
-## Confirmed V0.1 Definition
+## STATUS
 
-AIProductBench V0.1 contains:
+**In development. Not released. No live paid benchmark has been authorized.**
+Every artifact produced so far is synthetic dry-run output.
 
-- 10 test cases
-- 2 evaluated LLMs
-- 3 capability domains
-- 1 LLM-as-Judge
-- Token / Cost / Latency tracking
-- leaderboard.html
-- README.md
-- sample_results.json
+## COMPLETED
 
-Anything materially beyond this definition is out of scope unless explicitly approved.
+- DeepSeek Codex executor environment configured and validated
+- V0.1 framework scaffold completed (2 models, 3 domains, 1 judge, 10 cases)
+- Dry-run pipeline validated end to end
+- Pricing / accounting prototype implemented (native currency + separation of
+  candidate inference cost from judge evaluation cost)
+- V1 product direction frozen in documentation
 
-## Current Strategy
+## CURRENT PHASE
 
-Use a minimal benchmark pipeline:
+**Phase 2 — Framework Upgrade.** Documentation freeze plus the framework
+upgrade from the V0.1 scaffold to the V1 architecture.
 
-test cases
-→ benchmark runner
-→ two model responses
-→ LLM-as-Judge
-→ structured results
-→ aggregated summary
-→ sample_results.json
-→ leaderboard.html
+## NEXT
 
-## Product Positioning
+**Phase 3 — Dataset & Evaluation QA.** Build the 50 production cases (10 per
+domain, difficulty 2/5/3 per domain, approximately 40 Chinese-first), write the
+case-level `evaluation_criteria` and `deterministic_checks`, and QA the dataset
+for realism and non-overlap.
 
-This project should demonstrate:
+## THEN
 
-- model evaluation design
-- LLM-as-Judge
-- quantitative model comparison
-- API integration
-- Token / Cost / Latency awareness
-- reproducible AI product experimentation
+**Phase 4 — Native APIs & Live Benchmark.** Verify literal model IDs against
+provider-native documentation, verify pricing and FX snapshots, obtain
+credentials, run a cost projection, and only then execute a paid run.
 
-It should be understandable to recruiters, AI PMs, and engineers.
+## IMPORTANT
 
-## Important Constraint
+- No live paid benchmark has been authorized. Do not run `--confirm`.
+- Never read API keys from `~/.codex`, `~/.codex-deepseek`, shell history, or
+  other agent configuration files. Credentials come from environment variables
+  only, and are never committed.
+- Never fabricate token, cost, latency, or calibration data.
+- Never convert currencies without an explicit dated FX snapshot.
+- Do not commit Phase 2 implementation code without review.
 
-Do not present V0.1 as a scientifically comprehensive benchmark.
+## KEY DOCUMENTS
 
-Position it honestly as an early lightweight practical benchmark.
+| Document | Contents |
+| --- | --- |
+| [PRODUCT_SPEC_V1.md](PRODUCT_SPEC_V1.md) | What AIProductBench CN V1 is, frozen scope, out-of-scope list |
+| [METHODOLOGY_V1.md](METHODOLOGY_V1.md) | Frozen evaluation design: dataset, judges, metrics, Pareto |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Pipeline, module responsibilities, data flow, config schema |
+| [DECISIONS.md](DECISIONS.md) | Chronological decision log with rationale |
 
-## Implementation Preference
+## VERSION NOTES
 
-Prefer:
+V0.1 is an internal engineering scaffold, preserved in git history as the
+`chore: checkpoint v0.1 benchmark scaffold` commit. It is **not** intended for
+public release and its documentation is superseded by the V1 documents above.
 
-- simple files
-- simple functions
-- clear JSON schemas
-- small dependency surface
-- readable implementation
+## REPOSITORY STATE
 
-Avoid:
+- Branch: `main`
+- Remote: none configured
+- Latest committed state: V0.1 scaffold checkpoint plus the V1 documentation freeze
+- The V1 framework upgrade is implemented but intentionally left uncommitted
+  pending external review
 
-- large frameworks
-- unnecessary classes
-- databases
-- web backends
-- frontend frameworks
-- deployment infrastructure
-- multi-agent systems
+## STILL OPEN (requires human decision)
 
-## Execution Model
-
-GPT is the planner / product architect / reviewer.
-
-DeepSeek Flash through Codex CLI is the implementation executor.
-
-When an important architecture or product decision is unclear, DeepSeek should stop and ask rather than invent scope.
-
-## Current Status
-
-DeepSeek Codex execution environment is configured and validated.
-
-The AIProductBench repository is newly initialized and currently empty except for project instruction files.
-
-## Next Milestone
-
-Inspect the repository and propose the smallest viable V0.1 implementation plan.
-
-Do not begin implementation before the plan is reviewed.
-
-## Definition of Done
-
-A new user can understand the repository, inspect the benchmark methodology, see example results, view leaderboard.html, and understand how to reproduce the benchmark.
+| # | Open item |
+| --- | --- |
+| 1 | Literal model IDs for all V1 candidates and judges must be verified against provider-native documentation before any paid run |
+| 2 | Provider credentials for Moonshot, MiniMax, Zhipu, and Volcano Ark are not configured |
+| 3 | The pricing snapshot covers only the Qwen and DeepSeek tiers carried over from the V0.1 review; all other providers are unpriced |
+| 4 | No FX snapshot (USD/CNY) has been configured, so USD-priced models have no CNY-normalized cost |
+| 5 | Human calibration protocol and reviewer assignment are undefined |
+| 6 | The 50-case production dataset does not exist yet (Phase 3) |
