@@ -62,17 +62,20 @@ objectively testable, LLM evaluation where judgment is required.
 
 ### A. Deterministic checks
 
-Applied when a case contains machine-checkable constraints, for example:
+The evaluator implements **18 check types**, applied when a case declares
+machine-checkable constraints:
 
-- valid JSON
-- required keys
-- forbidden keys
-- exact item count
-- word or character limits
-- ordering
-- numeric constraints and ranges
-- schema compliance
-- required or forbidden phrases
+| Group | Check types |
+| --- | --- |
+| Structure | `valid_json`, `required_keys`, `forbidden_keys` |
+| Item count | `exact_item_count`, `max_items`, `min_items`, `exact_bullet_count` |
+| Length | `max_words`, `min_words`, `max_chars`, `min_chars` |
+| Content | `required_phrases`, `forbidden_phrases`, `required_regex`, `forbidden_regex` |
+| Order and format | `ordering`, `no_markdown_fence` |
+| Numeric | `numeric_range` |
+
+Cases declare checks; cases that need none declare none. The evaluator reports
+`null` for a case with no checks rather than a fabricated pass rate.
 
 Deterministic evaluation produces:
 
@@ -103,8 +106,14 @@ rejected, never repaired.
 
 ### C. Dual-judge design
 
-V1 maintains a **judge pool** of strong models from different model families,
-with target families:
+V1 has **one shared model registry**, and the judge pool is a set of
+judge-eligible entries in it. A model may be both an evaluated candidate and a
+judge; there are no judge-only duplicate copies of an existing model. The judge
+role and the candidate role produce strictly separate metrics — judge
+evaluation cost is never added to candidate inference cost, and judge latency is
+never mixed with candidate latency.
+
+Target judge families:
 
 - Qwen flagship
 - DeepSeek flagship
@@ -114,8 +123,30 @@ with target families:
 judge from the same model family or provider when an alternative is available.
 
 **Exactly two** valid cross-family judge evaluations are produced per candidate
-response. When more than two judges are eligible, selection is deterministic and
-documented in `ARCHITECTURE.md`.
+response.
+
+**Fixed-priority selection.** Judges are ordered by an explicit priority list
+declared in configuration, not by hashing the candidate:
+
+```
+qwen_flagship > deepseek_flagship > glm_flagship
+```
+
+The candidate's own family and provider are excluded, then the first two
+remaining cross-family judges are selected. A same-family judge is never
+substituted to obtain a second score; if fewer than two eligible judges remain,
+the response is recorded as judge-unavailable.
+
+| Candidate family | Judges |
+| --- | --- |
+| Qwen | DeepSeek + GLM |
+| DeepSeek | Qwen + GLM |
+| GLM | Qwen + DeepSeek |
+| Kimi, MiniMax, Doubao | Qwen + DeepSeek |
+
+Per-candidate hash rotation was considered and rejected (see `DECISIONS.md`
+D-018): giving unrelated candidates different judge pairs introduces an
+avoidable evaluation confound.
 
 The reason for two judges rather than one: a single judge from one family
 produces a number nobody can audit. Two independent cross-family judges let the
@@ -245,8 +276,14 @@ weights at a later date.
 
 **Frozen:** domain set and count, domain case counts, difficulty distribution,
 language composition, three judge dimensions, the 1-5 integer scale, the
-dual-judge cross-family rule, leave-one-provider-out, the deterministic-then-LLM
-hybrid, RMB presentation, Pareto presentation.
+dual-judge cross-family rule, leave-one-provider-out, fixed-priority judge
+selection over one shared registry, the deterministic-then-LLM hybrid, RMB
+presentation, Pareto presentation.
 
 **Open for Phase 3/4:** the literal content of the 50 cases, the literal judge
 model IDs, the literal candidate model IDs, and the pricing and FX values.
+
+**Active V1 pricing is currently unresolved for every model.** V0.1-era prices
+were retired rather than reused, because they were verified for different model
+IDs and different tiers (see `DECISIONS.md` D-019). No V1 rate may be inferred
+from an earlier tier.

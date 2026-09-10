@@ -1,0 +1,114 @@
+{
+  "dataset_name": "AIProductBench CN V1 synthetic framework fixture",
+  "dataset_version": "v1-synthetic-fixture-1",
+  "synthetic": true,
+  "synthetic_notice": "SYNTHETIC FIXTURE. Five placeholder cases exist only to exercise the V1 framework offline. They are not the production 50-case dataset and must never be reported as benchmark results.",
+  "domains": [
+    "instruction_constraint_following",
+    "structured_information_analysis",
+    "product_reasoning_decision",
+    "chinese_business_communication",
+    "agent_workflow_planning"
+  ],
+  "test_cases": [
+    {
+      "id": "SYN-IF-01",
+      "domain": "instruction_constraint_following",
+      "difficulty": "medium",
+      "language": "zh",
+      "title": "[SYNTHETIC] 把混乱需求改写成三条问题陈述",
+      "prompt": "请把下面的内部需求改写成为工程启动会准备的问题陈述。\n\n规则：\n- 只输出三条要点，不要标题、不要开头语、不要结尾语。\n- 每条要点必须以「- 」开头，且不超过 20 个字。\n- 不要提出任何解决方案、工具或技术实现。\n\n原始需求：\n销售同事反馈演示环境在客户会议中经常挂掉导致丢单，另外新客户上手要两周时间太长，而且文档太旧大家只能去群里问。",
+      "evaluation_criteria": [
+        "输出恰好包含三条要点，且没有任何其他文字。",
+        "每条要点以「- 」开头，且不超过 20 个字。",
+        "三条要点分别覆盖演示环境稳定性、上手周期过长、文档过时三个问题。",
+        "没有提出任何解决方案、工具或技术实现。"
+      ],
+      "deterministic_checks": [
+        {"name": "恰为三条要点", "type": "exact_bullet_count", "count": 3},
+        {"name": "无解决方案词", "type": "forbidden_phrases", "phrases": ["我们可以", "建议使用", "解决方案"]}
+      ]
+    },
+    {
+      "id": "SYN-SA-01",
+      "domain": "structured_information_analysis",
+      "difficulty": "hard",
+      "language": "en",
+      "title": "[SYNTHETIC] Messy ticket to fixed JSON schema",
+      "prompt": "Extract the structured record from the ticket below.\n\nReturn only a JSON object, with no prose and no markdown fences, containing exactly these keys:\n- product_area: one of \"reporting\", \"billing\", \"integrations\", \"authentication\", \"unknown\"\n- severity: one of \"low\", \"medium\", \"high\"\n- blocked_since: the date mentioned in the ticket as YYYY-MM-DD, or null\n- confidence: a number between 0 and 1\n\nTicket:\n\"Since 2026-08-14 our nightly billing export has produced empty files. Finance cannot close the month. Please escalate.\"",
+      "evaluation_criteria": [
+        "The output is a single valid JSON object with exactly the four required keys.",
+        "product_area is one of the allowed values; billing is a defensible choice.",
+        "severity is one of the allowed values and reflects that finance is blocked.",
+        "blocked_since is \"2026-08-14\".",
+        "confidence is a number between 0 and 1 and no fact is invented beyond the ticket."
+      ],
+      "deterministic_checks": [
+        {"name": "合法 JSON 对象", "type": "valid_json", "expect": "object"},
+        {"name": "必填字段", "type": "required_keys", "keys": ["product_area", "severity", "blocked_since", "confidence"]},
+        {"name": "禁止多余字段", "type": "forbidden_keys", "keys": ["notes", "summary", "raw_text"]},
+        {"name": "无 markdown 代码块", "type": "no_markdown_fence"}
+      ]
+    },
+    {
+      "id": "SYN-PR-01",
+      "domain": "product_reasoning_decision",
+      "difficulty": "medium",
+      "language": "zh",
+      "title": "[SYNTHETIC] 本季度只做两件事的优先级判断",
+      "prompt": "你是某 B2B 数据分析产品的产品经理，本季度团队最多只能完成五项待办中的两项。\n\n待办（影响：对核心指标活跃空间留存的影响；成本：工程周；信心：你对影响估计的确信程度）：\nA. 看板收藏。影响：中。成本：2 周。信心：高。\nB. SSO 与审计日志。影响：中。成本：5 周。信心：高。\nC. 查询引擎提速。影响：高。成本：8 周。信心：中。\nD. CSV 导入修复。影响：低。成本：1 周。信心：高。\nE. AI 洞察摘要。影响：高。成本：6 周。信心：低。\n\n请给出本季度的建议。\n\n要求：\n- 先明确写出你的决策规则，再应用它。\n- 恰好推荐两项。\n- 明确说明本季度放弃什么以及原因。\n- 指出你建议中最大的一个不确定性。\n- 不要编造题目中没有的数据。",
+      "evaluation_criteria": [
+        "先明确给出决策规则，再按该规则得出结论。",
+        "恰好推荐两项，且都来自给出的五项。",
+        "说明本季度放弃了什么，并解释该放弃如何由决策规则推出。",
+        "指出最大的不确定性，且该不确定性来自题目给出的信息（例如高影响项的信心较低）。",
+        "没有引入题目之外的任何数据或约束。"
+      ],
+      "deterministic_checks": [
+        {"name": "包含决策规则", "type": "required_phrases", "phrases": ["决策规则"]},
+        {"name": "长度上限", "type": "max_chars", "count": 2500}
+      ]
+    },
+    {
+      "id": "SYN-BC-01",
+      "domain": "chinese_business_communication",
+      "difficulty": "easy",
+      "language": "zh",
+      "title": "[SYNTHETIC] 把内部进展改写成给高管的汇报",
+      "prompt": "请把下面的内部进展改写成一段给公司管理层的汇报。\n\n要求：\n- 面向管理层，语气克制、结论先行。\n- 不超过 120 个字。\n- 保留原文全部四个事实，不得改动数字。\n- 不要使用「赋能」「抓手」「闭环」这类词。\n\n内部进展：\n推荐模型 v2 已于 3 月 3 日全量上线。上线后 14 天内首页信息流的点击率相比 v1 提升 12%。关于「推荐不相关」的客诉下降 30%。单次请求的推理成本从 0.0004 美元上升到 0.0006 美元。",
+      "evaluation_criteria": [
+        "结论先行，语气适合管理层，不是内部口语流水账。",
+        "全文不超过 120 个字。",
+        "四个事实全部保留且数字不变：3 月 3 日全量上线、14 天内点击率 +12%、客诉 -30%、单次成本从 0.0004 到 0.0006 美元。",
+        "没有使用「赋能」「抓手」「闭环」等词。",
+        "没有引入原文之外的任何事实。"
+      ],
+      "deterministic_checks": [
+        {"name": "长度上限", "type": "max_chars", "count": 120},
+        {"name": "禁用空话", "type": "forbidden_phrases", "phrases": ["赋能", "抓手", "闭环"]},
+        {"name": "保留成本数字", "type": "required_phrases", "phrases": ["0.0006"]}
+      ]
+    },
+    {
+      "id": "SYN-AW-01",
+      "domain": "agent_workflow_planning",
+      "difficulty": "hard",
+      "language": "mixed",
+      "title": "[SYNTHETIC] 客服工单自动分类的工作流规划",
+      "prompt": "你正在规划一个 agent workflow：每天从工单系统导出新的客服工单，自动分类到 5 个产品模块，对高优先级工单生成给值班工程师的中文摘要，并把结果写回工单系统。\n\n请输出执行计划。\n\n要求：\n- 按顺序给出步骤，每一步写清输入、动作、输出。\n- 明确标出需要人工确认的步骤。\n- 指出两个最可能失败的地方以及对应的处理方式。\n- 不要输出任何代码。",
+      "evaluation_criteria": [
+        "步骤按正确顺序排列：导出工单 → 分类 → 摘要 → 写回，且顺序不可颠倒。",
+        "每一步都写清输入、动作和输出。",
+        "至少明确标出一个需要人工确认的步骤，并说明确认内容。",
+        "指出两个具体的失败点（例如分类阈值不准、写回接口限流）以及对应处理方式。",
+        "没有输出代码或伪代码。"
+      ],
+      "deterministic_checks": [
+        {"name": "无代码块", "type": "no_markdown_fence"},
+        {"name": "步骤顺序", "type": "ordering", "phrases": ["导出", "分类", "摘要", "写回"]},
+        {"name": "含人工确认", "type": "required_phrases", "phrases": ["人工确认"]},
+        {"name": "长度下限", "type": "min_chars", "count": 400}
+      ]
+    }
+  ]
+}

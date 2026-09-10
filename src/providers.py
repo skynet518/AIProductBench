@@ -1,12 +1,13 @@
-"""Minimal OpenAI-compatible HTTP client.
+"""Provider-native HTTP access.
 
-Both configured providers are reached over an OpenAI-compatible HTTP API, so a
-single small requests-based implementation covers them. Everything that differs
-between providers — base URL, API key environment variable, and wire API shape —
-is configuration in src/config.py rather than duplicated logic here.
+Every V1 candidate is reached through its own native provider endpoint. All
+provider differences — base URL, credential environment variable, wire API
+shape, model ID — are configuration read from the model pool, so this module
+contains no provider-specific branching and no model names.
 
-This is deliberately not a provider framework. It is one function that posts a
-chat request and normalises the response.
+This is deliberately one function, not an adapter framework. A provider needing
+a genuinely different protocol gets one more branch in `_build_payload`, not a
+new layer.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ import time
 
 import requests
 
-from src import config
+from src import config, pricing
 
 
 class ProviderError(RuntimeError):
@@ -29,40 +30,50 @@ class MissingCredentials(ProviderError):
     """Raised when the API key environment variable for a provider is not set."""
 
 
-def resolve_api_key(entry: dict) -> str:
+def resolve_api_key(model: dict) -> str:
     """Read a provider API key from the environment. Never from a file."""
-    api_key = os.environ.get(entry["api_key_env"], "").strip()
+    api_key = os.environ.get(model["api_key_env"], "").strip()
     if not api_key:
         raise MissingCredentials(
-            f"Missing credentials for {entry['display_name']}: set the "
-            f"{entry['api_key_env']} environment variable."
+            f"Missing credentials for {model['display_name']}: set the "
+            f"{model['api_key_env']} environment variable."
         )
     return api_key
 
 
-def _endpoint(entry: dict) -> str:
-    base_url = entry["base_url"].rstrip("/")
-    if entry["wire_api"] == "responses":
+def resolve_model_id(model: dict) -> str:
+    model_id = model.get("model_id")
+    if not model_id:
+        raise ProviderError(
+            f"Model '{model['key']}' has no verified model ID. Verify it against "
+            "provider-native documentation before running a paid benchmark."
+        )
+    return model_id
+
+
+def _endpoint(model: dict) -> str:
+    base_url = model["base_url"].rstrip("/")
+    if model["wire_api"] == "responses":
         return f"{base_url}/responses"
     return f"{base_url}/chat/completions"
 
 
-def _build_payload(entry: dict, messages: list[dict]) -> dict:
-    if entry["wire_api"] == "responses":
+def _build_payload(model: dict, messages: list[dict]) -> dict:
+    if model["wire_api"] == "responses":
         return {
-            "model": entry["model"],
+            "model": resolve_model_id(model),
             "input": [
                 {"role": message["role"], "content": message["content"]}
                 for message in messages
             ],
-            "max_output_tokens": entry["max_output_tokens"],
-            "temperature": entry["temperature"],
+            "max_output_tokens": model["max_output_tokens"],
+            "temperature": model["temperature"],
         }
     return {
-        "model": entry["model"],
+        "model": resolve_model_id(model),
         "messages": messages,
-        "max_tokens": entry["max_output_tokens"],
-        "temperature": entry["temperature"],
+        "max_tokens": model["max_output_tokens"],
+        "temperature": model["temperature"],
     }
 
 
@@ -76,10 +87,12 @@ def _extract_text_and_usage(data: dict, wire_api: str) -> tuple[str, dict]:
                 if chunk.get("type") in ("output_text", "text"):
                     parts.append(chunk.get("text") or "")
         usage = data.get("usage") or {}
+        details = usage.get("output_tokens_details") or {}
         return "".join(parts).strip(), {
             "input_tokens": usage.get("input_tokens"),
             "output_tokens": usage.get("output_tokens"),
             "total_tokens": usage.get("total_tokens"),
+            "reasoning_tokens": details.get("reasoning_tokens"),
         }
 
     text = ""
@@ -88,43 +101,34 @@ def _extract_text_and_usage(data: dict, wire_api: str) -> tuple[str, dict]:
         message = choices[0].get("message") or {}
         text = (message.get("content") or "").strip()
     usage = data.get("usage") or {}
+    details = usage.get("completion_tokens_details") or {}
     return text, {
         "input_tokens": usage.get("prompt_tokens"),
         "output_tokens": usage.get("completion_tokens"),
         "total_tokens": usage.get("total_tokens"),
+        "reasoning_tokens": details.get("reasoning_tokens"),
     }
 
 
 # Status codes that will not succeed on retry.
 _FATAL_STATUS = {400, 401, 403, 404, 422}
 
-# Fixed timestamp used for offline dry runs so that synthetic cost figures are
-# reproducible and never depend on when the dry run happened to be executed.
+# Fixed timestamp used for offline dry runs so synthetic cost figures are
+# reproducible and do not depend on when the dry run was executed.
 SYNTHETIC_CALL_TIMESTAMP = dt.datetime(2026, 9, 11, 2, 0, tzinfo=dt.timezone.utc)
 
 
-def _price(model_id: str, input_tokens, output_tokens, called_at: dt.datetime) -> dict:
-    """Price a call without ever substituting a guessed rate."""
-    try:
-        priced = config.price_call(model_id, input_tokens, output_tokens, at=called_at)
-    except config.PricingError as exc:
-        return {"estimated_cost_usd": None, "cost_basis": None, "cost_error": str(exc)}
-    return {
-        "estimated_cost_usd": priced["cost_usd"],
-        "cost_basis": priced["basis"],
-        "cost_error": None,
-    }
-
-
-def chat(entry: dict, messages: list[dict]) -> dict:
-    """Call a model and return text, latency, token usage, and cost.
-
-    Retries transient network errors and server-side failures. Fails loudly on
-    missing credentials or a non-retryable error response.
-    """
-    api_key = resolve_api_key(entry)
-    url = _endpoint(entry)
-    payload = _build_payload(entry, messages)
+def chat(
+    model: dict,
+    messages: list[dict],
+    *,
+    at: dt.datetime | None = None,
+    fx_snapshot: dict | None = None,
+) -> dict:
+    """Call a model once and return text, latency, usage, and cost."""
+    api_key = resolve_api_key(model)
+    url = _endpoint(model)
+    payload = _build_payload(model, messages)
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -132,11 +136,14 @@ def chat(entry: dict, messages: list[dict]) -> dict:
 
     last_error = "unknown error"
     for attempt in range(config.MAX_RETRIES + 1):
-        called_at = dt.datetime.now(dt.timezone.utc)
+        called_at = at or dt.datetime.now(dt.timezone.utc)
         started = time.perf_counter()
         try:
             response = requests.post(
-                url, headers=headers, json=payload, timeout=config.REQUEST_TIMEOUT_SECONDS
+                url,
+                headers=headers,
+                json=payload,
+                timeout=config.REQUEST_TIMEOUT_SECONDS,
             )
         except requests.RequestException as exc:
             last_error = f"{type(exc).__name__}: {exc}"
@@ -144,7 +151,7 @@ def chat(entry: dict, messages: list[dict]) -> dict:
             latency_ms = round((time.perf_counter() - started) * 1000, 1)
             if response.status_code in _FATAL_STATUS:
                 raise ProviderError(
-                    f"{entry['display_name']} rejected the request "
+                    f"{model['display_name']} rejected the request "
                     f"(HTTP {response.status_code}): {response.text[:300]}"
                 )
             if response.status_code >= 400:
@@ -155,70 +162,86 @@ def chat(entry: dict, messages: list[dict]) -> dict:
                 except ValueError as exc:
                     last_error = f"provider returned invalid JSON: {exc}"
                 else:
-                    text, usage = _extract_text_and_usage(data, entry["wire_api"])
+                    text, usage = _extract_text_and_usage(data, model["wire_api"])
                     if not text:
                         last_error = "provider returned an empty response"
                     else:
-                        price = _price(
-                            entry["model"],
+                        cost = pricing.price_call(
+                            model,
                             usage["input_tokens"],
                             usage["output_tokens"],
-                            called_at,
+                            at=called_at,
+                            fx_snapshot=fx_snapshot,
                         )
                         return {
                             "text": text,
                             "latency_ms": latency_ms,
-                            "input_tokens": usage["input_tokens"],
-                            "output_tokens": usage["output_tokens"],
-                            "total_tokens": usage["total_tokens"],
-                            "model_id": entry["model"],
+                            "model_key": model["key"],
+                            "model_id": resolve_model_id(model),
                             "called_at": called_at.isoformat(timespec="seconds"),
                             "attempts": attempt + 1,
                             "synthetic": False,
                             "error": None,
-                            **price,
+                            **usage,
+                            **{key: cost[key] for key in cost},
                         }
 
         if attempt < config.MAX_RETRIES:
             time.sleep(config.RETRY_BACKOFF_SECONDS * (2**attempt))
 
     raise ProviderError(
-        f"{entry['display_name']} failed after {config.MAX_RETRIES + 1} attempt(s): {last_error}"
+        f"{model['display_name']} failed after {config.MAX_RETRIES + 1} attempt(s): {last_error}"
     )
 
 
-def synthetic_call(entry: dict, messages: list[dict], seed: str) -> dict:
+def synthetic_call(
+    model: dict,
+    messages: list[dict],
+    seed: str,
+    *,
+    fx_snapshot: dict | None = None,
+) -> dict:
     """Deterministic offline stand-in used by --dry-run.
 
-    Every value returned here is fabricated by a hash function so that the
-    dry run exercises the full pipeline without network access or cost. The
-    `synthetic` flag is propagated into the results document, and dry-run
-    artifacts are written outside the committed result files.
+    Every value is fabricated by a hash function so the dry run exercises the
+    full pipeline without network access or cost. The `synthetic` flag is
+    propagated into the results document.
     """
-    digest = hashlib.sha256(f"{entry['key']}|{seed}".encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(f"{model['key']}|{seed}".encode("utf-8")).hexdigest()
     number = int(digest[:10], 16)
 
     prompt_characters = sum(len(message["content"]) for message in messages)
     input_tokens = max(1, prompt_characters // 4)
     output_tokens = 160 + (number % 180)
+    reasoning_tokens = (number % 40) if number % 3 == 0 else None
 
     text = (
         "[SYNTHETIC DRY-RUN RESPONSE — generated offline, not by a real model]\n"
-        f"Model: {entry['display_name']} ({entry['model']})\n"
+        f"Model: {model['display_name']}\n"
         f"Case seed: {seed}\n"
         "This placeholder exists only to exercise the benchmark pipeline end to end."
     )
-    price = _price(entry["model"], input_tokens, output_tokens, SYNTHETIC_CALL_TIMESTAMP)
+
+    cost = pricing.price_call(
+        model,
+        input_tokens,
+        output_tokens,
+        at=SYNTHETIC_CALL_TIMESTAMP,
+        fx_snapshot=fx_snapshot,
+        synthetic=True,
+    )
     return {
         "text": text,
         "latency_ms": round(120 + (number % 900) / 10, 1),
+        "model_key": model["key"],
+        "model_id": model.get("model_id"),
+        "called_at": SYNTHETIC_CALL_TIMESTAMP.isoformat(timespec="seconds"),
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "total_tokens": input_tokens + output_tokens,
-        "model_id": entry["model"],
-        "called_at": SYNTHETIC_CALL_TIMESTAMP.isoformat(timespec="seconds"),
+        "reasoning_tokens": reasoning_tokens,
         "attempts": 1,
         "synthetic": True,
         "error": None,
-        **price,
+        **{key: cost[key] for key in cost},
     }

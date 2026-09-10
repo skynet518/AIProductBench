@@ -1,7 +1,9 @@
-"""Benchmark orchestration, aggregation, and result serialisation.
+"""Pipeline orchestration for AIProductBench CN V1.
 
-Flow: load the 10 test cases, call each of the 2 candidate models once per case,
-send every response to the single judge, then aggregate per model and per domain.
+Flow (docs/ARCHITECTURE.md §1): cases -> candidate runner -> native provider
+adapters -> raw responses -> deterministic evaluator -> cross-family judge
+selector -> dual LLM evaluation -> score aggregation -> cost/latency analytics
+-> Pareto analysis -> snapshot document.
 """
 
 from __future__ import annotations
@@ -10,11 +12,7 @@ import datetime as dt
 import json
 from pathlib import Path
 
-from src import config, judge, providers
-
-
-# Fixed timestamp used only for pricing lookups in validation.
-_SAMPLE_AT = dt.datetime(2026, 9, 11, 0, 0, tzinfo=dt.timezone.utc)
+from src import analytics, cases as cases_module, config, deterministic, judge, models, pricing, providers
 
 
 # --------------------------------------------------------------------------
@@ -23,124 +21,66 @@ _SAMPLE_AT = dt.datetime(2026, 9, 11, 0, 0, tzinfo=dt.timezone.utc)
 
 
 def load_test_cases(path: Path | None = None) -> dict:
-    path = path or config.TEST_CASES_FILE
-    with open(path, encoding="utf-8") as handle:
-        return json.load(handle)
+    return cases_module.load_cases(path)
 
 
-def validate_test_cases(document: dict) -> list[str]:
-    """Return a list of human-readable problems. Empty list means valid."""
-    errors: list[str] = []
-    cases = document.get("test_cases")
-
-    if not isinstance(cases, list):
-        return ["'test_cases' must be a list."]
-    if len(cases) != 10:
-        errors.append(f"Expected exactly 10 test cases, found {len(cases)}.")
-
-    seen_ids: set[str] = set()
-    domain_counts: dict[str, int] = {}
-
-    for index, case in enumerate(cases):
-        label = case.get("id") or f"index {index}"
-        for field in ("id", "domain", "title", "prompt", "evaluation_criteria"):
-            if not case.get(field):
-                errors.append(f"Case {label} is missing a non-empty '{field}'.")
-
-        case_id = case.get("id")
-        if case_id in seen_ids:
-            errors.append(f"Duplicate case id: {case_id}.")
-        seen_ids.add(case_id)
-
-        domain = case.get("domain")
-        if domain and domain not in config.DOMAINS:
-            errors.append(f"Case {label} has unknown domain '{domain}'.")
-        if domain:
-            domain_counts[domain] = domain_counts.get(domain, 0) + 1
-
-        criteria = case.get("evaluation_criteria")
-        if criteria is not None and (not isinstance(criteria, list) or not criteria):
-            errors.append(f"Case {label} must have a non-empty 'evaluation_criteria' list.")
-
-    present_domains = sorted(domain_counts)
-    if present_domains != sorted(config.DOMAINS):
-        errors.append(
-            f"Expected exactly the 3 domains {list(config.DOMAINS)}, found {present_domains}."
-        )
-
-    return errors
+def load_model_pool(path: Path | None = None) -> dict:
+    return models.load_model_pool(path)
 
 
-def domain_distribution(document: dict) -> dict[str, int]:
-    counts = {domain: 0 for domain in config.DOMAINS}
-    for case in document.get("test_cases", []):
-        domain = case.get("domain")
-        if domain in counts:
-            counts[domain] += 1
-    return counts
-
-
-def validate_configuration() -> list[str]:
-    """Check the model and judge configuration without contacting any provider."""
-    errors: list[str] = []
-
-    if len(config.MODELS) != 2:
-        errors.append(f"Expected exactly 2 evaluated models, found {len(config.MODELS)}.")
-    if len({model["key"] for model in config.MODELS}) != len(config.MODELS):
-        errors.append("Evaluated model keys must be unique.")
-    if len({model["model"] for model in config.MODELS}) != len(config.MODELS):
-        errors.append("The two evaluated models must use different model IDs.")
-
-    for model in list(config.MODELS) + [config.JUDGE]:
-        if model["wire_api"] not in ("chat_completions", "responses"):
-            errors.append(
-                f"{model['display_name']} has unsupported wire_api '{model['wire_api']}'."
-            )
-        if not model["base_url"].startswith("https://"):
-            errors.append(f"{model['display_name']} base_url must use https.")
-        if not model["api_key_env"].isupper():
-            errors.append(
-                f"{model['display_name']} api_key_env must name an environment variable."
-            )
-        if model["temperature"] != 0.0:
-            errors.append(f"{model['display_name']} must run at temperature 0.0.")
-
-    judge_id = config.JUDGE["model"]
-    if judge_id in {model["model"] for model in config.MODELS}:
-        errors.append("The judge must not be the same model as an evaluated model.")
-
-    for model in list(config.MODELS) + [config.JUDGE]:
-        try:
-            config.rates_for(model["model"], at=_SAMPLE_AT)
-        except config.PricingError as exc:
-            errors.append(f"Pricing unresolved for {model['display_name']}: {exc}")
-
-    return errors
-
-
-def pricing_region() -> dict:
-    """Report the DashScope region implied by the configured base URL."""
-    base_url = config.MODELS[0]["base_url"]
-    key = config.dashscope_region(base_url)
+def validate_all(cases_document: dict, pool: dict) -> dict:
+    """Return {"errors": [...], "warnings": [...]} across pool and cases."""
+    pool_result = models.validate_model_pool(pool)
+    cases_result = cases_module.validate_cases(cases_document)
     return {
-        "base_url": base_url,
-        "key": key,
-        "label": config.DASHSCOPE_REGIONS[key]["label"] if key else "unidentified",
+        "errors": pool_result["errors"] + cases_result["errors"],
+        "warnings": pool_result["warnings"] + cases_result["warnings"],
     }
 
 
-def credential_status() -> list[dict]:
+def check_pricing_ready(pool: dict) -> list[str]:
+    """Blockers for cost reporting. V1 requires cost, so unresolved pricing blocks."""
+    unresolved = [
+        model["key"]
+        for model in pool["models"]
+        if model["pricing"].get("status") != "verified"
+        or model["pricing"].get("input") is None
+        or model["pricing"].get("output") is None
+    ]
+    if not unresolved:
+        return []
+    return [
+        f"Unresolved active V1 pricing for {len(unresolved)} model(s): "
+        + ", ".join(unresolved)
+    ]
+
+
+def check_ready_for_paid_run(pool: dict, *, require_pricing: bool = True) -> list[str]:
+    """Blockers that must be cleared before any real provider call."""
+    blockers = []
+    unverified = models.unverified_models(pool)
+    if unverified:
+        blockers.append(
+            "Unverified model IDs: "
+            + ", ".join(f"{model['key']} ({model['display_name']})" for model in unverified)
+        )
+    if require_pricing:
+        blockers.extend(check_pricing_ready(pool))
+    return blockers
+
+
+def credential_status(pool: dict) -> list[dict]:
     """Report, without contacting anything, which API keys are present."""
     import os
 
     rows = []
-    for model in list(config.MODELS) + [config.JUDGE]:
-        name = model["api_key_env"]
+    for model in pool["models"]:
         rows.append(
             {
+                "key": model["key"],
                 "display_name": model["display_name"],
-                "env_var": name,
-                "present": bool(os.environ.get(name, "").strip()),
+                "env_var": model["api_key_env"],
+                "present": bool(os.environ.get(model["api_key_env"], "").strip()),
             }
         )
     return rows
@@ -151,89 +91,145 @@ def credential_status() -> list[dict]:
 # --------------------------------------------------------------------------
 
 
-def _evaluate_response(case: dict, model: dict, response: dict, dry_run: bool) -> dict:
-    record = {
+def _base_record(case: dict, model: dict, dry_run: bool) -> dict:
+    return {
         "case_id": case["id"],
         "domain": case["domain"],
-        "case_title": case["title"],
+        "difficulty": case.get("difficulty"),
+        "language": case.get("language"),
         "model_key": model["key"],
         "model_name": model["display_name"],
-        "model_id": model["model"],
-        "response_text": response["text"],
-        "latency_ms": response["latency_ms"],
-        "input_tokens": response["input_tokens"],
-        "output_tokens": response["output_tokens"],
-        "total_tokens": response["total_tokens"],
-        "estimated_cost_usd": response["estimated_cost_usd"],
-        "cost_basis": response.get("cost_basis"),
-        "cost_error": response.get("cost_error"),
-        "called_at": response.get("called_at"),
-        "synthetic": response["synthetic"],
+        "model_id": model.get("model_id"),
+        "model_family": model["model_family"],
+        "provider": model["provider"],
+        "product_tier": model["product_tier"],
+        "inference_channel": model["inference_channel"],
+        "thinking_mode": model["thinking_mode"],
+        "response_text": None,
+        "latency_ms": None,
+        "input_tokens": None,
+        "output_tokens": None,
+        "total_tokens": None,
+        "reasoning_tokens": None,
+        "native_cost": None,
+        "native_currency": None,
+        "normalized_cost_cny": None,
+        "normalization_method": None,
+        "cost_basis": None,
+        "cost_error": None,
+        "called_at": None,
+        "synthetic": dry_run,
         "error": None,
-        "judge": None,
+        "deterministic": None,
+        "judges_attempted": [],
+        "judge_unavailable_reason": None,
+        "judgements": [],
+        "aggregate": None,
+        "judge_agreement": None,
+        "judge_cost_cny": None,
     }
 
-    try:
-        record["judge"] = judge.evaluate(
-            case, model["display_name"], response["text"], dry_run=dry_run
-        )
-    except (providers.ProviderError, judge.JudgeOutputError) as exc:
-        record["error"] = f"judge: {exc}"
 
+def _evaluate_case(
+    case: dict, model: dict, response: dict, pool: dict, *, dry_run: bool, fx_snapshot
+) -> dict:
+    record = _base_record(case, model, dry_run)
+    record.update(
+        {
+            "model_id": response.get("model_id"),
+            "response_text": response["text"],
+            "latency_ms": response["latency_ms"],
+            "input_tokens": response["input_tokens"],
+            "output_tokens": response["output_tokens"],
+            "total_tokens": response["total_tokens"],
+            "reasoning_tokens": response.get("reasoning_tokens"),
+            "native_cost": response["native_cost"],
+            "native_currency": response["native_currency"],
+            "normalized_cost_cny": response["normalized_cost_cny"],
+            "normalization_method": response["normalization_method"],
+            "cost_basis": response["basis"],
+            "cost_error": response["cost_error"],
+            "called_at": response["called_at"],
+            "synthetic": response["synthetic"],
+            "deterministic": deterministic.evaluate(case, response["text"]),
+        }
+    )
+
+    selected = judge.select_judges(
+        model, models.judges(pool), models.judge_priority(pool)
+    )
+    record["judges_attempted"] = [item["key"] for item in selected]
+    if not selected:
+        record["judge_unavailable_reason"] = (
+            "fewer than two cross-family judges are eligible for this candidate"
+        )
+        return record
+
+    verdicts = judge.evaluate(
+        case, model, response["text"], selected, dry_run=dry_run, fx_snapshot=fx_snapshot
+    )
+    record["judgements"] = verdicts
+    record["aggregate"] = judge.aggregate_verdicts(verdicts)
+    record["judge_agreement"] = judge.judge_agreement(verdicts)
+
+    judge_costs = [
+        verdict["normalized_cost_cny"]
+        for verdict in verdicts
+        if verdict.get("normalized_cost_cny") is not None
+    ]
+    record["judge_cost_cny"] = round(sum(judge_costs), 8) if judge_costs else None
     return record
 
 
-def run_benchmark(document: dict, *, dry_run: bool = False) -> dict:
-    cases = document["test_cases"]
+def run_benchmark(
+    cases_document: dict,
+    pool: dict,
+    *,
+    dry_run: bool = False,
+    fx_snapshot: dict | None = None,
+) -> dict:
+    case_list = cases_module.all_cases(cases_document)
+    candidate_models = models.candidates(pool)
     results: list[dict] = []
     failures: list[dict] = []
 
-    for case in cases:
-        for model in config.MODELS:
+    for case in case_list:
+        for model in candidate_models:
             messages = [{"role": "user", "content": case["prompt"]}]
             try:
                 if dry_run:
                     response = providers.synthetic_call(
-                        model, messages, seed=f"{case['id']}|{model['key']}"
+                        model,
+                        messages,
+                        seed=f"{case['id']}|{model['key']}",
+                        fx_snapshot=fx_snapshot,
                     )
                 else:
-                    response = providers.chat(model, messages)
+                    response = providers.chat(model, messages, fx_snapshot=fx_snapshot)
             except providers.ProviderError as exc:
+                record = _base_record(case, model, dry_run)
+                record["error"] = str(exc)
+                results.append(record)
                 failures.append(
                     {
                         "case_id": case["id"],
                         "model_key": model["key"],
                         "model_name": model["display_name"],
+                        "stage": "candidate",
                         "error": str(exc),
-                    }
-                )
-                results.append(
-                    {
-                        "case_id": case["id"],
-                        "domain": case["domain"],
-                        "case_title": case["title"],
-                        "model_key": model["key"],
-                        "model_name": model["display_name"],
-                        "model_id": model["model"],
-                        "response_text": None,
-                        "latency_ms": None,
-                        "input_tokens": None,
-                        "output_tokens": None,
-                        "total_tokens": None,
-                        "estimated_cost_usd": None,
-                        "cost_basis": None,
-                        "cost_error": None,
-                        "called_at": None,
-                        "synthetic": dry_run,
-                        "error": str(exc),
-                        "judge": None,
                     }
                 )
                 continue
 
-            results.append(_evaluate_response(case, model, response, dry_run))
+            results.append(
+                _evaluate_case(
+                    case, model, response, pool, dry_run=dry_run, fx_snapshot=fx_snapshot
+                )
+            )
 
-    return build_document(document, results, failures, dry_run=dry_run)
+    return build_document(
+        cases_document, pool, results, failures, dry_run=dry_run, fx_snapshot=fx_snapshot
+    )
 
 
 # --------------------------------------------------------------------------
@@ -241,71 +237,145 @@ def run_benchmark(document: dict, *, dry_run: bool = False) -> dict:
 # --------------------------------------------------------------------------
 
 
-def _mean(values: list[float]) -> float | None:
-    return round(sum(values) / len(values), 2) if values else None
-
-
-def _sum_or_none(values: list[int]) -> int | None:
+def _mean(values: list) -> float | None:
     present = [value for value in values if value is not None]
-    return sum(present) if present else None
+    return round(sum(present) / len(present), 3) if present else None
 
 
-def _cost_or_none(values: list[float]) -> float | None:
+def _sum(values: list) -> float | None:
     present = [value for value in values if value is not None]
-    return round(sum(present), 6) if present else None
+    return round(sum(present), 8) if present else None
 
 
-def summarize(results: list[dict]) -> dict:
-    """Build per-model and per-domain aggregates plus judge overhead."""
+def summarize(results: list[dict], pool: dict) -> dict:
     model_rows = []
 
-    for model in config.MODELS:
+    for model in models.candidates(pool):
         rows = [row for row in results if row["model_key"] == model["key"]]
-        scored = [row for row in rows if row.get("judge") and row.get("error") is None]
+        scored = [row for row in rows if row.get("aggregate") and row.get("error") is None]
 
-        domain_scores: dict[str, float | None] = {}
-        domain_averages: dict[str, float | None] = {}
-        for domain in config.DOMAINS:
-            domain_rows = [row for row in scored if row["domain"] == domain]
-            domain_scores[domain] = _mean(
-                [row["judge"]["normalized_score"] for row in domain_rows]
-            )
-            domain_averages[domain] = _mean(
-                [row["judge"]["mean_score"] for row in domain_rows]
-            )
+        det_checks = [
+            check
+            for row in rows
+            if row.get("deterministic")
+            for check in row["deterministic"]["checks"]
+        ]
+        det_passed = sum(1 for check in det_checks if check["passed"])
+
+        native_costs: dict[str, float] = {}
+        for row in rows:
+            if row.get("native_cost") is not None and row.get("native_currency"):
+                currency = row["native_currency"]
+                native_costs[currency] = round(
+                    native_costs.get(currency, 0.0) + row["native_cost"], 8
+                )
 
         model_rows.append(
             {
                 "model_key": model["key"],
                 "model_name": model["display_name"],
-                "model_id": model["model"],
+                "model_id": model.get("model_id"),
+                "model_family": model["model_family"],
                 "provider": model["provider"],
+                "product_tier": model["product_tier"],
+                "inference_channel": model["inference_channel"],
+                "thinking_mode": model["thinking_mode"],
                 "cases_total": len(rows),
                 "cases_scored": len(scored),
                 "cases_failed": len(rows) - len(scored),
-                "overall_score": _mean(
-                    [row["judge"]["normalized_score"] for row in scored]
+                "overall_score": _mean([row["aggregate"]["overall_score"] for row in scored]),
+                "quality_score": _mean([row["aggregate"]["quality_score"] for row in scored]),
+                "dimension_scores": {
+                    dimension: _mean(
+                        [row["aggregate"]["dimension_scores"][dimension] for row in scored]
+                    )
+                    for dimension in config.RUBRIC_DIMENSIONS
+                },
+                "constraint_pass_rate": round(det_passed / len(det_checks), 4)
+                if det_checks
+                else None,
+                "deterministic_checks": f"{det_passed}/{len(det_checks)}"
+                if det_checks
+                else None,
+                "task_success_rate": _mean(
+                    [
+                        1.0 if row["deterministic"]["all_passed"] else 0.0
+                        for row in rows
+                        if row.get("deterministic")
+                        and row["deterministic"]["all_passed"] is not None
+                    ]
                 ),
-                "overall_mean_score": _mean([row["judge"]["mean_score"] for row in scored]),
-                "domain_scores": domain_scores,
-                "domain_mean_scores": domain_averages,
-                "avg_latency_ms": _mean(
-                    [row["latency_ms"] for row in scored if row["latency_ms"] is not None]
+                "latency": analytics.latency_stats(
+                    [row["latency_ms"] for row in rows if row.get("latency_ms") is not None]
                 ),
-                "total_tokens": _sum_or_none([row["total_tokens"] for row in scored]),
-                "candidate_cost_usd": _cost_or_none(
-                    [row["estimated_cost_usd"] for row in scored]
+                "tokens": {
+                    "input": _sum([row["input_tokens"] for row in rows]),
+                    "output": _sum([row["output_tokens"] for row in rows]),
+                    "reasoning": _sum([row["reasoning_tokens"] for row in rows]),
+                    "total": _sum([row["total_tokens"] for row in rows]),
+                },
+                "candidate_cost_native": native_costs or None,
+                "candidate_cost_cny": _sum([row["normalized_cost_cny"] for row in rows]),
+                "judge_cost_cny": _sum([row["judge_cost_cny"] for row in rows]),
+                "judge_agreement_mean_abs_difference": _mean(
+                    [
+                        row["judge_agreement"]["overall_mean_abs_difference"]
+                        for row in rows
+                        if row.get("judge_agreement")
+                    ]
                 ),
-                "cost_complete": not any(row.get("cost_error") for row in scored),
-                "cost_basis": sorted(
+                "judge_agreement_samples": sum(
+                    1 for row in rows if row.get("judge_agreement")
+                ),
+                "judges_used": sorted(
                     {
-                        row["cost_basis"]
-                        for row in scored
-                        if row.get("cost_basis") and row.get("cost_error") is None
+                        verdict["judge_key"]
+                        for row in rows
+                        for verdict in row["judgements"]
                     }
                 ),
+                "judge_unavailable_cases": sum(
+                    1 for row in rows if row.get("judge_unavailable_reason")
+                ),
+                "cost_warnings": sum(1 for row in rows if row.get("cost_error")),
             }
         )
+
+    for row in model_rows:
+        row["cost_per_100_tasks_cny"] = analytics.cost_per_100_tasks(
+            row["candidate_cost_cny"], row["cases_total"]
+        )
+        row["quality_per_cny"] = analytics.quality_per_cny(
+            row["overall_score"], row["candidate_cost_cny"]
+        )
+
+    quality_cost = analytics.pareto_frontier(
+        model_rows, [("overall_score", "max"), ("cost_per_100_tasks_cny", "min")]
+    )
+    three_axis_rows = [
+        row for row in model_rows if row["latency"]["p95_latency_ms"] is not None
+    ]
+    if three_axis_rows:
+        quality_cost_latency = analytics.pareto_frontier(
+            [
+                {**row, "p95_latency_ms": row["latency"]["p95_latency_ms"]}
+                for row in model_rows
+            ],
+            [
+                ("overall_score", "max"),
+                ("cost_per_100_tasks_cny", "min"),
+                ("p95_latency_ms", "min"),
+            ],
+        )
+    else:
+        quality_cost_latency = {"objectives": [], "frontier": [], "dominated": {}, "not_evaluated": []}
+
+    for row in model_rows:
+        row["pareto_quality_cost"] = row["model_key"] in quality_cost["frontier"]
+        row["pareto_quality_cost_latency"] = (
+            row["model_key"] in quality_cost_latency["frontier"]
+        )
+        row["dominated_by"] = quality_cost["dominated"].get(row["model_key"])
 
     ranked = sorted(
         model_rows,
@@ -314,105 +384,142 @@ def summarize(results: list[dict]) -> dict:
     for index, row in enumerate(ranked, start=1):
         row["rank"] = index
 
-    judge_rows = [row["judge"] for row in results if row.get("judge")]
+    verdict_rows = [verdict for row in results for verdict in row["judgements"]]
     judge_overhead = {
-        "judge_model": config.JUDGE["model"],
-        "judge_display_name": config.JUDGE["display_name"],
-        "judge_prompt_version": config.JUDGE_PROMPT_VERSION,
-        "judge_calls": len(judge_rows),
-        "judge_total_tokens": _sum_or_none([row["total_tokens"] for row in judge_rows]),
-        "judge_cost_usd": _cost_or_none([row["estimated_cost_usd"] for row in judge_rows]),
-        "judge_cost_complete": not any(row.get("cost_error") for row in judge_rows),
-        "judge_avg_latency_ms": _mean(
-            [row["latency_ms"] for row in judge_rows if row["latency_ms"] is not None]
+        "judge_calls": len(verdict_rows),
+        "judge_models_used": sorted({verdict["judge_key"] for verdict in verdict_rows}),
+        "judge_total_tokens": {
+            "input": _sum([verdict["input_tokens"] for verdict in verdict_rows]),
+            "output": _sum([verdict["output_tokens"] for verdict in verdict_rows]),
+            "total": _sum([verdict["total_tokens"] for verdict in verdict_rows]),
+        },
+        "judge_cost_cny": _sum([row["judge_cost_cny"] for row in results]),
+        "judge_avg_latency_ms": _mean([verdict["latency_ms"] for verdict in verdict_rows]),
+        "judge_p95_latency_ms": analytics.percentile(
+            [verdict["latency_ms"] for verdict in verdict_rows], 0.95
         ),
     }
-
-    candidate_cost = _cost_or_none([row["candidate_cost_usd"] for row in model_rows])
-
-    cost_warnings = []
-    for row in results:
-        if row.get("cost_error"):
-            cost_warnings.append(
-                {
-                    "case_id": row["case_id"],
-                    "model_name": row["model_name"],
-                    "stage": "candidate inference",
-                    "detail": row["cost_error"],
-                }
-            )
-        judge_row = row.get("judge")
-        if judge_row and judge_row.get("cost_error"):
-            cost_warnings.append(
-                {
-                    "case_id": row["case_id"],
-                    "model_name": config.JUDGE["display_name"],
-                    "stage": "judge evaluation",
-                    "detail": judge_row["cost_error"],
-                }
-            )
 
     return {
         "models": ranked,
         "judge_overhead": judge_overhead,
-        "cost_warnings": cost_warnings,
+        "pareto": {
+            "quality_cost": quality_cost,
+            "quality_cost_latency": quality_cost_latency,
+        },
         "totals": {
             "candidate_calls": sum(row["cases_total"] for row in model_rows),
-            "judge_calls": judge_overhead["judge_calls"],
-            "candidate_cost_usd": candidate_cost,
-            "judge_cost_usd": judge_overhead["judge_cost_usd"],
-            "cost_estimation_complete": not cost_warnings,
-            "run_cost_usd": (
-                round(candidate_cost + judge_overhead["judge_cost_usd"], 6)
-                if candidate_cost is not None and judge_overhead["judge_cost_usd"] is not None
-                else None
-            ),
+            "judge_calls": len(verdict_rows),
+            "candidate_cost_cny": _sum([row["candidate_cost_cny"] for row in model_rows]),
+            "judge_cost_cny": judge_overhead["judge_cost_cny"],
+            "cost_estimation_complete": not any(row["cost_warnings"] for row in model_rows),
         },
     }
 
 
 def build_document(
-    document: dict, results: list[dict], failures: list[dict], *, dry_run: bool
+    cases_document: dict,
+    pool: dict,
+    results: list[dict],
+    failures: list[dict],
+    *,
+    dry_run: bool,
+    fx_snapshot: dict | None,
 ) -> dict:
+    case_list = cases_module.all_cases(cases_document)
+    snapshot_id = (
+        f"{config.BENCHMARK_VERSION}-"
+        f"{'synthetic-' if dry_run else ''}"
+        f"{dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+    )
+
     return {
-        "benchmark": document.get("benchmark", "AIProductBench"),
+        "benchmark": config.BENCHMARK_NAME,
         "benchmark_version": config.BENCHMARK_VERSION,
+        "snapshot_id": snapshot_id,
         "synthetic": dry_run,
         "synthetic_notice": (
-            "SYNTHETIC DRY-RUN OUTPUT. Responses, tokens, latency, and costs in this "
-            "document were generated offline and do not come from any real model."
+            "SYNTHETIC DRY-RUN OUTPUT. Responses, tokens, latency, scores and costs in "
+            "this document were generated offline and do not come from any real model. "
+            "Synthetic pricing and FX fixtures are placeholders, not published values."
         )
         if dry_run
         else None,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-        "domains": document.get("domains", {}),
-        "models": [
-            {
-                "key": model["key"],
-                "display_name": model["display_name"],
-                "model_id": model["model"],
-                "provider": model["provider"],
-            }
-            for model in config.MODELS
-        ],
-        "judge": {
-            "display_name": config.JUDGE["display_name"],
-            "model_id": config.JUDGE["model"],
-            "provider": config.JUDGE["provider"],
-            "prompt_version": config.JUDGE_PROMPT_VERSION,
+        "dataset": {
+            "name": cases_document.get("dataset_name"),
+            "version": cases_document.get("dataset_version"),
+            "synthetic": bool(cases_document.get("synthetic")),
+            "case_count": len(case_list),
+            "domain_distribution": cases_module.domain_distribution(case_list),
+            "difficulty_distribution": cases_module.distribution(case_list, "difficulty"),
+            "language_distribution": cases_module.distribution(case_list, "language"),
+        },
+        "domains": list(config.DOMAINS),
+        "model_pool": {
+            "pool_version": pool.get("pool_version"),
+            **models.pool_facts(pool),
+            "candidates": [
+                {
+                    "key": model["key"],
+                    "display_name": model["display_name"],
+                    "model_id": model.get("model_id"),
+                    "model_id_status": model["model_id_status"],
+                    "model_family": model["model_family"],
+                    "provider": model["provider"],
+                    "provider_key": model["provider_key"],
+                    "product_tier": model["product_tier"],
+                    "inference_channel": model["inference_channel"],
+                    "thinking_mode": model["thinking_mode"],
+                }
+                for model in models.candidates(pool)
+            ],
+            "judge_pool": [
+                {
+                    "key": model["key"],
+                    "display_name": model["display_name"],
+                    "model_id": model.get("model_id"),
+                    "model_id_status": model["model_id_status"],
+                    "model_family": model["model_family"],
+                    "provider": model["provider"],
+                    "provider_key": model["provider_key"],
+                    "product_tier": model["product_tier"],
+                    "also_candidate": bool(model.get("candidate")),
+                }
+                for model in models.judges(pool)
+            ],
+            "judge_priority": models.judge_priority(pool),
+            "registry_note": pool.get("registry_note"),
         },
         "rubric": {
             "dimensions": list(config.RUBRIC_DIMENSIONS),
             "scale": f"integer {config.SCORE_MIN}-{config.SCORE_MAX} per dimension",
             "aggregation": "equal-weight mean of the three dimensions, normalised to 0-100",
+            "judge_prompt_version": config.JUDGE_PROMPT_VERSION,
+            "judges_per_response": config.JUDGES_PER_RESPONSE,
+            "selection_rule": (
+                "fixed judge priority from configuration, then leave-one-family/provider-out "
+                "exclusion, then the first two eligible cross-family judges"
+            ),
+            "role_separation": (
+                "Candidate execution and judge execution are distinct roles over one shared "
+                "model registry. Candidate inference cost and judge evaluation cost are never "
+                "mixed, and candidate latency and judge latency are never mixed."
+            ),
         },
-        "reproducibility": config.REPRODUCIBILITY,
-        "pricing_snapshot": config.pricing_snapshot(),
-        "test_case_count": len(document.get("test_cases", [])),
-        "domain_distribution": domain_distribution(document),
+        "pricing_snapshot": pricing.pricing_snapshot(
+            pool["models"], fx_snapshot, synthetic=dry_run
+        ),
+        "historical_pricing": {
+            "status": models.historical_pricing(pool).get("status"),
+            "note": models.historical_pricing(pool).get("note"),
+            "entry_count": len(models.historical_pricing(pool).get("entries") or []),
+            "model_ids": sorted(models.archived_pricing_model_ids(pool)),
+            "used_for_v1_cost": False,
+        },
         "results": results,
         "failures": failures,
-        "summary": summarize(results),
+        "summary": summarize(results, pool),
     }
 
 
@@ -438,54 +545,74 @@ def print_summary(document: dict) -> None:
     if document.get("synthetic"):
         print("!! SYNTHETIC DRY-RUN RESULTS — not produced by any real model.\n")
 
-    header = f"{'#':>2}  {'model':<18} {'score':>7}  {'latency':>9}  {'tokens':>8}  {'cost':>10}"
+    header = (
+        f"{'#':>2}  {'model':<24} {'score':>7}  {'p50':>8}  {'p95':>8}  "
+        f"{'constr':>7}  {'CNY/100':>10}  pareto"
+    )
     print(header)
     print("-" * len(header))
     for row in summary["models"]:
         score = f"{row['overall_score']:.2f}" if row["overall_score"] is not None else "n/a"
-        latency = (
-            f"{row['avg_latency_ms']:.0f} ms" if row["avg_latency_ms"] is not None else "n/a"
+        p50 = (
+            f"{row['latency']['p50_latency_ms']:.0f}ms"
+            if row["latency"]["p50_latency_ms"] is not None
+            else "n/a"
         )
-        tokens = f"{row['total_tokens']:,}" if row["total_tokens"] is not None else "n/a"
-        cost = (
-            f"${row['candidate_cost_usd']:.6f}"
-            if row["candidate_cost_usd"] is not None
+        p95 = (
+            f"{row['latency']['p95_latency_ms']:.0f}ms"
+            if row["latency"]["p95_latency_ms"] is not None
+            else "n/a"
+        )
+        constraint = (
+            f"{row['constraint_pass_rate']:.2f}"
+            if row["constraint_pass_rate"] is not None
+            else "n/a"
+        )
+        per_100 = (
+            f"{row['cost_per_100_tasks_cny']:.4f}"
+            if row["cost_per_100_tasks_cny"] is not None
             else "unpriced"
         )
+        flags = []
+        if row["pareto_quality_cost"]:
+            flags.append("QxC")
+        if row["pareto_quality_cost_latency"]:
+            flags.append("QxCxL")
         print(
-            f"{row['rank']:>2}  {row['model_name']:<18} {score:>7}  {latency:>9}  "
-            f"{tokens:>8}  {cost:>10}"
+            f"{row['rank']:>2}  {row['model_name']:<24} {score:>7}  {p50:>8}  {p95:>8}  "
+            f"{constraint:>7}  {per_100:>10}  {','.join(flags) or '-'}"
         )
 
     print()
     for row in summary["models"]:
         parts = []
-        for domain in config.DOMAINS:
-            value = row["domain_scores"].get(domain)
-            parts.append(f"{domain}={value:.1f}" if value is not None else f"{domain}=n/a")
+        for dimension in config.RUBRIC_DIMENSIONS:
+            value = row["dimension_scores"][dimension]
+            parts.append(f"{dimension}={value:.2f}" if value is not None else f"{dimension}=n/a")
         print(f"  {row['model_name']}: " + "  ".join(parts))
 
     print()
-    judge_cost = (
-        f"${overhead['judge_cost_usd']:.6f}"
-        if overhead["judge_cost_usd"] is not None
-        else "unpriced"
+    judge_tokens = overhead["judge_total_tokens"]["total"]
+    print(
+        f"  judge overhead: {overhead['judge_calls']} calls across "
+        f"{len(overhead['judge_models_used'])} judge(s), "
+        f"{judge_tokens if judge_tokens is not None else 'n/a'} tokens, "
+        f"{overhead['judge_cost_cny'] if overhead['judge_cost_cny'] is not None else 'unpriced'} CNY"
+        " (reported separately)"
     )
     print(
-        f"  judge overhead: {overhead['judge_calls']} calls, "
-        f"{overhead['judge_total_tokens'] if overhead['judge_total_tokens'] is not None else 'n/a'} tokens, "
-        f"{judge_cost} (reported separately from candidate cost)"
-    )
-    print(
-        f"  candidate calls: {totals['candidate_calls']}, "
-        f"judge calls: {totals['judge_calls']}, "
-        f"scored responses: {sum(row['cases_scored'] for row in summary['models'])}"
+        f"  candidate calls: {totals['candidate_calls']}, judge calls: {totals['judge_calls']}, "
+        f"candidate cost: "
+        f"{totals['candidate_cost_cny'] if totals['candidate_cost_cny'] is not None else 'unpriced'} CNY"
     )
     if document.get("failures"):
         print(f"  failures: {len(document['failures'])}")
-    if summary["cost_warnings"]:
-        print()
-        print(f"  !! COST ESTIMATION FAILED for {len(summary['cost_warnings'])} call(s):")
-        for warning in summary["cost_warnings"][:10]:
-            print(f"     {warning['case_id']} [{warning['stage']}] {warning['detail']}")
-        print("     Affected costs are recorded as null rather than guessed.")
+
+    unpriced = sum(row["cost_warnings"] for row in summary["models"])
+    if unpriced:
+        print(f"  note: {unpriced} response(s) have no usable price and are recorded as null.")
+    unavailable = sum(row["judge_unavailable_cases"] for row in summary["models"])
+    if unavailable:
+        print(
+            f"  note: {unavailable} response(s) had fewer than two eligible cross-family judges."
+        )

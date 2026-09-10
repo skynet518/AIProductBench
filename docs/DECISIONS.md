@@ -321,3 +321,108 @@ adequately. A test-runner dependency is not justified by convenience alone.
 **Consequences.** Tests must be runnable with
 `python3 -m unittest discover -s tests -v`. Fixtures are constructed inline
 rather than through a pytest fixture system.
+
+---
+
+## D-017 — Keep one shared model registry, with candidate and judge as roles
+**Date:** 2026-09-11
+
+**Decision.** V1 maintains exactly one model registry. A model may be both an
+evaluated candidate and a judge (`candidate: true`, `judge_eligible: true`). No
+judge-only duplicate entry may exist for a model that is already registered as a
+candidate. Candidate execution and judge execution are distinct roles over that
+one registry, and their metrics are never mixed: candidate inference cost and
+judge evaluation cost are separate fields, and candidate latency and judge
+latency are separate series.
+
+**Rationale.** The first framework draft registered the Qwen, DeepSeek, and GLM
+flagship models twice — once as candidates and again as `judge_*` entries. That
+duplicates the same underlying model, creates two sources of truth for one
+model's ID, price, and endpoint, and makes it possible for the two copies to
+drift apart. It also invites accidental double-counting of cost if the judge
+copy is ever counted as a participant.
+
+**Alternatives considered.** Keeping separate judge-only entries for clarity;
+introducing a separate judge registry file; allowing either shape and letting
+the validator warn.
+
+**Consequences.** The registry shrank from 13 entries to 10, with 3 of them
+judge-eligible. The validator now rejects two entries that share a
+`model_family` and `product_tier`, which is the shape a duplicate judge copy
+takes. Adding a judge means marking an existing entry `judge_eligible`, not
+cloning it. Role separation is documented in `ARCHITECTURE.md` §4.
+
+---
+
+## D-018 — Replace hash-rotated judge pairs with fixed-priority selection
+**Date:** 2026-09-11
+
+**Decision.** Judge selection uses a fixed priority list declared in
+configuration (`qwen_flagship > deepseek_flagship > glm_flagship`), with
+leave-one-family/provider-out exclusion and the first two remaining cross-family
+judges selected. The earlier candidate-key SHA-256 rotation is removed.
+
+**Rationale.** The hash rotation gave unrelated candidate models different judge
+pairs within the same run — for example, one candidate scored by DeepSeek + GLM
+and another by Qwen + DeepSeek. That is an avoidable evaluation confound: a
+difference between two models could reflect the judges rather than the models.
+Rotation was introduced to balance judge usage, which is a smaller benefit than
+comparability. Fixed priority is also transparent: a reader can derive the judge
+pair for any candidate from configuration alone, without reproducing a hash.
+
+**Alternatives considered.** Keep hash rotation for pool balance; fixed pair for
+all candidates; random assignment with a recorded seed; rotating by case index.
+
+**Consequences.** Resulting pairs are Qwen → DeepSeek + GLM; DeepSeek →
+Qwen + GLM; GLM, Kimi, MiniMax, Doubao → Qwen + DeepSeek. Because the priority
+list has three distinct families and only one can be excluded per candidate, the
+selected pair is always cross-family. If fewer than two eligible judges remain,
+the response is recorded as judge-unavailable rather than scored by a
+same-family judge.
+
+---
+
+## D-019 — Reset active V1 pricing; retire V0.1-era prices to an archive
+**Date:** 2026-09-11
+
+**Decision.** All active V1 pricing is reset to unverified. The prices verified
+during the V0.1 / Phase 1.5 review are moved into
+`historical_pricing_archive` with status `historical_inactive` and are not used
+for V1 cost reporting.
+
+**Rationale.** Those prices were verified against specific V0.1-era model IDs
+(`qwen3.7-flash-2026-07-15`, `qwen3.7-max-2026-05-20`, `deepseek-v4-flash`) and
+had been attached to V1 *tiers* whose literal model IDs are not yet verified.
+Carrying a price forward onto a different, unverified model is an inference, not
+a fact, and it would let an unverified V1 cost estimate look authoritative. A
+V1 price must be verified for the literal V1 model ID.
+
+**Alternatives considered.** Keep the carried-forward prices marked "verified"
+with a caveat; keep them as a provisional estimate line; delete them entirely.
+
+**Consequences.** Ten of ten V1 models are unpriced, `--estimate` reports
+candidate cost as NOT AVAILABLE, and the paid-run gate now blocks on unresolved
+active pricing as well as unverified model IDs. The validator rejects an active
+model entry whose pricing references an archived model ID, so archived pricing
+cannot silently leak back into a V1 estimate. Historical traceability is
+preserved without implying validity.
+
+---
+
+## D-020 — Record the deterministic check count as 18
+**Date:** 2026-09-11
+
+**Decision.** The deterministic evaluator implements 18 check types, and every
+document that states a count states 18.
+
+**Rationale.** The Phase 2 completion report described "15 check types" while
+enumerating 18. The code was audited directly: 18 types are handled by
+`_run_check` in `src/deterministic.py`. The mismatch was an error in report
+prose, not in the implementation.
+
+**Alternatives considered.** Change the implementation to match the number 15 —
+rejected, because the working checks are correct and covering less would be a
+regression.
+
+**Consequences.** `METHODOLOGY_V1.md` §2A and `ARCHITECTURE.md` §2 now state the
+count and list the types. No check behavior changed.

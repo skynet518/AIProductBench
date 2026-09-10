@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""AIProductBench V0.1 command line interface.
+"""AIProductBench CN V1 command line interface.
 
 Usage:
-    python3 run_benchmark.py --validate-only   # check configuration and cases, no network
+    python3 run_benchmark.py --validate-only   # check pool + cases, no network
     python3 run_benchmark.py --estimate        # projected call count and cost, no network
     python3 run_benchmark.py --dry-run         # full pipeline offline, synthetic output only
-    python3 run_benchmark.py --confirm         # real run against both providers
+    python3 run_benchmark.py --confirm         # real run against native provider APIs
 
-A real run refuses to start without --confirm. That gate exists so that the
-projected API cost is reviewed before any money is spent.
+A real run refuses to start without --confirm, and refuses to start while any
+configured model ID is unverified. Both gates exist so that spending is reviewed
+before any money is spent.
 """
 
 from __future__ import annotations
@@ -18,19 +19,19 @@ import datetime as dt
 import sys
 from pathlib import Path
 
-from src import config, leaderboard, runner
+from src import config, judge, leaderboard, models, pricing, runner
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="run_benchmark.py",
-        description="AIProductBench V0.1 — a lightweight LLM benchmark for AI product work.",
+        description="AIProductBench CN V1 — Chinese LLM selection benchmark for AI product teams.",
     )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         "--validate-only",
         action="store_true",
-        help="validate configuration and the 10 test cases, then exit without network access",
+        help="validate the model pool and case schema, then exit without network access",
     )
     mode.add_argument(
         "--estimate",
@@ -40,14 +41,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     mode.add_argument(
         "--dry-run",
         action="store_true",
-        help="run the full pipeline offline with synthetic responses; writes only synthetic artifacts",
+        help="run the full pipeline offline with synthetic data; writes synthetic artifacts only",
     )
     parser.add_argument(
         "--confirm",
         action="store_true",
-        help="required for a real paid run against the configured providers",
+        help="required for a real paid run against the configured native providers",
     )
-    parser.add_argument("--cases", type=Path, default=config.TEST_CASES_FILE)
+    parser.add_argument("--cases", type=Path, default=config.DEFAULT_CASES_FILE)
+    parser.add_argument("--models", type=Path, default=config.MODEL_POOL_FILE)
     parser.add_argument(
         "--output",
         type=Path,
@@ -63,323 +65,432 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def print_configuration() -> None:
-    print(f"Benchmark version : {config.BENCHMARK_VERSION}")
-    print("Evaluated models  :")
-    for model in config.MODELS:
-        print(
-            f"  - {model['display_name']:<18} provider={model['provider']:<9} "
-            f"model={model['model']}  key=${model['api_key_env']}"
-        )
+# --------------------------------------------------------------------------
+# Reporting helpers
+# --------------------------------------------------------------------------
+
+
+def print_pool(pool: dict) -> None:
+    facts = models.pool_facts(pool)
+    print(f"Benchmark         : {config.BENCHMARK_NAME} {config.BENCHMARK_VERSION}")
+    print(f"Model pool        : {facts['pool_version']}")
     print(
-        f"Judge             : {config.JUDGE['display_name']} "
-        f"(model={config.JUDGE['model']}, prompt v{config.JUDGE_PROMPT_VERSION})"
+        f"Candidates        : {facts['candidate_count']} "
+        f"across {len(facts['providers'])} provider(s), {len(facts['families'])} family(ies)"
     )
-    repro = config.REPRODUCIBILITY
+    print(f"  families        : {', '.join(facts['families'])}")
+    print(f"  providers       : {', '.join(facts['providers'])}")
+    print(f"  channels        : {', '.join(facts['inference_channels'])}")
     print(
-        f"Snapshots         : Qwen candidate {repro['qwen_candidate_snapshot']}, "
-        f"Qwen judge {repro['qwen_judge_snapshot']}, "
-        f"DeepSeek {repro['deepseek_api_model_id']} (not date-pinned)"
+        f"Judge pool        : {facts['judge_count']} judge(s) across families "
+        f"{', '.join(facts['judge_families'])}"
     )
-    print(f"Domains           : {', '.join(config.DOMAINS)}")
+    print(f"  judge priority  : {' > '.join(facts['judge_priority']) or 'NOT CONFIGURED'}")
+    print(f"  judges per response: {config.JUDGES_PER_RESPONSE} (leave-one-provider-out)")
+    print(
+        f"Registry          : {facts['registry_size']} shared model entries "
+        "(candidates and judges are roles over one registry)"
+    )
+    print(f"Domains           : {len(config.DOMAINS)} — {', '.join(config.DOMAINS)}")
     print(f"Rubric dimensions : {', '.join(config.RUBRIC_DIMENSIONS)}")
 
 
-def run_validation(path: Path) -> int:
-    print("== Configuration ==")
-    print_configuration()
-    print()
+def print_dataset(case_document: dict) -> None:
+    from src import cases as cases_module
 
-    print("== Test cases ==")
-    try:
-        document = runner.load_test_cases(path)
-    except FileNotFoundError:
-        print(f"FAIL: test case file not found: {path}")
-        return 1
-    except ValueError as exc:
-        print(f"FAIL: test case file is not valid JSON: {exc}")
-        return 1
+    case_list = cases_module.all_cases(case_document)
+    print(f"Dataset           : {case_document.get('dataset_name')}")
+    print(f"Dataset version   : {case_document.get('dataset_version')}")
+    if case_document.get("synthetic"):
+        print("Dataset type      : SYNTHETIC FIXTURE — not the production dataset")
+    print(f"Cases loaded      : {len(case_list)} (production target: {config.TARGET_CASES})")
+    for domain, count in cases_module.domain_distribution(case_list).items():
+        print(f"  {domain:<36}: {count}")
+    print(f"  difficulty      : {cases_module.distribution(case_list, 'difficulty')}")
+    print(f"  language        : {cases_module.distribution(case_list, 'language')}")
+    checks = sum(len(case.get('deterministic_checks') or []) for case in case_list)
+    print(f"  deterministic checks declared: {checks}")
 
-    case_errors = runner.validate_test_cases(document)
-    config_errors = runner.validate_configuration()
-    errors = case_errors + config_errors
 
-    distribution = runner.domain_distribution(document)
-    print(f"  loaded           : {len(document.get('test_cases', []))} test cases from {path}")
-    for domain in config.DOMAINS:
-        print(f"  {domain:<22}: {distribution[domain]}")
-
-    print()
-    print("== Credentials (presence only, values are never read into results) ==")
-    for row in runner.credential_status():
+def print_credentials(pool: dict) -> None:
+    print("Credentials (presence only, values are never read into results):")
+    seen: set[str] = set()
+    for row in runner.credential_status(pool):
+        if row["env_var"] in seen:
+            continue
+        seen.add(row["env_var"])
         state = "present" if row["present"] else "NOT SET"
-        print(f"  {row['display_name']:<18} {row['env_var']:<20} {state}")
+        print(f"  {row['env_var']:<22} {state}")
 
-    print()
-    print("== Pricing ==")
-    region = runner.pricing_region()
-    print(f"  base URL          : {region['base_url']}")
-    print(f"  DashScope region  : {region['label']} ({region['key'] or 'unidentified'})")
-    print(f"  snapshot date     : {config.PRICING_SNAPSHOT_DATE} (official list pricing)")
-    for entry in config.pricing_snapshot()["resolved_rates"]:
-        if entry["pricing_model"] == "time_of_day":
-            if not entry["windows"]:
-                print(f"  {entry['display_name']:<18}: UNRESOLVED — {entry['basis']}")
-                continue
-            off_peak = entry["windows"]["off_peak"]
-            peak = entry["windows"]["peak"]
+
+def print_pricing(pool: dict, fx_snapshot: dict | None, *, synthetic: bool) -> None:
+    snapshot = pricing.pricing_snapshot(pool["models"], fx_snapshot, synthetic=synthetic)
+    print(f"Display currency  : {snapshot['display_currency']}")
+    fx = snapshot.get("fx_snapshot") or {}
+    if fx.get("fx_rate"):
+        print(
+            f"FX snapshot       : {fx.get('fx_pair')} = {fx.get('fx_rate')} "
+            f"({fx.get('fx_snapshot_date')}, {fx.get('status')})"
+        )
+    else:
+        print("FX snapshot       : NOT CONFIGURED — non-CNY costs have no CNY value")
+    verified = [entry for entry in snapshot["models"] if entry["status"] in ("verified", "synthetic")]
+    unverified = [entry for entry in snapshot["models"] if entry["status"] not in ("verified", "synthetic")]
+    print(f"Priced models     : {len(verified)} of {len(snapshot['models'])}")
+    for entry in verified:
+        schedule = entry.get("time_of_day")
+        if schedule:
             print(
-                f"  {entry['display_name']:<18}: input ${off_peak['input']}/1M off-peak, "
-                f"${peak['input']}/1M peak; output ${off_peak['output']}/1M off-peak, "
-                f"${peak['output']}/1M peak"
+                f"  {entry['display_name']:<26} {entry['native_currency']} "
+                f"peak {schedule['peak']['input']}/{schedule['peak']['output']}, "
+                f"off-peak {schedule['off_peak']['input']}/{schedule['off_peak']['output']} per 1M"
             )
-        elif entry["input"] is None:
-            print(f"  {entry['display_name']:<18}: UNRESOLVED — {entry['basis']}")
         else:
             print(
-                f"  {entry['display_name']:<18}: input ${entry['input']}/1M, "
-                f"output ${entry['output']}/1M"
+                f"  {entry['display_name']:<26} {entry['native_currency']} "
+                f"{entry['input']}/{entry['output']} per 1M"
             )
-            if entry["input_tier_limit_tokens"]:
-                print(
-                    f"    note: valid for request inputs at or below "
-                    f"{entry['input_tier_limit_tokens']:,} tokens"
-                )
+    if unverified:
+        print(f"Unpriced models   : {len(unverified)} — {', '.join(e['model_key'] for e in unverified)}")
+    archive = models.historical_pricing(pool)
+    if archive:
+        print(
+            f"Historical pricing: {len(archive.get('entries') or [])} retired V0.1-era "
+            f"entr(y/ies), status '{archive.get('status')}' — NOT used for V1 cost"
+        )
 
+
+def print_judge_selection(pool: dict) -> None:
+    priority = models.judge_priority(pool)
+    print("== Judge selection ==")
+    print(f"  fixed priority  : {' > '.join(priority) or 'NOT CONFIGURED'}")
+    print("  rule            : exclude the candidate's own family/provider, then take the first two")
+    seen_families: set[str] = set()
+    for candidate in models.candidates(pool):
+        family = candidate["model_family"]
+        if family in seen_families:
+            continue
+        seen_families.add(family)
+        selected = judge.select_judges(
+            candidate, models.judges(pool), models.judge_priority(pool)
+        )
+        names = " + ".join(item["display_name"] for item in selected) or "UNAVAILABLE"
+        print(f"  {family:<10} candidate -> {names}")
+
+
+def run_validation(args: argparse.Namespace, pool: dict, case_document: dict, result: dict) -> int:
+    print("== Model pool ==")
+    print_pool(pool)
     print()
-    if errors:
+    print("== Dataset ==")
+    print_dataset(case_document)
+    print()
+    print("== Credentials ==")
+    print_credentials(pool)
+    print()
+    print("== Pricing ==")
+    print_pricing(pool, config.FX_SNAPSHOT, synthetic=False)
+    print()
+    print_judge_selection(pool)
+    print()
+
+    if result["warnings"]:
+        print("== Warnings ==")
+        for warning in result["warnings"]:
+            print(f"  - {warning}")
+        print()
+
+    if result["errors"]:
         print("== Validation failed ==")
-        for error in errors:
+        for error in result["errors"]:
             print(f"  - {error}")
         return 1
 
     print("== Validation passed ==")
-    print("  10 cases across 3 domains, exactly 2 evaluated models, exactly 1 judge.")
+    print("  Model pool and case schema are valid for the V1 framework.")
+    blockers = runner.check_ready_for_paid_run(pool)
+    if blockers:
+        print("  Paid run status: BLOCKED")
+        for blocker in blockers:
+            print(f"    - {blocker}")
+    else:
+        print("  Paid run status: model IDs verified (credentials still required).")
     return 0
 
 
-def project_run(document: dict) -> dict:
+# --------------------------------------------------------------------------
+# Projection
+# --------------------------------------------------------------------------
+
+
+def project_run(pool: dict, case_document: dict, fx_snapshot: dict | None, *, synthetic: bool) -> dict:
     """Rough, clearly-labelled projection. Never written into result artifacts."""
-    cases = document["test_cases"]
-    model_count = len(config.MODELS)
+    from src import cases as cases_module
 
-    # Rough English heuristic: about four characters per token. Responses are
-    # assumed to be comfortably below the configured output cap.
-    assumed_candidate_output = 400
-    assumed_judge_output = 120
-    rubric_overhead_tokens = 700
+    case_list = cases_module.all_cases(case_document)
+    candidate_models = models.candidates(pool)
+    judge_models = models.judges(pool)
 
-    candidate_input = sum(max(1, len(case["prompt"]) // 4) for case in cases) * model_count
-    candidate_output = assumed_candidate_output * len(cases) * model_count
-    judge_input = (
-        sum(
-            max(1, len(case["prompt"]) // 4)
-            + assumed_candidate_output
-            + rubric_overhead_tokens
-            for case in cases
-        )
-        * model_count
-    )
-    judge_output = assumed_judge_output * len(cases) * model_count
+    assumed_candidate_output = 600
+    assumed_judge_output = 150
+    rubric_overhead_tokens = 800
 
-    peak_at, off_peak_at = config.weekday_window_times()
-    errors: list[str] = []
     per_model = []
+    errors: list[str] = []
+    unpriced: list[str] = []
 
-    for model in config.MODELS:
-        input_tokens = candidate_input / model_count
-        output_tokens = candidate_output / model_count
-        row = {"display_name": model["display_name"], "model_id": model["model"], "windows": {}}
+    for model in candidate_models:
+        input_tokens = sum(max(1, len(case["prompt"]) // 4) for case in case_list)
+        output_tokens = assumed_candidate_output * len(case_list)
         try:
-            if model["provider"] == "deepseek":
-                row["windows"]["peak"] = config.price_call(
-                    model["model"], input_tokens, output_tokens, at=peak_at
-                )["cost_usd"]
-                row["windows"]["off-peak"] = config.price_call(
-                    model["model"], input_tokens, output_tokens, at=off_peak_at
-                )["cost_usd"]
-            else:
-                row["windows"]["standard"] = config.price_call(
-                    model["model"], input_tokens, output_tokens, at=peak_at
-                )["cost_usd"]
-        except config.PricingError as exc:
-            errors.append(f"{model['display_name']}: {exc}")
-        values = [value for value in row["windows"].values() if value is not None]
-        row["cost_min"] = min(values) if values else None
-        row["cost_max"] = max(values) if values else None
-        per_model.append(row)
+            at = pricing_reference_time() if model["pricing"].get("time_of_day") else None
+            native = pricing.native_price_call(
+                model, input_tokens, output_tokens, at=at, synthetic=synthetic
+            )
+            native_cost = native["native_cost"]
+        except pricing.PricingError as exc:
+            native_cost = None
+            unpriced.append(model["key"])
+            if "time of day" in str(exc):
+                errors.append(f"{model['key']}: {exc}")
+        per_model.append(
+            {
+                "key": model["key"],
+                "display_name": model["display_name"],
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "native_cost": native_cost,
+                "native_currency": model["pricing"].get("native_currency"),
+            }
+        )
 
-    try:
-        judge_cost = config.price_call(
-            config.JUDGE["model"], judge_input, judge_output, at=peak_at
-        )["cost_usd"]
-    except config.PricingError as exc:
-        errors.append(f"{config.JUDGE['display_name']}: {exc}")
-        judge_cost = None
+    judge_calls = len(case_list) * len(candidate_models) * config.JUDGES_PER_RESPONSE
+    judge_input_tokens = (
+        sum(
+            max(1, len(case["prompt"]) // 4) + assumed_candidate_output + rubric_overhead_tokens
+            for case in case_list
+        )
+        * len(candidate_models)
+    )
+    judge_output_tokens = assumed_judge_output * judge_calls
 
-    candidate_min = (
-        round(sum(row["cost_min"] for row in per_model), 6)
-        if per_model and all(row["cost_min"] is not None for row in per_model)
-        else None
-    )
-    candidate_max = (
-        round(sum(row["cost_max"] for row in per_model), 6)
-        if per_model and all(row["cost_max"] is not None for row in per_model)
-        else None
-    )
-    total_min = (
-        round(candidate_min + judge_cost, 6)
-        if candidate_min is not None and judge_cost is not None
-        else None
-    )
-    total_max = (
-        round(candidate_max + judge_cost, 6)
-        if candidate_max is not None and judge_cost is not None
-        else None
-    )
+    judge_cost = None
+    if judge_models:
+        judge_input_per_judge = judge_input_tokens / max(1, len(candidate_models))
+        judge_output_per_judge = judge_output_tokens / max(1, judge_calls)
+        totals = []
+        for judge in judge_models:
+            try:
+                native = pricing.native_price_call(
+                    judge,
+                    judge_input_per_judge,
+                    judge_output_per_judge,
+                    at=pricing_reference_time() if judge["pricing"].get("time_of_day") else None,
+                    synthetic=synthetic,
+                )
+            except pricing.PricingError:
+                continue
+            if native["native_cost"] is not None:
+                totals.append(native["native_cost"])
+        judge_cost = round(sum(totals) / len(totals) * judge_calls, 8) if totals else None
+
+    candidate_total = None
+    if per_model and all(row["native_cost"] is not None for row in per_model):
+        candidate_total = round(sum(row["native_cost"] for row in per_model), 8)
+
+    normalized = pricing.normalize_to_cny(candidate_total, "USD", fx_snapshot)
 
     return {
-        "candidate_calls": len(cases) * model_count,
-        "judge_calls": len(cases) * model_count,
-        "total_calls": len(cases) * model_count * 2,
-        "candidate_input_tokens": candidate_input,
-        "candidate_output_tokens": candidate_output,
-        "judge_input_tokens": judge_input,
-        "judge_output_tokens": judge_output,
+        "candidate_calls": len(case_list) * len(candidate_models),
+        "judge_calls": judge_calls,
+        "total_calls": len(case_list) * len(candidate_models) + judge_calls,
         "per_model": per_model,
-        "candidate_cost_min_usd": candidate_min,
-        "candidate_cost_max_usd": candidate_max,
-        "judge_cost_usd": judge_cost,
-        "total_cost_min_usd": total_min,
-        "total_cost_max_usd": total_max,
+        "candidate_input_tokens": sum(row["input_tokens"] for row in per_model),
+        "candidate_output_tokens": sum(row["output_tokens"] for row in per_model),
+        "judge_input_tokens": judge_input_tokens,
+        "judge_output_tokens": judge_output_tokens,
+        "candidate_cost_native_total": candidate_total,
+        "judge_cost_native_total": judge_cost,
+        "candidate_cost_cny": normalized["normalized_cost_cny"],
+        "cny_note": normalized["normalization_note"],
+        "unpriced_models": unpriced,
         "errors": errors,
     }
 
 
-def print_projection(document: dict) -> int:
-    projection = project_run(document)
-    snapshot = config.pricing_snapshot()
-    region = runner.pricing_region()
+def pricing_reference_time() -> dt.datetime:
+    """A weekday instant inside any published peak window, for projections."""
+    day = dt.datetime(2026, 9, 1, tzinfo=dt.timezone.utc)
+    while day.weekday() != 0:
+        day += dt.timedelta(days=1)
+    return day.replace(hour=2)
 
+
+def print_projection(projection: dict, pool: dict, fx_snapshot: dict | None, *, synthetic: bool) -> int:
     print("== Projected real-run cost ==")
-    print(f"  candidate model calls : {projection['candidate_calls']} "
-          f"({len(document['test_cases'])} cases x {len(config.MODELS)} models)")
-    print(f"  judge calls           : {projection['judge_calls']}")
-    print(f"  total API calls       : {projection['total_calls']}")
+    print(
+        f"  candidate calls : {projection['candidate_calls']} "
+        f"({projection['candidate_calls'] // max(1, len(models.candidates(pool)))} cases x "
+        f"{len(models.candidates(pool))} models)"
+    )
+    print(f"  judge calls     : {projection['judge_calls']} "
+          f"({config.JUDGES_PER_RESPONSE} judges per response)")
+    print(f"  total API calls : {projection['total_calls']}")
     print()
-    print(f"  est. candidate tokens : {projection['candidate_input_tokens']:,} in / "
-          f"{projection['candidate_output_tokens']:,} out")
-    print(f"  est. judge tokens     : {projection['judge_input_tokens']:,} in / "
-          f"{projection['judge_output_tokens']:,} out")
+    print(
+        f"  est. candidate tokens : {projection['candidate_input_tokens']:,} in / "
+        f"{projection['candidate_output_tokens']:,} out"
+    )
+    print(
+        f"  est. judge tokens     : {projection['judge_input_tokens']:,} in / "
+        f"{projection['judge_output_tokens']:,} out"
+    )
     print()
 
-    if projection["errors"]:
-        print("  est. cost             : NOT AVAILABLE")
-        for error in projection["errors"]:
-            print(f"  Reason: {error}")
+    if projection["candidate_cost_native_total"] is None:
+        print("  est. candidate cost   : NOT AVAILABLE")
+        print(
+            f"  Reason: {len(projection['unpriced_models'])} of "
+            f"{len(projection['per_model'])} candidate models have no verified pricing."
+        )
+        print("  Action: complete the pricing snapshot in data/models_v1.json before a paid run.")
     else:
-        for row in projection["per_model"]:
-            windows = ", ".join(f"{k} ${v:.6f}" for k, v in row["windows"].items())
-            print(f"  {row['display_name']:<18}: {windows}")
-        print()
-        if projection["candidate_cost_min_usd"] == projection["candidate_cost_max_usd"]:
-            print(f"  est. candidate cost   : ${projection['candidate_cost_min_usd']:.6f}")
-        else:
-            print(f"  est. candidate cost   : ${projection['candidate_cost_min_usd']:.6f} "
-                  f"- ${projection['candidate_cost_max_usd']:.6f}")
-        print(f"  est. judge cost       : ${projection['judge_cost_usd']:.6f} "
-              "(evaluation overhead, reported separately)")
-        if projection["total_cost_min_usd"] == projection["total_cost_max_usd"]:
-            print(f"  est. total cost       : ${projection['total_cost_min_usd']:.6f}")
-        else:
-            print(f"  est. total cost       : ${projection['total_cost_min_usd']:.6f} "
-                  f"- ${projection['total_cost_max_usd']:.6f} "
-                  "(range spans DeepSeek peak and off-peak pricing)")
+        print(
+            f"  est. candidate cost   : {projection['candidate_cost_native_total']:.6f} "
+            "(native currency total across all candidates)"
+        )
+    if projection["judge_cost_native_total"] is not None:
+        print(
+            f"  est. judge cost       : {projection['judge_cost_native_total']:.6f} "
+            "(native currency, evaluation overhead, reported separately)"
+        )
+    else:
+        print("  est. judge cost       : NOT AVAILABLE (judge pricing not verified)")
+
+    if projection["candidate_cost_cny"] is not None:
+        print(f"  est. candidate cost   : CNY {projection['candidate_cost_cny']:.6f}")
+    else:
+        print(f"  est. candidate cost in CNY : UNAVAILABLE — {projection['cny_note']}")
 
     print()
-    print(f"  pricing snapshot      : {snapshot['date']}, official list pricing")
-    print(f"  DashScope region      : {region['label']}")
-    print(f"  DeepSeek peak (UTC)   : {', '.join(snapshot['deepseek_peak_windows_utc'])}, Mon-Fri")
-    print()
-    print("  Note: token counts above are rough estimates for planning only.")
+    print("  Note: token counts above are rough planning estimates only.")
     print("        Only real provider usage reported by the APIs is recorded in results.")
     return 0
+
+
+# --------------------------------------------------------------------------
+# Main
+# --------------------------------------------------------------------------
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
     try:
-        document = runner.load_test_cases(args.cases)
+        pool = runner.load_model_pool(args.models)
     except FileNotFoundError:
-        print(f"FAIL: test case file not found: {args.cases}")
+        print(f"FAIL: model pool not found: {args.models}")
         return 1
     except ValueError as exc:
-        print(f"FAIL: test case file is not valid JSON: {exc}")
+        print(f"FAIL: model pool is not valid JSON: {exc}")
         return 1
 
-    errors = runner.validate_test_cases(document) + runner.validate_configuration()
+    try:
+        case_document = runner.load_test_cases(args.cases)
+    except FileNotFoundError:
+        print(f"FAIL: case file not found: {args.cases}")
+        return 1
+    except ValueError as exc:
+        print(f"FAIL: case file is not valid JSON: {exc}")
+        return 1
+
+    result = runner.validate_all(case_document, pool)
 
     if args.validate_only:
-        return run_validation(args.cases)
+        return run_validation(args, pool, case_document, result)
 
-    if errors:
+    if result["errors"]:
         print("== Validation failed ==")
-        for error in errors:
+        for error in result["errors"]:
             print(f"  - {error}")
         return 1
 
     if args.estimate:
-        print_configuration()
+        print_pool(pool)
         print()
-        return print_projection(document)
+        print_dataset(case_document)
+        print()
+        projection = project_run(pool, case_document, config.FX_SNAPSHOT, synthetic=False)
+        return print_projection(projection, pool, config.FX_SNAPSHOT, synthetic=False)
 
     if args.dry_run:
+        from src import leaderboard as leaderboard_module
+
         print("== Dry run (offline, synthetic) ==")
         print("  No network calls are made and no API cost is incurred.")
+        print("  Synthetic pricing and FX fixtures are used so cost paths are exercised.")
         print()
-        results = runner.run_benchmark(document, dry_run=True)
+        document = runner.run_benchmark(
+            case_document,
+            pool,
+            dry_run=True,
+            fx_snapshot=config.SYNTHETIC_FX_SNAPSHOT,
+        )
         stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
         results_path = config.RESULTS_DIR / f"dry_run_{stamp}.json"
         leaderboard_path = config.RESULTS_DIR / f"dry_run_{stamp}_leaderboard.html"
 
-        runner.write_json(results, results_path)
-        leaderboard.write(
-            results,
+        runner.write_json(document, results_path)
+        leaderboard_module.write(
+            document,
             leaderboard_path,
             banner="Synthetic dry-run artifact. Not a real benchmark result.",
         )
-        runner.print_summary(results)
+        runner.print_summary(document)
         print()
-        print(f"  synthetic results   : {results_path}")
+        print(f"  synthetic results    : {results_path}")
         print(f"  synthetic leaderboard: {leaderboard_path}")
         print()
         print("  sample_results.json and leaderboard.html were NOT written.")
-        return 0 if not results["failures"] else 1
+        return 0 if not document["failures"] else 1
 
     if not args.confirm:
         print("== Real run requires approval ==")
-        print("  This would call both providers and incur real API cost.")
+        print("  This would call native provider APIs and incur real API cost.")
         print()
-        print_configuration()
+        print_pool(pool)
         print()
-        print_projection(document)
+        projection = project_run(pool, case_document, config.FX_SNAPSHOT, synthetic=False)
+        print_projection(projection, pool, config.FX_SNAPSHOT, synthetic=False)
         print()
-        print("  Stopped before spending. Re-run with --confirm once the projected")
-        print("  cost above has been reviewed and approved.")
+        blockers = runner.check_ready_for_paid_run(pool)
+        if blockers:
+            print("  BLOCKED:")
+            for blocker in blockers:
+                print(f"    - {blocker}")
+        print("  Stopped before spending. Re-run with --confirm once approved.")
         return 2
 
+    blockers = runner.check_ready_for_paid_run(pool)
+    if blockers:
+        print("== Paid run refused ==")
+        for blocker in blockers:
+            print(f"  - {blocker}")
+        return 3
+
     print("== Real benchmark run ==")
-    print_configuration()
+    print_pool(pool)
     print()
-    results = runner.run_benchmark(document, dry_run=False)
-    runner.write_json(results, args.output)
-    leaderboard.write(results, args.leaderboard_output)
-    runner.print_summary(results)
+    document = runner.run_benchmark(
+        case_document, pool, dry_run=False, fx_snapshot=config.FX_SNAPSHOT
+    )
+    runner.write_json(document, args.output)
+    leaderboard.write(document, args.leaderboard_output)
+    runner.print_summary(document)
     print()
     print(f"  results     : {args.output}")
     print(f"  leaderboard : {args.leaderboard_output}")
-    return 0 if not results["failures"] else 1
+    return 0 if not document["failures"] else 1
 
 
 if __name__ == "__main__":

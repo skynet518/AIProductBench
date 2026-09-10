@@ -1,107 +1,132 @@
-# AIProductBench — Project Instructions
+# AIProductBench CN — Project Instructions
 
-## Product Goal
+## CURRENT TARGET
 
-AIProductBench is a lightweight, reproducible benchmark project for comparing LLMs from an AI product management perspective.
+**AIProductBench CN V1** — a practical model-selection benchmark for Chinese
+LLMs, for AI product teams choosing models under real quality, cost, and latency
+constraints. RMB/CNY user-facing presentation, Pareto-based selection analysis.
 
-The immediate goal is to ship a credible public V0.1 quickly.
+## STATUS
 
-This is not intended to become a full evaluation framework in V0.1.
+**In development.** Not released. **No live paid benchmark has been authorized.**
+Every artifact produced so far is synthetic dry-run output.
 
-## V0.1 Fixed Scope
+## V0.1
 
-V0.1 contains exactly:
+V0.1 was an internal historical engineering scaffold: 2 models, 3 domains, 1
+judge, 10 cases. It is preserved in git history as a checkpoint. It is **not**
+the product, is not for public release, and its constraints no longer apply.
 
-- 10 test cases
-- 2 evaluated models
-- 3 capability domains
-- 1 LLM-as-Judge
-- token tracking
-- cost tracking
-- latency tracking
-- leaderboard.html
-- README.md
-- sample_results.json
+## V1 FROZEN SCOPE
 
-Do not expand this scope unless explicitly instructed.
+- approximately 10 candidate models
+- approximately 6 Chinese model families/providers
+- 50 real-world AI product tasks
+- exactly 5 capability domains
+- hybrid deterministic + LLM evaluation
+- cross-family dual-judge evaluation
+- human calibration planning
+- quality / cost / latency metrics
+- RMB/CNY user-facing cost presentation
+- Pareto model-selection analysis
+- reproducible snapshot-oriented results
 
-## Product Principles
+## AUTHORITATIVE DOCUMENTS
 
-Prioritize:
+| Document | Role |
+| --- | --- |
+| [docs/PRODUCT_SPEC_V1.md](docs/PRODUCT_SPEC_V1.md) | What V1 is and what is out of scope |
+| [docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md) | Frozen evaluation design |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline, modules, data flow, config schema |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Chronological decision log |
+| [docs/HANDOFF.md](docs/HANDOFF.md) | Current operational status |
+
+**Reading order.** Every future agent must read `AGENTS.md` and `docs/HANDOFF.md`
+first, before touching the repository.
+
+**Precedence.** For product or methodology decisions, the V1 specification
+documents above are authoritative. If code and a frozen specification disagree,
+that is a bug in one of them — stop and resolve it rather than picking one.
+Changes to frozen scope require an explicit decision appended to
+`docs/DECISIONS.md`.
+
+## DO NOT EXPAND V1 INTO
+
+Unless explicitly approved:
+
+- coding benchmark
+- RAG
+- vision / multimodal
+- live search
+- real tool execution
+- multi-agent benchmark
+- hosted SaaS
+
+Also out of scope: fine-tuning, production routing systems, databases,
+authentication, containers, cloud infrastructure, dashboards, and frontend
+frameworks.
+
+## PRODUCT PRINCIPLES
+
+Prioritize, in order:
 
 1. working end-to-end execution
 2. reproducibility
 3. readable benchmark design
-4. credible GitHub presentation
+4. credible public presentation
 5. minimal implementation complexity
 
-Avoid unnecessary abstraction and premature extensibility.
+Prefer the smallest change that fully satisfies the task. Do not add
+abstraction, dependencies, or generality that V1 does not need.
 
-## Evaluation
+## MANDATORY HONESTY RULES
 
-One LLM-as-Judge evaluates model responses using an explicit scoring rubric.
+- Never fabricate token, cost, latency, score, or calibration data.
+- Missing provider metrics are recorded as `null`, never estimated into a result.
+- Never convert currencies without an explicit, dated FX snapshot with a source.
+- Never present an unverified model ID or price as verified.
+- Never present synthetic dry-run output as a real result.
+- Never claim final model IDs, final pricing, benchmark scores, human calibration
+  results, or final leaderboard results while they do not exist.
+- Never describe the benchmark as scientifically comprehensive.
 
-Judge output must be machine-readable.
+## ENGINEERING CONSTRAINTS
 
-Do not introduce multiple judges, voting, tournaments, or complex statistical evaluation in V0.1.
+- Python for benchmark execution; dependencies stay minimal (`requests` only).
+- Prefer structured JSON for inputs, outputs, and configuration.
+- Configuration drives the model pool. No benchmark logic may branch on a
+  specific model name or provider name.
+- Candidate execution and judge execution are distinct roles. Candidate
+  inference cost and judge evaluation cost are never mixed, and candidate
+  latency and judge latency are never mixed.
+- Credentials come from environment variables only. Never read API keys from
+  `~/.codex`, `~/.codex-deepseek`, shell history, or any other agent
+  configuration file. Never commit credentials.
 
-## Metrics
+## GIT SAFETY
 
-For every evaluated response, record when available:
+- Do not push to a remote unless explicitly instructed.
+- Do not create a remote unless explicitly instructed.
+- Do not rewrite history, merge branches, or delete branches.
+- Do not amend published commits unless explicitly instructed.
+- Do not modify global Git configuration or global Git identity.
+- Before completion, inspect `git status` and `git diff`.
 
-- score
-- input tokens
-- output tokens
-- total tokens
-- estimated cost
-- latency
-- model
-- test case
-- capability domain
+## VALIDATION
 
-Never fabricate missing provider metrics.
+Before reporting completion, run at least:
 
-## Engineering Constraints
+```
+python3 -m unittest discover -s tests -v
+python3 run_benchmark.py --validate-only
+python3 run_benchmark.py --dry-run
+```
 
-Prefer Python for benchmark execution.
+`--validate-only`, `--estimate`, and `--dry-run` must make zero network calls.
+A real paid run requires `--confirm` and is refused while any model ID or any
+active pricing entry is unresolved.
 
-Keep dependencies minimal.
+## SCOPE CONTROL
 
-Prefer structured JSON for inputs and outputs.
-
-Do not add databases, authentication, containers, cloud infrastructure, dashboards, or frontend frameworks unless explicitly requested.
-
-## Git Safety
-
-Do not push to GitHub unless explicitly instructed.
-
-Do not rewrite history.
-
-Do not merge or delete branches.
-
-Do not commit credentials.
-
-Before completion inspect:
-
-- git status
-- git diff
-
-## Validation
-
-V0.1 validation should establish that:
-
-- all 10 cases can be loaded
-- exactly 2 evaluated models are configured
-- exactly 3 domains exist
-- judge output parses correctly
-- result JSON is valid
-- leaderboard generation works
-- sample_results.json is valid
-- leaderboard.html opens standalone
-- README matches the implementation
-
-## Scope Control
-
-If a feature is useful but unnecessary for V0.1, do not implement it.
-
-Record it as a future improvement instead.
+If something is useful but unnecessary for V1, do not implement it. Record it as
+a future improvement in `docs/PRODUCT_SPEC_V1.md` or `docs/DECISIONS.md` instead.
