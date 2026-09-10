@@ -62,20 +62,41 @@ objectively testable, LLM evaluation where judgment is required.
 
 ### A. Deterministic checks
 
-The evaluator implements **18 check types**, applied when a case declares
+The evaluator implements **21 check types**, applied when a case declares
 machine-checkable constraints:
 
 | Group | Check types |
 | --- | --- |
-| Structure | `valid_json`, `required_keys`, `forbidden_keys` |
-| Item count | `exact_item_count`, `max_items`, `min_items`, `exact_bullet_count` |
-| Length | `max_words`, `min_words`, `max_chars`, `min_chars` |
+| Structure | `valid_json`, `required_keys`, `forbidden_keys`, `exact_keys` |
+| Item count | `exact_item_count`, `max_items`, `min_items`, `exact_bullet_count`, `section_bullet_count` |
+| Length | `max_words`, `min_words`, `max_chars`, `min_chars`, `section_max_chars` |
 | Content | `required_phrases`, `forbidden_phrases`, `required_regex`, `forbidden_regex` |
 | Order and format | `ordering`, `no_markdown_fence` |
 | Numeric | `numeric_range` |
 
 Cases declare checks; cases that need none declare none. The evaluator reports
 `null` for a case with no checks rather than a fabricated pass rate.
+
+**Section-scoped checks.** `section_max_chars` and `section_bullet_count`
+isolate one section of a response using a required `start_marker` and an
+optional `end_marker` (null for the final section), then apply a length ceiling
+or an exact hyphen-bullet count to the isolated body. A missing, duplicate, or
+out-of-order marker fails the check safely. `exact_keys` requires a JSON object
+whose key set equals the declared set exactly: order is irrelevant, and a
+missing key, an extra key, invalid JSON, or a non-object root fails. These three
+operators were added in Phase 3B-1.1 after production-case review; see
+`DECISIONS.md` D-039.
+
+**Deterministic-check declaration validation. A production case cannot pass
+dataset validation if any deterministic-check declaration is malformed.** Every
+declaration is checked against a centralized per-operator schema before a run.
+An unknown operator, a missing or unexpected field, a wrong parameter type, a
+non-compiling regex, an invalid or duplicate list member, a non-integer or
+out-of-range count, or an invalid section marker (including identical
+start/end markers) is a dataset-validation error. Declarations are validated by
+`src/deterministic.py` and surfaced by `run_benchmark.py --validate-only`, so a
+broken check fails before any paid execution is possible rather than becoming a
+silent runtime failure. This changes no operator's runtime semantics.
 
 **Check-quality rule.** A deterministic check must test the intended
 constraint, not a superficial proxy. Requiring the word "risk" is not evidence

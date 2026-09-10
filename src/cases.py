@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from src import config
+from src import config, deterministic
 
 REQUIRED_FIELDS = (
     "id",
@@ -100,10 +100,9 @@ def validate_cases(document: dict) -> dict:
                 errors.append(f"Case {label} 'deterministic_checks' must be a list.")
             else:
                 for check_index, check in enumerate(checks):
-                    if not isinstance(check, dict) or not check.get("type"):
+                    for problem in deterministic.validate_check_declaration(check):
                         errors.append(
-                            f"Case {label} deterministic check {check_index} must be an object "
-                            "with a 'type'."
+                            f"Case {label} deterministic check {check_index} {problem}."
                         )
                 errors.extend(_validate_length_checks(case, checks, label))
 
@@ -119,6 +118,13 @@ def validate_cases(document: dict) -> dict:
         warnings.append(
             f"Case count is {len(cases)}; the V1 production target is {config.TARGET_CASES}. "
             "This is expected until the Phase 3 dataset exists."
+        )
+
+    production_status = document.get("production_status")
+    if production_status and production_status != "complete":
+        warnings.append(
+            f"Dataset production_status is '{production_status}': this is a partial "
+            "authoring dataset, not eligible as the final V1 benchmark dataset."
         )
 
     if document.get("synthetic"):
@@ -138,7 +144,9 @@ def _validate_length_checks(case: dict, checks: list, label: str) -> list[str]:
     """
     language = case.get("language")
     word_checks = [
-        check.get("type") for check in checks if check.get("type") in WORD_COUNT_CHECKS
+        check.get("type")
+        for check in checks
+        if isinstance(check, dict) and check.get("type") in WORD_COUNT_CHECKS
     ]
     if not word_checks:
         return []

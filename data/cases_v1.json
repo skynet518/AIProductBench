@@ -1,0 +1,697 @@
+{
+  "dataset_name": "AIProductBench CN V1 production cases",
+  "dataset_version": "v1-authoring-2026-09-11",
+  "synthetic": false,
+  "production_status": "authoring",
+  "authoring_note": "Phase 3B production dataset, authored domain by domain. Domain 1 (instruction_constraint_following, IF-01 through IF-10) is frozen and externally approved. Domains 2-5 are not yet authored, so this file is NOT a complete V1 benchmark dataset and must never be presented as one.",
+  "domains": [
+    "instruction_constraint_following",
+    "structured_information_analysis",
+    "product_reasoning_decision",
+    "chinese_business_communication",
+    "agent_workflow_planning"
+  ],
+  "test_cases": [
+    {
+      "id": "IF-01",
+      "title": "用户反馈整理为三条问题陈述",
+      "domain": "instruction_constraint_following",
+      "difficulty": "easy",
+      "language": "zh",
+      "tags": [
+        "instruction_following",
+        "exact_count",
+        "negative_constraint",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在最小改写任务中同时遵守精确条数约束和「先不要给解决方案」的否定约束，并且不编造原材料中没有的问题。",
+      "prompt": "下面是我们上周用户反馈会速记里的一段原话，比较乱。请帮我整理成三条问题陈述，给周会同步用。\n\n要求：\n- 只输出三条要点，每条用「- 」开头，每条一句话。\n- 全文不超过 300 字。\n- 只描述问题本身，先不要给解决方案或改进建议。\n\n速记原文：\n「注册的时候验证码要等十多分钟才收到，基本就卡在这儿了；客服那边说订单页的时间显示不对，明明今天的单子显示成昨天；另外搜索没结果的时候页面一片空白，用户不知道下一步该干嘛。哦对，这次会议大家觉得效率挺高，下次还在这个会议室。」",
+      "evaluation_criteria": [
+        "输出恰好是三条要点，每条以「- 」开头，除此之外没有标题、开头语或结尾语。",
+        "三条要点分别覆盖验证码延迟、订单页时间显示异常、搜索无结果无提示这三个问题，未编造原材料中没有的问题。",
+        "没有提出任何解决方案、工具或改进建议。",
+        "全文不超过 300 字。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "恰为三条要点",
+          "type": "exact_bullet_count",
+          "count": 3
+        },
+        {
+          "name": "全文不超过 300 字",
+          "type": "max_chars",
+          "count": 300
+        }
+      ],
+      "reference_facts": [
+        "注册验证码要十多分钟才收到，注册流程被卡住",
+        "订单页时间显示不对，今天的单子显示成昨天",
+        "搜索无结果时页面空白，用户不知道下一步做什么",
+        "会议效率评价与会议室安排属于非问题内容，不应写成问题陈述"
+      ],
+      "expected_structure": "恰好三条以「- 」开头的列表项，无标题、无前后说明段落。",
+      "ambiguity_notes": "原文含三条真实问题与两句无关内容；正确做法是只提取问题，不把会议安排当成问题。",
+      "author_notes": "Easy baseline. One exact-count constraint plus one negative constraint; input carries mild noise so the count is non-trivial but not analytically hard."
+    },
+    {
+      "id": "IF-02",
+      "title": "Constrained internal release note",
+      "domain": "instruction_constraint_following",
+      "difficulty": "easy",
+      "language": "en",
+      "tags": [
+        "instruction_following",
+        "english",
+        "length_control",
+        "negative_constraint"
+      ],
+      "test_intent": "Verify that an English release note obeys several simultaneous simple constraints: a required literal prefix, an exact bullet count, a word ceiling, a banned-word list, and factual preservation.",
+      "prompt": "Our internal tool Atlas shipped this week. Write the weekly release note for the #atlas-updates channel.\n\nUse only the facts below. Do not add or alter factual claims:\n- CSV export was added on the Reports page.\n- The bug where saved filters disappeared after logout is fixed.\n- The dashboard now loads up to 5,000 rows without timing out.\n\nHard requirements:\n- Start with the exact line: Release note:\n- Use exactly three hyphen bullets, one per change.\n- Keep the whole note to 80 words or fewer.\n- Do not use the words seamless, revolutionary, or game-changing.\n- Do not use exclamation marks.",
+      "evaluation_criteria": [
+        "The response begins with the exact line 'Release note:'.",
+        "There are exactly three hyphen bullets, one for each supplied change.",
+        "The whole response contains 80 words or fewer and no exclamation marks.",
+        "None of the banned words appears, and no supplied fact is invented, dropped, or materially changed."
+      ],
+      "deterministic_checks": [
+        {
+          "name": "Required prefix at the start",
+          "type": "required_regex",
+          "pattern": "^Release note:"
+        },
+        {
+          "name": "Exactly three hyphen bullets",
+          "type": "exact_bullet_count",
+          "count": 3
+        },
+        {
+          "name": "At most 80 words",
+          "type": "max_words",
+          "count": 80
+        },
+        {
+          "name": "No banned hype words",
+          "type": "forbidden_phrases",
+          "phrases": [
+            "seamless",
+            "revolutionary",
+            "game-changing"
+          ]
+        },
+        {
+          "name": "No exclamation marks",
+          "type": "forbidden_regex",
+          "pattern": "[!！]"
+        }
+      ],
+      "reference_facts": [
+        "CSV export was added on the Reports page",
+        "The bug where saved filters disappeared after logout is fixed",
+        "The dashboard now loads up to 5,000 rows without timing out"
+      ],
+      "expected_structure": "A 'Release note:' line followed by exactly three hyphen bullets, with no other prose.",
+      "ambiguity_notes": "No external information is required. The wording may change, but the three supplied factual claims may not.",
+      "author_notes": "Canonical easy English constraint-following case. The user-visible word limit and deterministic max_words boundary are intentionally identical."
+    },
+    {
+      "id": "IF-03",
+      "title": "一次事实，三种受众",
+      "domain": "instruction_constraint_following",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "instruction_following",
+        "audience_adaptation",
+        "fact_invariance",
+        "section_length",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把同一组业务事实改写给三个不同受众，在改变措辞与信息密度的同时保持所有实质事实不漂移，并严格遵守分段长度要求。",
+      "prompt": "运维刚定了「星河 CRM」数据库迁移方案。请把下面的事实说明改写成三段内部通知，分别给客服团队、销售团队和实施顾问使用。\n\n小节标题必须完全使用并按以下顺序输出：\n【客服团队】\n【销售团队】\n【实施顾问】\n\n要求：\n- 每个小节正文不超过 120 个字符。\n- 每个小节都必须覆盖事实说明中的全部信息点；可以调整顺序、措辞和强调重点，但不得省略其中任何一项。\n- 时间、时长、数字、功能状态、限制条件、回滚安排、负责方和联系人等实质事实不得改变。\n- 不得新增原材料没有的承诺、时间、数字或状态。\n\n事实说明：\n星河 CRM 将于 2026-10-18 22:00 至 2026-10-19 02:00 进行数据库迁移，预计停机 4 小时。迁移期间「客户档案查询」和「工单创建」不可用；「报表导出」可用，但数据最多延迟 2 小时。迁移期间不要做批量导入，超过 5,000 条的导入会被拒绝。如果迁移失败，会在 2026-10-19 06:00 前回滚到迁移前状态，并在状态页发布通知。本次迁移由运维团队负责，联系人是李文。",
+      "evaluation_criteria": [
+        "三个小节标题完全为【客服团队】【销售团队】【实施顾问】，并按规定顺序出现。",
+        "三个小节各自都完整覆盖迁移时间与停机时长、两项不可用功能、报表延迟、批量导入限制、失败回滚与状态页安排、负责方和联系人，没有通过省略事实来满足长度限制。",
+        "三个版本确实针对受众调整关注重点和信息密度，而不是简单逐字复制同一段文字。",
+        "没有新增原材料不存在的承诺、时间、数字或系统状态。",
+        "每个小节正文均不超过 120 个字符。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "三个小节标题齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【客服团队】",
+            "【销售团队】",
+            "【实施顾问】"
+          ]
+        },
+        {
+          "name": "小节顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【客服团队】",
+            "【销售团队】",
+            "【实施顾问】"
+          ]
+        },
+        {
+          "name": "客服团队正文不超过120字符",
+          "type": "section_max_chars",
+          "start_marker": "【客服团队】",
+          "end_marker": "【销售团队】",
+          "count": 120
+        },
+        {
+          "name": "销售团队正文不超过120字符",
+          "type": "section_max_chars",
+          "start_marker": "【销售团队】",
+          "end_marker": "【实施顾问】",
+          "count": 120
+        },
+        {
+          "name": "实施顾问正文不超过120字符",
+          "type": "section_max_chars",
+          "start_marker": "【实施顾问】",
+          "end_marker": null,
+          "count": 120
+        }
+      ],
+      "reference_facts": [
+        "迁移时间：2026-10-18 22:00 至 2026-10-19 02:00",
+        "预计停机 4 小时",
+        "客户档案查询和工单创建不可用",
+        "报表导出可用，但数据最多延迟 2 小时",
+        "超过 5,000 条的批量导入会被拒绝",
+        "迁移失败时将在 2026-10-19 06:00 前回滚并发布状态页通知",
+        "负责方为运维团队，联系人李文"
+      ],
+      "expected_structure": "三个按指定顺序排列的小节，每节正文不超过120字符。",
+      "ambiguity_notes": "受众适配允许改变措辞和信息密度，但不允许改变任何实质事实。事实不变与逐字复制不是同一要求。",
+      "author_notes": "section_max_chars must enforce the user-visible 120-character boundary exactly. No tolerance-based regex is permitted."
+    },
+    {
+      "id": "IF-04",
+      "title": "需求不清时先澄清",
+      "domain": "instruction_constraint_following",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "instruction_following",
+        "clarification",
+        "no_execution",
+        "zh"
+      ],
+      "test_intent": "检验模型在信息确实不足时是否先提出两个关键澄清问题并说明默认假设，而不是直接开始产出交付物。",
+      "prompt": "这是我们负责人刚发给我的一段原话：\n\n『把上个季度的数据整理一下，做一份给管理层看的材料，下周一要用。』\n\n按我们组的习惯：需求不清楚的时候先澄清，不要直接开工。我一次最多看两个问题，所以请只提两个最关键的澄清问题（用「1. 」「2. 」编号列出），再用一行说明你现在的默认假设。先不要开始写这份材料，回复控制在 260 字以内。",
+      "evaluation_criteria": [
+        "只提出两个澄清问题，并用「1. 」「2. 」编号，没有第三个问题。",
+        "两个问题针对真正缺失的关键信息，例如材料要支撑的决策与指标口径、数据来源与统计范围，而不是无关紧要的细节。",
+        "用一行说明当前默认假设或状态，且没有开始撰写材料、大纲或计划。",
+        "没有把未确认的信息当成事实写进假设。",
+        "全文不超过 260 字。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "第一个问题以 1. 编号",
+          "type": "required_regex",
+          "pattern": "(?m)^\\s*1[.、)]"
+        },
+        {
+          "name": "第二个问题以 2. 编号",
+          "type": "required_regex",
+          "pattern": "(?m)^\\s*2[.、)]"
+        },
+        {
+          "name": "没有第三个问题",
+          "type": "forbidden_regex",
+          "pattern": "(?m)^\\s*3[.、)]"
+        },
+        {
+          "name": "回复不超过 260 字",
+          "type": "max_chars",
+          "count": 260
+        }
+      ],
+      "reference_facts": [
+        "原始请求：把上个季度数据整理成给管理层看的材料，周一交付",
+        "请求未说明：材料要支撑的决策与指标口径、数据来源与统计范围、交付形式与长度",
+        "团队约定：需求不清先澄清，最多两个问题，不直接开工"
+      ],
+      "expected_structure": "两行以「1. 」「2. 」编号的问题，加一行默认假设说明，无其他内容。",
+      "ambiguity_notes": "这是真实缺失信息，而不是表面歧义：请求没有给出指标口径、数据来源和材料用途，直接开工只能靠猜。",
+      "author_notes": "The character cap keeps the answer to two questions plus one line and excludes a drafted deliverable. It is a structural proxy for the no-work constraint; whether the questions target the genuinely missing information is judged."
+    },
+    {
+      "id": "IF-05",
+      "title": "会议纪要到行动项表",
+      "domain": "instruction_constraint_following",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "instruction_following",
+        "table_transformation",
+        "no_invention",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把非结构化的会议纪要转换成固定列的表格，并且不编造纪要中没有的负责人、截止时间或行动项。",
+      "prompt": "把下面的会议纪要整理成一张行动项表，发到项目群。\n\n输出要求：\n- 用 Markdown 表格，第一列是「序号」（从 1 开始编号），后面依次是「行动项」「负责人」「截止时间」。\n- 负责人或截止时间在纪要里没有明确写的，填「未指定」，不要自己编人、编日期。\n- 只输出表格，不要额外说明。\n\n会议纪要：\n「3 月 12 日项目周会速记：\n1）张磊负责在 3 月 20 日前补齐新用户引导流程的埋点；\n2）登录页错误提示文案要重写，本周五前完成，负责人还没定；\n3）陈静跟进客户反馈的导出乱码问题，截止 3 月 22 日；\n4）张磊再整理一份竞品对比，时间没定；\n5）下周三复会的时间还没确认，需要有人去定，暂未指定负责人。\n另外大家提到官网改版先不做，这次就不列进来了。」",
+      "evaluation_criteria": [
+        "输出为 Markdown 表格，列为序号、行动项、负责人、截止时间，序号从 1 开始。",
+        "恰好 5 条行动项，与纪要中的 5 件事一一对应，未把「官网改版先不做」列成行动项。",
+        "负责人和截止时间与纪要一致；纪要未指定的填「未指定」，没有编造人名或日期。",
+        "没有额外说明文字或表格之外的段落。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "表头包含所需四列",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*序号\\s*\\|.*行动项.*\\|.*负责人.*\\|.*截止时间"
+        },
+        {
+          "name": "存在第 5 行数据",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*5\\s*[.、]?\\s*\\|"
+        },
+        {
+          "name": "没有第 6 行数据",
+          "type": "forbidden_regex",
+          "pattern": "(?m)^\\|\\s*6\\s*[.、]?\\s*\\|"
+        },
+        {
+          "name": "未指定值使用「未指定」",
+          "type": "required_phrases",
+          "phrases": [
+            "未指定"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "行动项 1：补齐新用户引导流程埋点；负责人 张磊；截止 3 月 20 日",
+        "行动项 2：重写登录页错误提示文案；负责人 未指定；截止 本周五",
+        "行动项 3：跟进导出乱码问题；负责人 陈静；截止 3 月 22 日",
+        "行动项 4：整理竞品对比；负责人 张磊；截止 未指定",
+        "行动项 5：确认下周三复会时间；负责人 未指定；截止 未指定",
+        "官网改版已决定先不做，不属于行动项"
+      ],
+      "expected_structure": "一张 Markdown 表格，表头为 序号 / 行动项 / 负责人 / 截止时间，共 5 行数据。",
+      "ambiguity_notes": "纪要含一条已被明确排除的决策（官网改版先不做），正确做法是不把它列为行动项。",
+      "author_notes": "Row count is checked through the required index column (row 5 present, row 6 absent). Non-invention is constrained by requiring the literal placeholder 未指定 and judged for the rest; the framework cannot verify owner provenance by regex, so no name-matching check is faked."
+    },
+    {
+      "id": "IF-06",
+      "title": "冲突指令的优先级判定",
+      "domain": "instruction_constraint_following",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "instruction_following",
+        "conflict_resolution",
+        "precedence",
+        "zh"
+      ],
+      "test_intent": "检验模型能否按照候选输入中明确给出的优先级规则解决冲突，并使最终交付物真正遵循高优先级规则，同时把内部规则判断与客户可见内容分离。",
+      "prompt": "客服中心要给「简报销」App 客户发一条系统维护通知。现有两套规则发生冲突：\n\n规则 A（客服中心《对外通知规范》）：通知使用「尊敬的客户」称谓，结尾添加统一签名「简报销客服中心」，正文不少于 150 字。\n\n规则 B（本次活动专项要求）：这条通知将在短信链接中展示，不使用任何称谓或签名，通知正文不超过 120 字。\n\n优先级规则：专项活动要求优先于通用规范，因此发生冲突时以规则 B 为准。\n\n通知必须包含：\n- 维护时间：2026-10-20 01:00 至 05:00。\n- 影响范围：报销单提交和审批暂停，其他功能正常。\n\n请严格输出两部分：\n规则判断：用一句简短的话说明采用哪条规则以及依据。\n通知正文：写最终客户可见通知。\n\n内部规则说明只能出现在「规则判断」中，不要写进客户可见的通知正文。",
+      "evaluation_criteria": [
+        "规则判断明确选择规则 B，并以题目给出的「专项要求优先于通用规范」作为简短依据。",
+        "通知正文真正遵循规则 B：不使用称谓、不添加签名、正文不超过 120 个字符。",
+        "通知正文准确包含维护时间 2026-10-20 01:00 至 05:00，以及报销单提交和审批暂停、其他功能正常的影响范围。",
+        "客户可见通知正文没有出现规则 A、规则 B、优先级等内部规则说明。",
+        "规则判断与通知正文清楚分离，没有出现口头选择 B、实际却执行 A 的情况。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "包含两个指定部分",
+          "type": "required_phrases",
+          "phrases": [
+            "规则判断：",
+            "通知正文："
+          ]
+        },
+        {
+          "name": "两个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "规则判断：",
+            "通知正文："
+          ]
+        },
+        {
+          "name": "客户通知正文不超过120字符",
+          "type": "section_max_chars",
+          "start_marker": "通知正文：",
+          "end_marker": null,
+          "count": 120
+        },
+        {
+          "name": "维护时间存在",
+          "type": "required_regex",
+          "pattern": "2026-10-20\\s*01:00\\s*至\\s*05:00"
+        }
+      ],
+      "reference_facts": [
+        "规则 A：使用称谓、添加签名、正文不少于150字",
+        "规则 B：不使用称谓或签名、通知正文不超过120字",
+        "冲突时规则 B 优先，因为专项活动要求优先于通用规范",
+        "维护时间：2026-10-20 01:00 至 05:00",
+        "报销单提交和审批暂停",
+        "其他功能正常"
+      ],
+      "expected_structure": "先输出一行「规则判断：…」，随后输出「通知正文：…」。120字符限制只作用于通知正文。",
+      "ambiguity_notes": "规则 B 明确与规则 A 在称谓、签名和长度要求上冲突，因此不存在需要模型自行猜测的优先级。",
+      "author_notes": "Correct precedence remains judge-evaluated. Deterministic checks validate observable downstream constraints, not keyword-based proof of reasoning."
+    },
+    {
+      "id": "IF-07",
+      "title": "输出格式契约",
+      "domain": "instruction_constraint_following",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "instruction_following",
+        "json_schema",
+        "enum_discipline",
+        "exact_keys",
+        "zh"
+      ],
+      "test_intent": "检验模型在输入已经结构化的前提下，能否严格遵守目标序列化契约：合法 JSON、精确字段集合、正确枚举映射与空值处理。",
+      "prompt": "把我们工单系统里的一条记录转换成对接系统需要的标准字段。输入已经是结构化数据，直接按规则映射即可。\n\n输入记录：\n{\n  \"ticket_id\": \"SR-20261014-7781\",\n  \"severity\": \"P2\",\n  \"status\": \"in_progress\",\n  \"owner\": null,\n  \"source\": \"电话\"\n}\n\n映射规则：\n- ticket_id → case_ref，值原样保留。\n- severity → priority：P1 映射为 high，P2 映射为 medium，P3、P4 映射为 low。\n- status → state：open 为 open，closed 为 closed，in_progress 为 pending。\n- owner → assignee：原样保留；为空时用 null，不要编造。\n- source → channel：app 为 app，web 为 web，电话为 phone。\n\n输出要求：\n- 只输出一个 JSON 对象，不要解释文字，不要代码块围栏。\n- 字段必须且只能是 case_ref、priority、state、assignee、channel，不允许增加任何其他字段。",
+      "evaluation_criteria": [
+        "输出是合法的单个 JSON 对象，没有解释文字或代码块围栏。",
+        "字段集合恰好等于 case_ref、priority、state、assignee、channel；没有缺失字段，也没有任何额外字段。",
+        "枚举映射正确：P2 → medium、in_progress → pending、电话 → phone。",
+        "owner 为空时 assignee 为 JSON null，而不是姓名、空字符串或字符串 'null'。",
+        "case_ref 与输入 ticket_id 完全一致。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "合法 JSON 对象",
+          "type": "valid_json",
+          "expect": "object"
+        },
+        {
+          "name": "字段集合完全一致",
+          "type": "exact_keys",
+          "keys": [
+            "case_ref",
+            "priority",
+            "state",
+            "assignee",
+            "channel"
+          ]
+        },
+        {
+          "name": "无代码块围栏",
+          "type": "no_markdown_fence"
+        },
+        {
+          "name": "case_ref 值正确",
+          "type": "required_regex",
+          "pattern": "\"case_ref\"\\s*:\\s*\"SR-20261014-7781\""
+        },
+        {
+          "name": "priority 枚举正确",
+          "type": "required_regex",
+          "pattern": "\"priority\"\\s*:\\s*\"medium\""
+        },
+        {
+          "name": "state 枚举正确",
+          "type": "required_regex",
+          "pattern": "\"state\"\\s*:\\s*\"pending\""
+        },
+        {
+          "name": "assignee 空值正确",
+          "type": "required_regex",
+          "pattern": "\"assignee\"\\s*:\\s*null"
+        },
+        {
+          "name": "channel 枚举正确",
+          "type": "required_regex",
+          "pattern": "\"channel\"\\s*:\\s*\"phone\""
+        }
+      ],
+      "reference_facts": [
+        "ticket_id SR-20261014-7781 映射为 case_ref SR-20261014-7781",
+        "P2 映射为 priority medium",
+        "in_progress 映射为 state pending",
+        "owner null 映射为 assignee null",
+        "电话映射为 channel phone",
+        "目标字段集合恰好为 case_ref、priority、state、assignee、channel"
+      ],
+      "expected_structure": "一个且仅一个 JSON object，根对象字段集合严格等于五个目标字段。",
+      "ambiguity_notes": "输入已经结构化，所有映射规则均在候选输入中给出，因此任务不存在外部信息依赖。",
+      "author_notes": "exact_keys is required because required_keys plus forbidden legacy keys cannot prevent arbitrary additional fields."
+    },
+    {
+      "id": "IF-08",
+      "title": "长文压缩到固定预算",
+      "domain": "instruction_constraint_following",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "instruction_following",
+        "compression",
+        "fact_invariance",
+        "length_budget",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在硬性字数预算下做信息保留压缩：必须保留全部关键数字与事实方向，同时把内容塞进有限篇幅，真正的难点是约束取舍而不是原文长度本身。",
+      "prompt": "下面是我们「星云」推荐改版的周报草稿，太长了。请压缩成一份给管理层看的周报摘要。\n\n输出要求：\n- 使用三个小节，标题必须依次为【结论】【风险】【下一步】，顺序不能变。\n- 全文不超过 240 字。\n- 关键数字必须保留原样：8 月 18 日、20%、4.1%、5.6%、4.9%、1,800 元、12 位、P1、50%。\n- 不要新增草稿里没有的结论或数字。\n\n周报草稿：\n「本周「星云」推荐改版进展：8 月 18 日完成灰度发布，首批覆盖 20% 流量。首页点击率从 3.2% 提升到 4.1%，但详情页转化率从 5.6% 降到 4.9%。新增 1 个 P1 缺陷（推荐位重复展示），已定位，预计 8 月 22 日修复。服务器成本每天增加 1,800 元，超出本季度预算 6%。已有 12 位用户反馈推荐重复问题。下周计划把灰度扩展到 50% 流量，前提是 P1 缺陷修复且详情页转化率回升。」",
+      "evaluation_criteria": [
+        "三个小节的标题依次为【结论】【风险】【下一步】，顺序正确。",
+        "全文不超过 240 字。",
+        "保留全部关键数字：8 月 18 日、20%、4.1%、5.6%、4.9%、1,800 元、12 位、P1、50%。",
+        "没有改变事实方向：首页点击率为上升、详情页转化率为下降、P1 缺陷为待修复而非已修复。",
+        "没有新增草稿之外的结论或数字。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "三个小节标题顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【结论】",
+            "【风险】",
+            "【下一步】"
+          ]
+        },
+        {
+          "name": "全文不超过 240 字",
+          "type": "max_chars",
+          "count": 240
+        },
+        {
+          "name": "保留日期 8 月 18 日",
+          "type": "required_regex",
+          "pattern": "8\\s*月\\s*18\\s*日"
+        },
+        {
+          "name": "保留 20%",
+          "type": "required_regex",
+          "pattern": "20\\s*[%％]"
+        },
+        {
+          "name": "保留 4.1%",
+          "type": "required_regex",
+          "pattern": "4\\.1\\s*[%％]"
+        },
+        {
+          "name": "保留 5.6%",
+          "type": "required_regex",
+          "pattern": "5\\.6\\s*[%％]"
+        },
+        {
+          "name": "保留 4.9%",
+          "type": "required_regex",
+          "pattern": "4\\.9\\s*[%％]"
+        },
+        {
+          "name": "保留 1,800 元",
+          "type": "required_regex",
+          "pattern": "1[,，]800"
+        },
+        {
+          "name": "保留 12 位用户",
+          "type": "required_regex",
+          "pattern": "12\\s*位"
+        },
+        {
+          "name": "保留 P1",
+          "type": "required_regex",
+          "pattern": "P1"
+        },
+        {
+          "name": "保留 50%",
+          "type": "required_regex",
+          "pattern": "50\\s*[%％]"
+        }
+      ],
+      "reference_facts": [
+        "8 月 18 日完成灰度发布，首批覆盖 20% 流量",
+        "首页点击率从 3.2% 升到 4.1%",
+        "详情页转化率从 5.6% 降到 4.9%",
+        "新增 1 个 P1 缺陷（推荐位重复展示），已定位，预计 8 月 22 日修复",
+        "服务器成本每天增加 1,800 元，超出本季度预算 6%",
+        "已有 12 位用户反馈推荐重复",
+        "下周计划把灰度扩展到 50%，前提是 P1 修复且转化率回升"
+      ],
+      "expected_structure": "三个小节，标题依次为【结论】【风险】【下一步】，全文不超过 240 字。",
+      "ambiguity_notes": "3.2% 与 6% 在原文中存在但不是必须保留项；压缩必须靠取舍，而不是把事实删到失真。",
+      "author_notes": "The 240-character budget is generous enough to retain the required invariants (which occupy roughly 35 characters) while still forcing genuine compression. Required figures are checked with tolerant regexes (full-width percent and either comma style accepted)."
+    },
+    {
+      "id": "IF-09",
+      "title": "中英双语交接说明",
+      "domain": "instruction_constraint_following",
+      "difficulty": "hard",
+      "language": "mixed",
+      "tags": [
+        "instruction_following",
+        "mixed_language",
+        "multi_part",
+        "conflict_resolution",
+        "section_count"
+      ],
+      "test_intent": "检验模型能否同时跟踪三个部分的语言、条数、顺序和事实要求，并解决一处有明确优先级的冲突。",
+      "prompt": "帮我把这次订单服务升级的交接说明整理好，发给国内的运维同事和新加坡团队。\n\n输出严格分三部分，顺序固定：\n1. 标题「## 变更摘要」，用中文写恰好 3 条要点；\n2. 标题「## Rollout checklist」，用英文写恰好 4 条要点；\n3. 标题「## 风险与回滚」，用中文写恰好 2 条要点。\n\n每条要点都用「- 」开头，总共 9 条。不要输出表格，也不要额外说明。\n\n资料（注意有一处冲突）：\n- 变更内容：订单服务升级到 v2.4.1，包含支付回调重试逻辑。\n- 运维手册（文档 A）写：部署窗口 22:00–23:00。\n- 业务排期（文档 B）写：必须在 20:00 前完成，避免影响当晚大促。\n- 优先级规则：以业务排期（文档 B）为准。\n- 风险：支付回调可能重复通知，需要幂等校验。\n- 回滚：切回 v2.4.0，预计 5 分钟，由值班同学执行。\n- Rollout checklist facts: freeze the payments dashboard; notify the CS on-call; run the payment smoke test; monitor the error rate for 30 minutes.",
+      "evaluation_criteria": [
+        "三个部分标题、顺序、语言与条数均正确：中文3条、英文4条、中文2条。",
+        "全部要点均以「- 」开头，总计9条，没有表格、前言或结尾说明。",
+        "冲突按照题目给出的优先级解决：最终采用文档 B 的「20:00 前完成」，不能把 22:00–23:00 当作实际部署窗口。",
+        "英文 Rollout checklist 覆盖冻结支付看板、通知客服值班、执行支付冒烟测试、监控错误率30分钟四项事实。",
+        "版本、变更内容、幂等风险、回滚版本、5分钟回滚时长和值班同学执行等事实没有发生漂移。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "三个小节标题齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "## 变更摘要",
+            "## Rollout checklist",
+            "## 风险与回滚"
+          ]
+        },
+        {
+          "name": "三个小节顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "## 变更摘要",
+            "## Rollout checklist",
+            "## 风险与回滚"
+          ]
+        },
+        {
+          "name": "变更摘要恰好3条",
+          "type": "section_bullet_count",
+          "start_marker": "## 变更摘要",
+          "end_marker": "## Rollout checklist",
+          "count": 3
+        },
+        {
+          "name": "Rollout checklist恰好4条",
+          "type": "section_bullet_count",
+          "start_marker": "## Rollout checklist",
+          "end_marker": "## 风险与回滚",
+          "count": 4
+        },
+        {
+          "name": "风险与回滚恰好2条",
+          "type": "section_bullet_count",
+          "start_marker": "## 风险与回滚",
+          "end_marker": null,
+          "count": 2
+        },
+        {
+          "name": "总计9条要点",
+          "type": "exact_bullet_count",
+          "count": 9
+        }
+      ],
+      "reference_facts": [
+        "订单服务升级到 v2.4.1，包含支付回调重试逻辑",
+        "文档 A 写部署窗口 22:00–23:00",
+        "文档 B 要求必须在 20:00 前完成",
+        "业务排期文档 B 优先，因此实际采用 20:00 前完成",
+        "支付回调可能重复通知，需要幂等校验",
+        "回滚到 v2.4.0，预计5分钟，由值班同学执行",
+        "English checklist facts: freeze the payments dashboard; notify the CS on-call; run the payment smoke test; monitor the error rate for 30 minutes"
+      ],
+      "expected_structure": "三个按指定顺序排列的小节，分别3、4、2条，共9条要点。",
+      "ambiguity_notes": "22:00–23:00 与 20:00 前完成发生冲突，但候选输入明确规定业务排期文档 B 优先，因此不存在需要猜测的优先级。",
+      "author_notes": "section_bullet_count is necessary because aggregate bullet count alone cannot distinguish a correct 3/4/2 split from an incorrect 4/3/2 split."
+    },
+    {
+      "id": "IF-10",
+      "title": "在否定约束下重写",
+      "domain": "instruction_constraint_following",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "instruction_following",
+        "negative_constraint",
+        "rewriting",
+        "fact_invariance",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在多项现实企业沟通禁用规则下完成客户致歉改写，同时保持事故事实不变，并避免未经依据的绝对承诺。",
+      "prompt": "下面是我们内部复盘里的几行记录，请改写成一条可直接发布在 App 公告里的客户致歉通知。\n\n沟通规范（必须遵守）：\n- 不要使用这些套话：不可抗力、高度重视、第一时间、深刻反思。\n- 不要使用「首先……其次……」这类成对排比组织内容。\n- 不要承诺任何具体赔偿金额或补偿方案。\n- 不要做无法验证的绝对保证，例如「绝不再发生」「保证不会再次发生」。\n\n通知需要保留的事实：\n- 9 月 28 日 14:02 到 14:45，支付页面无法加载，持续约 43 分钟。\n- 原因是数据库连接池配置变更，已定位并回滚。\n- 影响范围：约 6% 的下单请求失败。\n- 当前状态：已恢复，监控中。\n- 下一步：48 小时内发布复盘说明。\n\n内部记录原话：\n『9.28 支付挂了，大概从 14:02 到 14:45，前后 43 分钟起不来，后来定位是连接池配置改错了，已经回滚。影响面大概 6% 的下单请求。现在恢复了在观察，48 小时内给复盘。这次确实是我们自己的问题。』",
+      "evaluation_criteria": [
+        "准确保留事故时间、约43分钟时长、约6%失败比例、数据库连接池配置变更原因、已回滚、已恢复并监控、48小时内发布复盘等事实。",
+        "没有使用不可抗力、高度重视、第一时间、深刻反思等明确禁用套话。",
+        "没有使用「首先……其次……」作为成对排比结构。",
+        "没有承诺具体赔偿金额或补偿方案，也没有作出无法验证的绝对保证。",
+        "最终文本可以直接面向客户发布：有明确致歉和责任承担，但不推诿、不新增事实、不夸大承诺。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "无明确禁用套话",
+          "type": "forbidden_phrases",
+          "phrases": [
+            "不可抗力",
+            "高度重视",
+            "第一时间",
+            "深刻反思",
+            "绝不再发生",
+            "保证不会再次发生"
+          ]
+        },
+        {
+          "name": "不使用首先其次成对排比",
+          "type": "forbidden_regex",
+          "pattern": "首先[\\s\\S]*其次"
+        },
+        {
+          "name": "保留事发日期",
+          "type": "required_regex",
+          "pattern": "9\\s*[月.]\\s*28"
+        },
+        {
+          "name": "保留持续时长",
+          "type": "required_regex",
+          "pattern": "43\\s*分钟"
+        },
+        {
+          "name": "保留影响比例",
+          "type": "required_regex",
+          "pattern": "6\\s*[%％]"
+        },
+        {
+          "name": "保留复盘时限",
+          "type": "required_regex",
+          "pattern": "48\\s*小时"
+        }
+      ],
+      "reference_facts": [
+        "事发时间为9月28日14:02至14:45，持续约43分钟",
+        "原因是数据库连接池配置变更，已定位并回滚",
+        "约6%的下单请求失败",
+        "当前已恢复并处于监控状态",
+        "48小时内发布复盘说明",
+        "禁止具体赔偿或补偿承诺",
+        "禁止无法验证的绝对保证"
+      ],
+      "expected_structure": "一条可直接发布的客户致歉通知，不要求固定模板，但必须保留事实并满足全部沟通约束。",
+      "ambiguity_notes": "单独出现「首先」或「其次」并不自动等于违反要求；被禁止的是以二者组织内容的成对排比结构。绝对保证也采用语义判断，而不是试图枚举所有可能措辞。",
+      "author_notes": "The paired-structure regex catches the explicit 首先…其次 form without independently banning either word. Semantic over-promising remains judge-evaluated."
+    }
+  ]
+}

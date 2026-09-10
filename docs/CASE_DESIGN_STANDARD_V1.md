@@ -243,12 +243,21 @@ either; both judgments are made on the answer the candidate actually delivered.
 Use deterministic checks whenever an objective constraint can be tested
 programmatically:
 
-- structural: valid JSON, required keys, forbidden keys
-- counting: exact item count, bullet count, min/max items
-- length: character limits (all languages), word limits (English only)
+- structural: valid JSON, exact key sets, required keys, forbidden keys
+- counting: exact item count, bullet count, min/max items, per-section bullet counts
+- length: character limits (all languages), per-section character limits, word limits (English only)
 - content: required or forbidden phrases, required or forbidden patterns
 - order: required ordering of elements
 - numeric: a value within a required range
+
+**A production case cannot pass dataset validation if any deterministic-check
+declaration is malformed.** Every check is validated against a centralized
+per-operator schema: the `type` must be one of the supported operators, required
+parameters must be present with the correct type, regexes must compile, list
+parameters must be non-empty lists of unique non-empty strings, counts must be
+integers of the correct sign, and section markers must be valid and distinct.
+This runs inside `run_benchmark.py --validate-only`, so a malformed declaration
+is rejected before any execution rather than failing silently at run time.
 
 **Do not invent deterministic checks for subjective qualities merely to raise
 the automation percentage.** A check that a reasonable expert answer could fail

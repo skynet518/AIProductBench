@@ -49,6 +49,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="required for a real paid run against the configured native providers",
     )
     parser.add_argument("--cases", type=Path, default=config.DEFAULT_CASES_FILE)
+    parser.add_argument(
+        "--production-cases",
+        action="store_true",
+        help=(
+            "use the production dataset path (data/cases_v1.json) instead of the "
+            "synthetic framework fixture"
+        ),
+    )
     parser.add_argument("--models", type=Path, default=config.MODEL_POOL_FILE)
     parser.add_argument(
         "--output",
@@ -62,7 +70,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=config.LEADERBOARD_FILE,
         help="leaderboard HTML path for a real run (default: leaderboard.html)",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.production_cases:
+        args.cases = config.PRODUCTION_CASES_FILE
+    return args
 
 
 # --------------------------------------------------------------------------

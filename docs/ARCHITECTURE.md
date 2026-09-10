@@ -46,7 +46,7 @@ leaderboard / reports
 | `src/models.py` | Load, validate, and expose the single shared model registry (candidate and judge roles) | Hard-code model names into logic |
 | `src/cases.py` | Load and validate case files against the V1 schema | Contain the production dataset |
 | `src/providers.py` | One OpenAI-compatible HTTP client plus a synthetic offline client; provider differences are configuration | Branch on provider name in benchmark logic |
-| `src/deterministic.py` | Run the 18 machine-checkable constraint types and produce `constraint_pass_rate` | Judge subjective quality |
+| `src/deterministic.py` | Run the 21 machine-checkable constraint types and produce `constraint_pass_rate` | Judge subjective quality |
 | `src/judge.py` | Judge role, fixed-priority selection, leave-one-provider-out exclusion, strict JSON parsing, dual-judge aggregation | Repair or clamp invalid scores; mix judge metrics with candidate metrics |
 | `src/pricing.py` | Native price lookup, tier and time-of-day rules, currency normalisation to CNY | Silently convert currencies |
 | `src/analytics.py` | Latency percentiles, cost metrics, quality per CNY, Pareto frontier | Write files |

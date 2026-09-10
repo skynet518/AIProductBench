@@ -11,9 +11,11 @@ constraints. RMB/CNY presentation, Pareto-based selection analysis.
 ## STATUS
 
 **In development. Not released. No live paid benchmark has been authorized.**
-Every artifact produced so far is synthetic dry-run output. There is no
-production dataset, no verified V1 model ID, no verified V1 price, and no
-benchmark result.
+Domain 1 (`instruction_constraint_following`, IF-01 … IF-10) is frozen and
+externally approved; domains 2–5 are not yet authored. There is no complete V1
+production dataset (10 of 50 cases), no verified V1 model ID, no verified V1
+price, and no benchmark result. Every run artifact produced so far is synthetic
+dry-run output.
 
 ## COMPLETED
 
@@ -22,9 +24,9 @@ benchmark result.
   (2 models, 3 domains, 1 judge, 10 cases)
 - V1 product direction frozen in documentation
 - V1 framework implemented: one shared model registry, deterministic evaluator
-  (18 check types), fixed-priority cross-family dual-judge selection, pricing /
+  (21 check types), fixed-priority cross-family dual-judge selection, pricing /
   CNY normalization framework, Pareto analytics, standalone leaderboard
-- Test suite and network-isolated dry run passing (168 tests)
+- Test suite and network-isolated dry run passing (260 tests)
 - Phase 3A case design standard and 50-slot coverage matrix (awaiting external
   review; no production prompt written)
 - Case Design Standard approved for Phase 3B authoring (Gate 3A.1 passed)
@@ -37,24 +39,28 @@ benchmark result.
   deterministic-check quality audit (14 Strong / 25 Partial / 11 None),
   quantitative correctness plan, incomplete-run comparative-metric suppression,
   and the base-50 + risk-based human calibration policy
+- Phase 3B-1 Domain-1 authoring and first external review (IF-01/04/05/08 PASS;
+  IF-02/03/06/07/09/10 PATCH)
+- Phase 3B-1.1: the six PATCH cases replaced with externally authored canonical
+  definitions, and three generic deterministic operators added
+  (`section_max_chars`, `section_bullet_count`, `exact_keys`), raising the
+  operator count 18 → 21
+- Phase 3B-1.2: second (final) external review returned 8 PASS / IF-03 + IF-06
+  PATCH / 0 REJECT; IF-03 and IF-06 patched, and deterministic-check
+  declaration validation added for all 21 operators (operator count unchanged)
+- Domain 1 production cases IF-01 … IF-10 authored, externally reviewed, and
+  **frozen** (external final review PASSED after the Phase 3B-1.2 patches)
+- 21 deterministic operators, with centralized deterministic-check declaration
+  validation enforced by `run_benchmark.py --validate-only`
 
 ## CURRENT PHASE
 
-**Phase 3B-1 — Instruction & Constraint Following authoring.** Authoring IF-01
-through IF-10 against the approved standard and matrix. No live paid benchmark
-is authorized.
+**Phase 3B-2 — Structured Information Analysis.**
 
-## NEXT
+## CURRENT STATE
 
-**External review of IF-01 through IF-10** (domain 1,
-`instruction_constraint_following`). The authored cases stay uncommitted and
-are not frozen until that review passes.
-
-## THEN
-
-**Phase 3B-2 — remaining domains.** Author the structured information analysis,
-product reasoning decision, Chinese business communication, and agent workflow
-planning domains against the same approved standard and matrix.
+**Waiting for externally authored canonical SA-01 through SA-10 definitions.**
+Domain 1 is frozen; domains 2–5 are not authored.
 
 ## AFTER THAT
 
@@ -65,6 +71,10 @@ credentials, run a cost projection, and only then execute a paid run.
 ## IMPORTANT
 
 - No live paid benchmark has been authorized. Do not run `--confirm`.
+- **Do not independently author SA production cases** (or any later domain's
+  production cases). Production case semantic authorship is externally
+  controlled; execution agents integrate the externally authored canonical
+  definitions and must not redesign them.
 - Never read API keys from `~/.codex`, `~/.codex-deepseek`, shell history, or
   other agent configuration files. Credentials come from environment variables
   only, and are never committed.
@@ -97,12 +107,12 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 
 - Branch: `main`
 - Remote: none configured
-- Latest committed state: the V1 framework, including the Phase 2.1 consistency
-  patch, in commit `84443d9`
-- Phase 3A/3A.1 changes (equal-denominator ranking gate, incomplete-run
-  comparative-metric suppression, Chinese length-check rule, full production
-  case schema, the Phase 3A.1 semantic corrections, and the two design
-  documents) are **uncommitted** pending final external review
+- Latest committed state: the Domain 1 freeze checkpoint
+  (`feat: freeze instruction-following benchmark cases`). It contains the V1
+  framework, the Phase 3A/3A.1 design documents, the frozen Domain 1 production
+  cases IF-01 … IF-10, the Phase 3B-1.1 operators (`section_max_chars`,
+  `section_bullet_count`, `exact_keys`), and deterministic-check declaration
+  validation. Working tree is clean.
 
 ## STILL OPEN (requires human decision)
 
@@ -113,5 +123,5 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 | 3 | Provider credentials for Moonshot, MiniMax, Zhipu, and Volcano Ark are not configured |
 | 4 | No FX snapshot (USD/CNY) is configured, so USD-priced models would have no CNY-normalized cost |
 | 5 | Human calibration protocol and reviewer assignment are undefined |
-| 6 | The 50-case production dataset does not exist yet; the design matrix is awaiting final external Gate 3A.1 review before Phase 3B authoring |
-| 7 | The Phase 3A.1 patch (docs, metric-availability framework change, new tests) is uncommitted pending final external review |
+| 6 | Only Domain 1 (10 of 50 cases) is authored and frozen; domains 2–5 remain to be authored from externally supplied canonical definitions |
+| 7 | SA-01 … SA-10 (and the later domains) require externally authored canonical definitions before Phase 3B-2 can proceed; DeepSeek must not author them |

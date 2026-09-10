@@ -95,7 +95,7 @@ Full detail in [docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md).
   Chinese-first. Each domain is 2 easy / 5 medium / 3 hard.
 - **Hybrid evaluation.** Deterministic checks wherever a constraint is objectively
   machine-checkable (`constraint_pass_rate`), plus LLM evaluation for judgment.
-  Neither overrides the other; both are reported. The evaluator implements 18
+  Neither overrides the other; both are reported. The evaluator implements 21
   check types, listed in [docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md).
 - **Cross-family dual judging.** Two judges score every response, never from the
   candidate's own model family or provider. Judge selection follows a fixed

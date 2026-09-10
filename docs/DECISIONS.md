@@ -427,6 +427,8 @@ regression.
 **Consequences.** `METHODOLOGY_V1.md` §2A and `ARCHITECTURE.md` §2 now state the
 count and list the types. No check behavior changed.
 
+**Superseded.** The count was raised from 18 to 21 in Phase 3B-1.1; see D-039.
+
 ---
 
 ## D-021 — Official rankings require equal case denominators
@@ -879,3 +881,79 @@ Authored cases are reviewed per domain before freezing; the 50-case dataset is
 not approved until it is complete. Authoring progress and per-domain review
 state are tracked in `docs/DATASET_QA_V1.md`. No live paid benchmark is
 authorized.
+
+---
+
+## D-039 — Add three generic deterministic operators after production-case review
+**Date:** 2026-09-11
+
+**Decision.** Add exactly three generic deterministic operators — 
+`section_max_chars`, `section_bullet_count`, and `exact_keys` — and raise the
+recorded deterministic operator count from 18 to 21. All documents that stated
+the old count now state 21. No other operator is added and no existing operator
+changes behavior. No case-specific branch is introduced; the three operators
+are generic and reusable.
+
+**Rationale.** The Phase 3B-1 external review of Domain 1
+(`instruction_constraint_following`) exposed concrete false-pass risks in three
+authored cases:
+
+- IF-03 enforced its per-section 120-character budget with a tolerance-based
+  regex. A section padded with whitespace could run over budget and still pass,
+  and the regex stopped early if a section body itself contained `【`. A
+  section-isolating character count removes the tolerance.
+- IF-09's only counting check was an aggregate bullet total. A wrong 4/3/2
+  split still summed to 9 and passed. A section-scoped bullet count
+  distinguishes the correct 3/4/2 split from a wrong split.
+- IF-07 used required keys plus a forbidden-legacy-key list. That combination
+  cannot reject arbitrary additional fields, so a response with extra keys
+  could pass. An exact key-set check closes the gap.
+
+The operators were introduced **only** in response to that production-case
+review and the false-pass risks it exposed; they were not speculative additions.
+
+**Alternatives considered.** Keep the tolerance-based regex and leave the
+false-pass gaps in place — rejected, because a check that can pass while the
+constraint is violated injects noise into `constraint_pass_rate`. Add
+case-specific operators — rejected, because branches keyed to a case ID are not
+reusable and violate the generic-check design.
+
+**Consequences.** `src/deterministic.py` implements the three operators,
+`METHODOLOGY_V1.md` §2A lists 21 types, and the counts in `README.md`,
+`ARCHITECTURE.md`, and `HANDOFF.md` read 21. Six Domain-1 cases (IF-02, IF-03,
+IF-06, IF-07, IF-09, IF-10) were replaced with externally authored canonical
+definitions that use them. Domain 1 remains **EXTERNAL RE-REVIEW PENDING**; no
+domain is approved. This decision records an implementation change only; it does
+not approve any case or dataset.
+
+---
+
+## D-040 — Freeze Domain 1 after external final review; external control of remaining case authorship
+**Date:** 2026-09-11
+
+**Decision.** The external final review passed on all ten
+`instruction_constraint_following` cases (IF-01 through IF-10) after the
+Phase 3B-1.2 patches to IF-03 and IF-06. Domain 1 is **FROZEN / EXTERNALLY
+APPROVED**. The frozen cases are recorded in `data/cases_v1.json` and the QA
+ledger (`docs/DATASET_QA_V1.md`). Production case semantic authorship for the
+remaining domains (SA, PR, BC, AW) is **externally controlled**: execution
+agents may integrate externally authored canonical case definitions, validate
+them, and run them, but must not independently author or redesign them.
+
+**Rationale.** Two review rounds, plus the Phase 3B-1.1 operator additions and
+the Phase 3B-1.2 patches, converged on a clean final review with no rejected
+cases and no further semantic revision required. Separating semantic authorship
+(external) from execution/integration (this project's agents) preserves the
+methodology by keeping case design decisions out of the agent that also writes
+the checks and runs them.
+
+**Scope.** The approval covers **Domain 1 only**. It does not approve the
+50-case dataset, any later domain, any model ID, any price, or any benchmark
+result. `data/cases_v1.json` remains `production_status: "authoring"` because
+only 10 of 50 cases exist. No live paid benchmark is authorized.
+
+**Consequences.** Domain 1 is committed as the Domain 1 freeze checkpoint
+(`feat: freeze instruction-following benchmark cases`). Phase 3B-2
+(`structured_information_analysis`) waits for externally authored canonical
+SA-01 … SA-10 definitions. DeepSeek agents must not independently author SA
+production cases.

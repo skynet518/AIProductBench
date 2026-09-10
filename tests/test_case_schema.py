@@ -145,6 +145,27 @@ class TestCaseSchema(unittest.TestCase):
             any("production target is 50" in warning for warning in result["warnings"])
         )
 
+    def test_authoring_dataset_is_flagged_as_not_final(self):
+        document = load_fixture()
+        document["production_status"] = "authoring"
+        result = cases_module.validate_cases(document)
+        self.assertEqual(result["errors"], [])
+        self.assertTrue(
+            any(
+                "partial authoring dataset" in warning
+                and "not eligible as the final V1 benchmark dataset" in warning
+                for warning in result["warnings"]
+            )
+        )
+
+    def test_complete_dataset_is_not_flagged_as_partial(self):
+        document = load_fixture()
+        document["production_status"] = "complete"
+        result = cases_module.validate_cases(document)
+        self.assertFalse(
+            any("partial authoring dataset" in warning for warning in result["warnings"])
+        )
+
     def test_empty_case_list_is_rejected(self):
         result = cases_module.validate_cases({"test_cases": []})
         self.assertTrue(result["errors"])
