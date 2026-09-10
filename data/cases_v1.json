@@ -3,7 +3,7 @@
   "dataset_version": "v1-authoring-2026-09-11",
   "synthetic": false,
   "production_status": "authoring",
-  "authoring_note": "Phase 3B production dataset, authored domain by domain. Domain 1 (instruction_constraint_following, IF-01 through IF-10) is frozen and externally approved. Domains 2-5 are not yet authored, so this file is NOT a complete V1 benchmark dataset and must never be presented as one.",
+  "authoring_note": "Phase 3B production dataset, authored domain by domain. Domain 1 (instruction_constraint_following, IF-01 through IF-10) is frozen and externally approved. Domain 2 (structured_information_analysis, SA-01 through SA-10) is frozen and externally approved after the Phase 3B-2.1 patch round. Domains 3-5 are not yet authored, so this file contains 20 of 50 cases and is NOT a complete V1 production benchmark dataset. Production case semantics are externally authored; integration agents do not author or redesign cases.",
   "domains": [
     "instruction_constraint_following",
     "structured_information_analysis",
@@ -692,6 +692,684 @@
       "expected_structure": "一条可直接发布的客户致歉通知，不要求固定模板，但必须保留事实并满足全部沟通约束。",
       "ambiguity_notes": "单独出现「首先」或「其次」并不自动等于违反要求；被禁止的是以二者组织内容的成对排比结构。绝对保证也采用语义判断，而不是试图枚举所有可能措辞。",
       "author_notes": "The paired-structure regex catches the explicit 首先…其次 form without independently banning either word. Semantic over-promising remains judge-evaluated."
+    },
+    {
+      "id": "SA-01",
+      "title": "Messy support ticket to fixed schema",
+      "domain": "structured_information_analysis",
+      "difficulty": "easy",
+      "language": "en",
+      "tags": [
+        "structured_analysis",
+        "extraction",
+        "json",
+        "null_discipline",
+        "english"
+      ],
+      "test_intent": "Test whether the model can extract one unambiguous support record from messy prose into an exact JSON schema without inventing a missing field.",
+      "prompt": "Convert the support note below into the required JSON record.\n\nSupport note:\n\"Ticket T-8841 came in from Northstar Labs about Orbit. The customer is on the enterprise tier. The agent marked it P2. Issue category: access. The user says they cannot sign in after their company enabled SSO. No account owner is listed in the ticket. The customer did not request a phone callback. Side note: they thanked the support agent for responding quickly.\"\n\nMapping rules:\n- P1 → high\n- P2 → medium\n- P3 → low\n\nOutput exactly one JSON object with exactly these fields:\n- ticket_id\n- product\n- priority\n- issue_type\n- customer_tier\n- account_owner\n\nUse JSON null when a required value is not present. Do not add any other field or explanatory text.",
+      "evaluation_criteria": [
+        "The response is one valid JSON object with exactly the six required fields and no additional fields.",
+        "ticket_id, product, issue_type, and customer_tier are extracted correctly from the visible note.",
+        "P2 is mapped to priority medium according to the supplied rule.",
+        "account_owner is JSON null because no owner is supplied, rather than guessed from another person or organization.",
+        "Irrelevant material such as the callback status and customer compliment is not turned into extra output fields."
+      ],
+      "deterministic_checks": [
+        {
+          "name": "Valid JSON object",
+          "type": "valid_json",
+          "expect": "object"
+        },
+        {
+          "name": "Exact output fields",
+          "type": "exact_keys",
+          "keys": [
+            "ticket_id",
+            "product",
+            "priority",
+            "issue_type",
+            "customer_tier",
+            "account_owner"
+          ]
+        },
+        {
+          "name": "Ticket ID correct",
+          "type": "required_regex",
+          "pattern": "\"ticket_id\"\\s*:\\s*\"T-8841\""
+        },
+        {
+          "name": "Product correct",
+          "type": "required_regex",
+          "pattern": "\"product\"\\s*:\\s*\"Orbit\""
+        },
+        {
+          "name": "Priority mapping correct",
+          "type": "required_regex",
+          "pattern": "\"priority\"\\s*:\\s*\"medium\""
+        },
+        {
+          "name": "Issue type correct",
+          "type": "required_regex",
+          "pattern": "\"issue_type\"\\s*:\\s*\"access\""
+        },
+        {
+          "name": "Customer tier correct",
+          "type": "required_regex",
+          "pattern": "\"customer_tier\"\\s*:\\s*\"enterprise\""
+        },
+        {
+          "name": "Missing owner remains null",
+          "type": "required_regex",
+          "pattern": "\"account_owner\"\\s*:\\s*null"
+        },
+        {
+          "name": "No markdown fence",
+          "type": "no_markdown_fence"
+        }
+      ],
+      "reference_facts": [
+        "ticket_id = T-8841",
+        "product = Orbit",
+        "P2 maps to priority medium",
+        "issue_type = access",
+        "customer_tier = enterprise",
+        "account_owner is absent and therefore must be null"
+      ],
+      "expected_structure": "One JSON object whose root key set is exactly the six declared fields.",
+      "ambiguity_notes": "The note contains irrelevant information, but every target field except account_owner is explicitly supplied. account_owner is deliberately absent.",
+      "author_notes": "Easy extraction baseline. The task is extraction plus null discipline, not open-ended classification or reasoning."
+    },
+    {
+      "id": "SA-02",
+      "title": "工单分类到固定标签集",
+      "domain": "structured_information_analysis",
+      "difficulty": "easy",
+      "language": "zh",
+      "tags": [
+        "structured_analysis",
+        "classification",
+        "closed_taxonomy",
+        "unknown_handling",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把多条短工单归入封闭标签集，并在不属于任何业务标签时正确使用 OTHER，而不是强行套类。",
+      "prompt": "请把下面 5 条工单分别归入一个标签。只能使用：BUG、BILLING、FEATURE_REQUEST、ACCESS、OTHER。\n\n定义：\n- BUG：现有功能出现异常或错误。\n- BILLING：账单、发票、扣费相关问题。\n- FEATURE_REQUEST：希望增加目前不存在的产品能力。\n- ACCESS：登录、权限、账号访问问题。\n- OTHER：不属于以上四类。\n\n工单：\n1. 上传附件后 App 立即闪退，已经复现三次。\n2. 公司抬头变更后，在哪里重新开具增值税发票？\n3. 希望报表页增加深色模式。\n4. 手机丢失后无法通过原来的 MFA 登录，请帮我恢复账号访问。\n5. 我们公司想咨询与你们联合举办线下活动的合作方式。\n\n只输出 5 行，格式必须为「序号: LABEL」，不要解释。",
+      "evaluation_criteria": [
+        "五条工单分别被分类为 BUG、BILLING、FEATURE_REQUEST、ACCESS、OTHER。",
+        "每条工单只使用给定标签集中的一个标签。",
+        "第 5 条合作咨询使用 OTHER，没有被强行归入产品或账单类。",
+        "输出只有五行分类结果，没有解释性文本。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "工单1分类正确",
+          "type": "required_regex",
+          "pattern": "(?m)^1:\\s*BUG\\s*$"
+        },
+        {
+          "name": "工单2分类正确",
+          "type": "required_regex",
+          "pattern": "(?m)^2:\\s*BILLING\\s*$"
+        },
+        {
+          "name": "工单3分类正确",
+          "type": "required_regex",
+          "pattern": "(?m)^3:\\s*FEATURE_REQUEST\\s*$"
+        },
+        {
+          "name": "工单4分类正确",
+          "type": "required_regex",
+          "pattern": "(?m)^4:\\s*ACCESS\\s*$"
+        },
+        {
+          "name": "工单5分类正确",
+          "type": "required_regex",
+          "pattern": "(?m)^5:\\s*OTHER\\s*$"
+        },
+        {
+          "name": "不存在第6条输出",
+          "type": "forbidden_regex",
+          "pattern": "(?m)^6:"
+        }
+      ],
+      "reference_facts": [
+        "工单1为现有功能闪退，因此是 BUG",
+        "工单2为发票问题，因此是 BILLING",
+        "工单3请求新增深色模式，因此是 FEATURE_REQUEST",
+        "工单4为 MFA 登录与账号访问，因此是 ACCESS",
+        "工单5为商务合作咨询，不属于前四类，因此是 OTHER"
+      ],
+      "expected_structure": "恰好五行「序号: LABEL」形式的分类结果。",
+      "ambiguity_notes": "标签定义由 Prompt 给出，不要求模型依赖任何外部客服分类体系。",
+      "author_notes": "Pure closed-taxonomy classification case. It intentionally isolates classification rather than extraction."
+    },
+    {
+      "id": "SA-03",
+      "title": "表格数据解读与量化对比",
+      "domain": "structured_information_analysis",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "structured_analysis",
+        "quantitative_comparison",
+        "arithmetic",
+        "eligibility_filter",
+        "zh"
+      ],
+      "test_intent": "检验模型能否先根据质量与延迟硬门槛筛选候选方案，再根据给定计费规则计算实际月成本并做出唯一选择。",
+      "prompt": "我们预计下个月会处理 120,000 张客服工单，需要在 A、B、C 三个方案里选一个。\n\n硬门槛：\n- 准确率必须 ≥ 91%。\n- p95 延迟必须 ≤ 2.0 秒。\n\n在满足全部硬门槛的方案中，选择预计月成本最低的一个。\n\n数据：\n| 方案 | 准确率 | p95延迟 | 月基础费 | 基础费包含工单量 | 超出部分单价 |\n| --- | --- | --- | --- | --- | --- |\n| A | 92.0% | 1.8秒 | 30000元 | 80000张 | 0.15元/张 |\n| B | 94.0% | 2.4秒 | 28000元 | 120000张 | 0.10元/张 |\n| C | 91.5% | 1.5秒 | 34000元 | 100000张 | 0.05元/张 |\n\n预计月成本 = 月基础费 + max(0, 120000 - 基础费包含工单量) × 超出部分单价。\n\n请输出一张 Markdown 表格，列严格为：方案｜预计月成本｜准确率门槛｜延迟门槛｜是否合格。\n成本使用不带千分位逗号的整数。\n\n表格后只写一行：\n结论：选择 X，较次优合格方案 Y 每月节省 N 元。",
+      "evaluation_criteria": [
+        "正确计算 A=36000 元、B=28000 元、C=35000 元。",
+        "正确判断 A 与 C 满足全部硬门槛，B 因 p95 延迟 2.4 秒超过 2.0 秒而不合格。",
+        "只在合格方案之间比较成本，并最终选择 C。",
+        "正确识别次优合格方案为 A，C 相比 A 每月节省 1000 元。",
+        "没有因为 B 成本更低而忽略它违反延迟硬门槛。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "表头正确",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*方案\\s*\\|\\s*预计月成本\\s*\\|\\s*准确率门槛\\s*\\|\\s*延迟门槛\\s*\\|\\s*是否合格\\s*\\|"
+        },
+        {
+          "name": "A成本为36000",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*A\\s*\\|\\s*36000\\s*\\|"
+        },
+        {
+          "name": "B成本为28000",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*B\\s*\\|\\s*28000\\s*\\|"
+        },
+        {
+          "name": "C成本为35000",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*C\\s*\\|\\s*35000\\s*\\|"
+        },
+        {
+          "name": "最终选择正确",
+          "type": "required_regex",
+          "pattern": "结论：\\s*选择\\s*C[，,]\\s*较次优合格方案\\s*A\\s*每月节省\\s*1000\\s*元"
+        }
+      ],
+      "reference_facts": [
+        "A预计月成本 = 30000 + 40000×0.15 = 36000元",
+        "B预计月成本 = 28000元",
+        "C预计月成本 = 34000 + 20000×0.05 = 35000元",
+        "A满足准确率与延迟门槛",
+        "B准确率合格但2.4秒延迟不合格",
+        "C满足准确率与延迟门槛",
+        "合格方案中C比A便宜1000元，因此选择C"
+      ],
+      "expected_structure": "一张三行方案比较表，加一行固定格式结论。",
+      "ambiguity_notes": "成本最低的 B 不满足硬门槛，因此不能进入最终成本排序。",
+      "author_notes": "Arithmetic ground truth is fully derivable from candidate-visible data. Context-anchored regexes verify the computed values rather than merely checking that numbers occur somewhere."
+    },
+    {
+      "id": "SA-04",
+      "title": "Schema conversion between two shapes",
+      "domain": "structured_information_analysis",
+      "difficulty": "medium",
+      "language": "en",
+      "tags": [
+        "structured_analysis",
+        "schema_conversion",
+        "nested_data",
+        "field_mapping",
+        "english"
+      ],
+      "test_intent": "Test whether the model can transform a nested machine-readable record into a different exact schema, including enum mapping and selection of the primary contact, while dropping obsolete data.",
+      "prompt": "Convert the source record into the target schema using only the mapping rules below.\n\nSource:\n{\n  \"customer\": {\n    \"id\": \"C-2048\",\n    \"display_name\": \"Northstar Labs\",\n    \"status\": \"paused\",\n    \"plan\": \"enterprise\"\n  },\n  \"contacts\": [\n    {\"role\": \"billing\", \"email\": \"billing@northstar.example\"},\n    {\"role\": \"primary\", \"email\": \"ops@northstar.example\"}\n  ],\n  \"legacy\": {\n    \"region\": \"apac\",\n    \"segment\": \"strategic\"\n  }\n}\n\nRules:\n- customer.id → customer_id\n- customer.display_name → name\n- plan mapping: enterprise → ENT, pro → PRO, basic → BASIC\n- status mapping: active → active, paused → suspended, closed → closed\n- primary_email is the email of the contact whose role is primary\n- legacy fields are obsolete and must not be copied\n\nOutput exactly one JSON object with exactly these fields:\ncustomer_id, name, plan_code, state, primary_email.\nDo not include prose or a code fence.",
+      "evaluation_criteria": [
+        "The output is one valid JSON object whose key set is exactly the five target fields.",
+        "Nested customer fields are mapped to customer_id and name correctly.",
+        "enterprise maps to ENT and paused maps to suspended.",
+        "primary_email is selected from the contact whose role is primary, not the billing contact.",
+        "No legacy field or other source-only structure appears in the output."
+      ],
+      "deterministic_checks": [
+        {
+          "name": "Valid JSON object",
+          "type": "valid_json",
+          "expect": "object"
+        },
+        {
+          "name": "Exact target keys",
+          "type": "exact_keys",
+          "keys": [
+            "customer_id",
+            "name",
+            "plan_code",
+            "state",
+            "primary_email"
+          ]
+        },
+        {
+          "name": "customer_id correct",
+          "type": "required_regex",
+          "pattern": "\"customer_id\"\\s*:\\s*\"C-2048\""
+        },
+        {
+          "name": "name correct",
+          "type": "required_regex",
+          "pattern": "\"name\"\\s*:\\s*\"Northstar Labs\""
+        },
+        {
+          "name": "plan mapping correct",
+          "type": "required_regex",
+          "pattern": "\"plan_code\"\\s*:\\s*\"ENT\""
+        },
+        {
+          "name": "state mapping correct",
+          "type": "required_regex",
+          "pattern": "\"state\"\\s*:\\s*\"suspended\""
+        },
+        {
+          "name": "primary contact selected",
+          "type": "required_regex",
+          "pattern": "\"primary_email\"\\s*:\\s*\"ops@northstar\\.example\""
+        },
+        {
+          "name": "No markdown fence",
+          "type": "no_markdown_fence"
+        }
+      ],
+      "reference_facts": [
+        "customer.id = C-2048",
+        "customer.display_name = Northstar Labs",
+        "enterprise maps to ENT",
+        "paused maps to suspended",
+        "the primary contact email is ops@northstar.example",
+        "legacy.region and legacy.segment must not be copied"
+      ],
+      "expected_structure": "One JSON object with exactly five target fields.",
+      "ambiguity_notes": "There are two contacts, but the selection rule explicitly identifies the primary role.",
+      "author_notes": "Unlike IF-07, the analytical work here is nested-source transformation and selecting the correct record, not merely obeying a serialization contract."
+    },
+    {
+      "id": "SA-05",
+      "title": "噪声清理：从群聊提取需求",
+      "domain": "structured_information_analysis",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "structured_analysis",
+        "noise_filtering",
+        "requirements",
+        "provenance",
+        "zh"
+      ],
+      "test_intent": "检验模型能否从包含建议、闲聊、否决项和正式决定的群聊中，只提取已经确认的产品需求，并把每条需求追溯到可核验的原始证据。",
+      "prompt": "下面是「数据导出」功能讨论群的聊天记录。请只提取已经明确确认要进入本次版本的需求，不要把建议、被否决项或闲聊算进去。\n\n[M1] 小周：早，十点评审，咖啡我带。\n[M2] 产品经理：本次版本导出必须同时支持 CSV 和 XLSX。\n[M3] 设计：PDF 要不要也一起做？视觉上会完整一点。\n[M4] 销售：客户还问过能不能每天自动发邮件。\n[M5] 产品经理：自动邮件这版不做。用户必须可以选择导出日期范围，最长 90 天。\n[M6] 小周：午饭有人订了吗？\n[M7] 工程：文件名是不是随便生成就行？\n[M8] 产品经理：不行，文件名必须包含 workspace 名称和导出日期。\n[M9] 客服：有个客户昨天说现在线上按钮颜色太浅。\n[M10] 工程：大文件是同步生成还是异步？\n[M11] 产品经理：超过 50MB 的文件异步生成，完成后发送站内通知。\n[M12] 设计：深色模式下的导出页以后再看，不进这版。\n\n输出恰好 4 条要点。每条格式：\n- Requirement: <用自己的话概括需求> | Evidence: [M#] \"<引用支持这条需求的关键原话>\"\n\n要求：\n- Evidence 必须来自真正确认这条需求的消息。\n- Evidence 的 [M#] 与引号内容必须来自同一条消息。\n- 引号中的内容必须是该消息中的连续原文片段，不允许改写、拼接或把其他消息的文字放进引号。\n- 不要输出其他内容。",
+      "evaluation_criteria": [
+        "恰好提取四项已确认需求：CSV+XLSX、最长90天日期范围、文件名包含workspace名称和导出日期、超过50MB异步生成并发送站内通知。",
+        "没有把 PDF、自动邮件、按钮颜色、深色模式或闲聊内容当成本版本需求。",
+        "四项需求分别追溯到 M2、M5、M8、M11。",
+        "每个 Evidence 标签与其引号中的连续原文片段来自同一条消息，证据没有被改写、拼接或错误归因。",
+        "需求概括可以改写，但没有引入群聊中不存在的产品行为。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "恰好四条需求",
+          "type": "exact_bullet_count",
+          "count": 4
+        },
+        {
+          "name": "包含M2证据",
+          "type": "required_regex",
+          "pattern": "Evidence:\\s*\\[M2\\]"
+        },
+        {
+          "name": "包含M5证据",
+          "type": "required_regex",
+          "pattern": "Evidence:\\s*\\[M5\\]"
+        },
+        {
+          "name": "包含M8证据",
+          "type": "required_regex",
+          "pattern": "Evidence:\\s*\\[M8\\]"
+        },
+        {
+          "name": "包含M11证据",
+          "type": "required_regex",
+          "pattern": "Evidence:\\s*\\[M11\\]"
+        }
+      ],
+      "reference_facts": [
+        "M2确认 CSV 和 XLSX 都必须支持",
+        "M5明确自动邮件不做，并确认日期范围最长90天",
+        "M8确认文件名必须包含workspace名称和导出日期",
+        "M11确认超过50MB异步生成并在完成后发送站内通知",
+        "M3、M4、M9、M12都不构成本次版本已确认需求"
+      ],
+      "expected_structure": "四条 Requirement + Evidence 要点，每条 Evidence 包含正确消息ID与该消息中的连续原文片段。",
+      "ambiguity_notes": "群聊故意混入建议、被否决项和不相关信息；只有带明确决策语义的消息可以成为需求来源。Evidence 必须可直接回查原消息。",
+      "author_notes": "The scoring hinge is auditable provenance. Message IDs are machine-checked; exact source attribution and verbatim contiguous evidence spans remain judge-evaluated."
+    },
+    {
+      "id": "SA-06",
+      "title": "证据支撑的建议",
+      "domain": "structured_information_analysis",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "structured_analysis",
+        "evidence_based_recommendation",
+        "decision_rule",
+        "zh"
+      ],
+      "test_intent": "检验模型能否严格应用给定的硬门槛与排序规则，从结构化证据中得出推荐，而不是凭直觉重新发明权重。",
+      "prompt": "我们要从四个 OCR 方案里选一个进入下一轮试点。不要自行设计权重，严格按下面的规则判断。\n\n硬门槛：\n1. 字段准确率 ≥ 91%。\n2. p95 延迟 ≤ 1.8 秒。\n3. 月成本 ≤ 40000 元。\n\n满足全部硬门槛后：\n- 优先选择审计覆盖率最高的方案；\n- 如果审计覆盖率相同，再选择成本更低的方案。\n\n数据：\n| 方案 | 字段准确率 | p95延迟 | 月成本 | 审计覆盖率 |\n| --- | --- | --- | --- | --- |\n| A | 92.0% | 1.7秒 | 38000元 | 95% |\n| B | 94.0% | 2.0秒 | 35000元 | 98% |\n| C | 91.5% | 1.5秒 | 39000元 | 99% |\n| D | 93.0% | 1.6秒 | 42000元 | 100% |\n\n严格输出两部分：\n第一行必须是：{\"verdict\":\"X\",\"eligible\":[\"...\",\"...\"]}\n第二行以「理由：」开头，用一句话引用决定结果的关键数据。eligible 按方案字母升序排列。",
+      "evaluation_criteria": [
+        "正确识别只有 A 与 C 同时满足三个硬门槛。",
+        "B 因延迟 2.0 秒超过 1.8 秒被排除，D 因月成本 42000 元超过 40000 元被排除。",
+        "在 A 与 C 中根据审计覆盖率选择 C，因为 C 为99%、A为95%。",
+        "第一行 verdict 为 C，eligible 为 A、C，且没有把不合格方案放入 eligible。",
+        "理由只引用给定数据和规则，没有自行增加权重、偏好或外部假设。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "第一行结论结构正确",
+          "type": "required_regex",
+          "pattern": "(?m)^\\{\"verdict\":\"C\",\"eligible\":\\[\"A\",\"C\"\\]\\}\\s*$"
+        },
+        {
+          "name": "第二行有理由",
+          "type": "required_regex",
+          "pattern": "(?m)^理由："
+        },
+        {
+          "name": "理由包含99%",
+          "type": "required_regex",
+          "pattern": "99\\s*[%％]"
+        },
+        {
+          "name": "理由包含95%",
+          "type": "required_regex",
+          "pattern": "95\\s*[%％]"
+        }
+      ],
+      "reference_facts": [
+        "A通过全部硬门槛，审计覆盖率95%",
+        "B因2.0秒延迟高于1.8秒门槛而不合格",
+        "C通过全部硬门槛，审计覆盖率99%",
+        "D因42000元高于40000元成本门槛而不合格",
+        "符合门槛的A与C中，C的审计覆盖率更高，因此选择C"
+      ],
+      "expected_structure": "第一行固定JSON verdict，第二行一句证据理由。",
+      "ambiguity_notes": "选择规则完全给定，因此本题测试证据应用而不是开放式产品取舍。",
+      "author_notes": "This differs from PR trade-off cases: the decision policy is fixed, so the model is being tested on evidence-grounded analysis rather than inventing product priorities."
+    },
+    {
+      "id": "SA-07",
+      "title": "跨文档聚合与综合",
+      "domain": "structured_information_analysis",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "structured_analysis",
+        "multi_source",
+        "synthesis",
+        "conflict_preservation",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把三个来源中的重复信息合并成共识，把需要决策的问题与来源差异保留下来，而不是把冲突强行抹平。",
+      "prompt": "请把下面三个团队关于「企业版导出功能」上线准备情况的材料综合成一页简报。只能使用给定材料，不要判断哪个团队天然更权威。\n\n【销售访谈摘要】\n- 共访谈 42 位企业客户。\n- 31 位明确提出批量导出需求。\n- 18 位提出 SSO 需求。\n- 销售希望 11 月 15 日前上线。\n- 销售记录中的 Android 崩溃率为 2.1%。\n\n【客服工单摘要】\n- 最近一个月有 27 张工单要求批量导出。\n- 有 11 张工单涉及 SSO。\n- 客服建议 Android 崩溃率降到 2.5% 以下再扩大灰度。\n- 客服报告当前 Android 崩溃率为 2.8%。\n\n【工程评估】\n- 批量导出预计 10 月 30 日开发完成。\n- SSO 还需要约 6 周，无法赶上 11 月 15 日。\n- 工程监控记录 Android 崩溃率为 2.3%。\n- 批量导出和 SSO 可以独立发布。\n\n严格输出三个小节并按此顺序：\n【共同结论】\n【需要决策】\n【来源差异】\n\n共同结论要合并重复信息，不要按来源逐条复述；来源差异必须保留互相不一致的数字，不要擅自选一个当真值。",
+      "evaluation_criteria": [
+        "共同结论识别批量导出在销售与客服两侧都有明确需求信号，并结合工程给出的10月30日完成信息进行综合，而不是逐来源复制。",
+        "识别 SSO 同样存在需求，但工程明确表示约需6周、无法赶上11月15日，因此上线范围或顺序需要决策。",
+        "利用「批量导出和SSO可以独立发布」这一事实形成有意义的待决策项，而不是错误地把两者绑定。",
+        "来源差异明确保留 Android 崩溃率 2.1%、2.8%、2.3% 三个不同数字，没有自行决定哪个是真值。",
+        "没有引入任何材料之外的客户数量、时间、技术结论或优先级。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "三个小节齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【共同结论】",
+            "【需要决策】",
+            "【来源差异】"
+          ]
+        },
+        {
+          "name": "三个小节顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【共同结论】",
+            "【需要决策】",
+            "【来源差异】"
+          ]
+        },
+        {
+          "name": "保留2.1%",
+          "type": "required_regex",
+          "pattern": "2\\.1\\s*[%％]"
+        },
+        {
+          "name": "保留2.8%",
+          "type": "required_regex",
+          "pattern": "2\\.8\\s*[%％]"
+        },
+        {
+          "name": "保留2.3%",
+          "type": "required_regex",
+          "pattern": "2\\.3\\s*[%％]"
+        }
+      ],
+      "reference_facts": [
+        "销售42位访谈中31位要求批量导出，18位提出SSO",
+        "客服有27张批量导出工单和11张SSO工单",
+        "批量导出预计10月30日开发完成",
+        "SSO还需约6周，无法赶上11月15日",
+        "批量导出与SSO可以独立发布",
+        "三个来源的Android崩溃率分别为2.1%、2.8%、2.3%，材料未给出来源优先级"
+      ],
+      "expected_structure": "按指定顺序输出共同结论、需要决策、来源差异三个小节。",
+      "ambiguity_notes": "Android崩溃率差异是故意保留的未解决来源差异；模型没有足够依据选择一个真值。",
+      "author_notes": "The case rewards synthesis and conflict preservation. A response that merely summarizes each document separately is weaker even if factually accurate."
+    },
+    {
+      "id": "SA-08",
+      "title": "矛盾检测与可解决性判断",
+      "domain": "structured_information_analysis",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "structured_analysis",
+        "contradiction_detection",
+        "source_provenance",
+        "uncertainty",
+        "zh"
+      ],
+      "test_intent": "检验模型能否完整发现同一发布状态的多项矛盾，并根据候选输入中明确给出的来源规则区分可解决与不可解决冲突，而不是自信猜测。",
+      "prompt": "你在核对同一场灰度发布的两份状态报告。请找出所有真正互相冲突的事实，并判断哪些可以根据下面给出的来源规则解决。\n\n【报告 A】\n- 版本：2.4.1。来源：19:10 导出的 Deployment Console。\n- 灰度比例：50%。来源：19:10 导出的 Deployment Console。\n- 支付转化率：4.8%。来源：17:00 的分析师手工摘要。\n- P1 事故数：3。来源：18:00 的人工事故汇总。\n\n【报告 B】\n- 版本：2.4.0。来源：19:20 PM 手工周报。\n- 灰度比例：30%。来源：19:20 PM 手工周报。\n- 支付转化率：5.2%。来源：19:15 的实验看板，但统计人群口径未写明。\n- P1 事故数：2。来源：19:15 导出的 Incident Tracker。\n\n来源规则：\n- 已部署版本与灰度比例：Deployment Console 导出高于人工周报。\n- P1 事故数：Incident Tracker 导出高于人工事故汇总。\n- 支付转化率：材料没有给出统一统计口径，也没有声明两个来源谁优先，因此不得强行选一个真值。\n\n发布委员会规定，本次核对表的输出优先级为：P1事故数 > 已部署版本 > 灰度比例 > 支付转化率。这个顺序只决定汇报顺序，不代表来源权威性。\n\n输出恰好 4 条「- 」要点，并严格按照上述优先级排列。每条必须写明：矛盾字段、A值、B值、状态（可解决/未解决）、依据。\n\n最后另起一行写：\n总体判断：<一句话说明目前哪些矛盾仍需要补充信息>。",
+      "evaluation_criteria": [
+        "完整识别四项真实矛盾：版本2.4.1 vs 2.4.0、灰度50% vs 30%、转化率4.8% vs 5.2%、P1事故数3 vs 2。",
+        "版本与灰度比例根据Deployment Console优先规则解决为2.4.1和50%。",
+        "P1事故数根据Incident Tracker优先规则解决为2。",
+        "支付转化率明确标记为未解决，并指出缺少统一统计口径或来源优先级，而不是选择4.8%或5.2%作为真值。",
+        "四条按 P1事故数、已部署版本、灰度比例、支付转化率的顺序输出，并且每条同时给出A值、B值、状态和依据。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "恰好四条矛盾",
+          "type": "exact_bullet_count",
+          "count": 4
+        },
+        {
+          "name": "四个字段按规定顺序出现",
+          "type": "ordering",
+          "phrases": [
+            "P1事故数",
+            "已部署版本",
+            "灰度比例",
+            "支付转化率"
+          ]
+        },
+        {
+          "name": "包含两个版本值",
+          "type": "required_phrases",
+          "phrases": [
+            "2.4.1",
+            "2.4.0"
+          ]
+        },
+        {
+          "name": "包含两个灰度值",
+          "type": "required_regex",
+          "pattern": "50\\s*[%％][\\s\\S]*30\\s*[%％]|30\\s*[%％][\\s\\S]*50\\s*[%％]"
+        },
+        {
+          "name": "包含两个转化率值",
+          "type": "required_regex",
+          "pattern": "4\\.8\\s*[%％][\\s\\S]*5\\.2\\s*[%％]|5\\.2\\s*[%％][\\s\\S]*4\\.8\\s*[%％]"
+        },
+        {
+          "name": "包含总体判断",
+          "type": "required_regex",
+          "pattern": "(?m)^总体判断："
+        }
+      ],
+      "reference_facts": [
+        "P1事故数冲突：A=3，B=2；Incident Tracker优先，因此2可作为解决值",
+        "版本冲突：A=2.4.1，B=2.4.0；Deployment Console优先，因此2.4.1可作为解决值",
+        "灰度冲突：A=50%，B=30%；Deployment Console优先，因此50%可作为解决值",
+        "支付转化率冲突：A=4.8%，B=5.2%；统计口径和来源优先级不足，因此未解决",
+        "共有四项矛盾，规定输出顺序为P1事故数、已部署版本、灰度比例、支付转化率"
+      ],
+      "expected_structure": "四条按规定业务优先级排列的矛盾分析，加一行总体判断。",
+      "ambiguity_notes": "只有支付转化率被设计为不可根据现有信息解决；其余三项均有候选可见的来源优先规则。输出排序规则与来源权威规则是两套独立规则。",
+      "author_notes": "The fixed reporting priority removes judge subjectivity from ordering while preserving contradiction detection, provenance reasoning, and calibrated uncertainty as the core capabilities."
+    },
+    {
+      "id": "SA-09",
+      "title": "Missing-data discipline",
+      "domain": "structured_information_analysis",
+      "difficulty": "hard",
+      "language": "en",
+      "tags": [
+        "structured_analysis",
+        "missing_data",
+        "bounded_conclusion",
+        "eligibility",
+        "english"
+      ],
+      "test_intent": "Test whether the model distinguishes failure from missing evidence when applying approval gates, including the case where a known failure coexists with a missing field.",
+      "prompt": "Review four vendors for production approval using only the table below.\n\nA vendor may be APPROVED only if all four gates are known and satisfied:\n- security review = pass\n- accuracy >= 92.0%\n- p95 latency <= 1.8 seconds\n- monthly cost <= 40000 CNY\n\nRules for missing data:\n- A missing value is not a pass and not a failure.\n- If any required gate is missing and no known gate fails, the result is UNDETERMINED.\n- If a known gate fails, the result is REJECT even if another required field is missing.\n- Do not estimate or impute missing values.\n\n| Vendor | Security | Accuracy | p95 latency | Monthly cost |\n| --- | --- | --- | --- | --- |\n| A | pass | 93.0% | 1.6s | 38000 |\n| B | missing | 95.0% | 1.5s | 36000 |\n| C | pass | 94.0% | 1.7s | missing |\n| D | missing | 91.5% | 1.4s | 30000 |\n\nOutput exactly four lines in this format:\nA — STATUS — reason\nB — STATUS — reason\nC — STATUS — reason\nD — STATUS — reason\n\nUse only APPROVE, REJECT, or UNDETERMINED as STATUS.\nThen write one final line beginning with \"Bounded conclusion:\" stating which vendor or vendors can be approved today.",
+      "evaluation_criteria": [
+        "A is APPROVE because all four gates are known and satisfied.",
+        "B is UNDETERMINED because the security review is missing and no known gate fails.",
+        "C is UNDETERMINED because monthly cost is missing and no known gate fails.",
+        "D is REJECT because its known accuracy of 91.5% fails the 92.0% gate even though its security review is also missing.",
+        "The bounded conclusion states that only A can be approved today; B and C remain unresolved, while D is a known rejection rather than an undetermined case."
+      ],
+      "deterministic_checks": [
+        {
+          "name": "A status correct",
+          "type": "required_regex",
+          "pattern": "(?m)^A\\s*—\\s*APPROVE\\s*—"
+        },
+        {
+          "name": "B status correct",
+          "type": "required_regex",
+          "pattern": "(?m)^B\\s*—\\s*UNDETERMINED\\s*—"
+        },
+        {
+          "name": "C status correct",
+          "type": "required_regex",
+          "pattern": "(?m)^C\\s*—\\s*UNDETERMINED\\s*—"
+        },
+        {
+          "name": "D status correct",
+          "type": "required_regex",
+          "pattern": "(?m)^D\\s*—\\s*REJECT\\s*—"
+        },
+        {
+          "name": "Bounded conclusion present",
+          "type": "required_regex",
+          "pattern": "(?m)^Bounded conclusion:"
+        }
+      ],
+      "reference_facts": [
+        "A has security pass, 93.0% accuracy, 1.6s latency, and 38000 cost, so A is APPROVE",
+        "B is missing security and has no known failing gate, so B is UNDETERMINED",
+        "C is missing monthly cost and has no known failing gate, so C is UNDETERMINED",
+        "D is missing security but has 91.5% accuracy below the 92.0% threshold, so D is REJECT",
+        "Only A can be approved from the supplied evidence"
+      ],
+      "expected_structure": "Four vendor-status lines followed by one bounded-conclusion line.",
+      "ambiguity_notes": "Missing evidence is deliberately different from a failing gate. Vendor D tests the interaction: a missing security result does not erase a known accuracy failure.",
+      "author_notes": "Hardness comes from applying three epistemic states consistently and recognizing that known failure dominates unresolved missing evidence for the final status."
+    },
+    {
+      "id": "SA-10",
+      "title": "多源数据聚合到评分表",
+      "domain": "structured_information_analysis",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "structured_analysis",
+        "aggregation",
+        "weighted_scoring",
+        "ranking",
+        "rounding",
+        "tie_break",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把四张顺序不同的评分表按候选ID正确连接，应用固定权重计算总分，执行指定舍入规则，并在舍入后同分时正确应用二级排序规则。",
+      "prompt": "我们有四个候选方案 A、B、C、D。四个评审团队分别给出了 0–100 分评分，但表格顺序不同。请按候选 ID 合并，不要按行号对齐。\n\n权重：\n- 质量：40%\n- 成本效率：25%\n- 延迟表现：20%\n- 支持能力：15%\n\n总分 = 质量×0.40 + 成本效率×0.25 + 延迟表现×0.20 + 支持能力×0.15。\n最终总分按十进制常规四舍五入（ROUND_HALF_UP）保留 1 位小数，只在最终总分处舍入，不要对中间项提前舍入。例如 80.25 应得到 80.3。\n\n排序规则：\n1. 先按最终保留1位小数后的总分从高到低排序。\n2. 如果最终总分相同，以质量分更高者优先。\n\n【质量】\n| 候选 | 分数 |\n| --- | --- |\n| C | 95 |\n| A | 92 |\n| D | 90 |\n| B | 87.5 |\n\n【成本效率】\n| 候选 | 分数 |\n| --- | --- |\n| B | 90 |\n| D | 80 |\n| A | 70 |\n| C | 60 |\n\n【延迟表现】\n| 候选 | 分数 |\n| --- | --- |\n| D | 85 |\n| C | 90 |\n| B | 75 |\n| A | 80 |\n\n【支持能力】\n| 候选 | 分数 |\n| --- | --- |\n| A | 85 |\n| C | 90 |\n| B | 80 |\n| D | 70 |\n\n请输出 Markdown 表格，列严格为：排名｜候选｜质量｜成本效率｜延迟表现｜支持能力｜总分。\n四个候选都必须出现。\n\n表格后写一行：\n方法说明：<简短说明你按候选ID连接数据、使用给定权重、只在最终一步按ROUND_HALF_UP保留1位小数，并在同分时使用质量分作为tie-break。>",
+      "evaluation_criteria": [
+        "按候选ID正确连接四张来源表，没有因各表行顺序不同而错配分数。",
+        "正确计算并最终按ROUND_HALF_UP得到 A=83.1、B=84.5、C=84.5、D=83.5。",
+        "B与C最终同为84.5时，正确使用质量分作为tie-break：C质量95高于B的87.5，因此C第一、B第二。",
+        "最终排名正确为 C 第一、B 第二、D 第三、A 第四。",
+        "计算使用给定40%/25%/20%/15%权重，没有自行修改权重或提前对中间项舍入；方法说明准确描述连接、加权、舍入和tie-break规则。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "表头正确",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*排名\\s*\\|\\s*候选\\s*\\|\\s*质量\\s*\\|\\s*成本效率\\s*\\|\\s*延迟表现\\s*\\|\\s*支持能力\\s*\\|\\s*总分\\s*\\|"
+        },
+        {
+          "name": "C第一且84.5",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*1\\s*\\|\\s*C\\s*\\|\\s*95\\s*\\|\\s*60\\s*\\|\\s*90\\s*\\|\\s*90\\s*\\|\\s*84\\.5\\s*\\|"
+        },
+        {
+          "name": "B第二且84.5",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*2\\s*\\|\\s*B\\s*\\|\\s*87\\.5\\s*\\|\\s*90\\s*\\|\\s*75\\s*\\|\\s*80\\s*\\|\\s*84\\.5\\s*\\|"
+        },
+        {
+          "name": "D第三且83.5",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*3\\s*\\|\\s*D\\s*\\|\\s*90\\s*\\|\\s*80\\s*\\|\\s*85\\s*\\|\\s*70\\s*\\|\\s*83\\.5\\s*\\|"
+        },
+        {
+          "name": "A第四且83.1",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*4\\s*\\|\\s*A\\s*\\|\\s*92\\s*\\|\\s*70\\s*\\|\\s*80\\s*\\|\\s*85\\s*\\|\\s*83\\.1\\s*\\|"
+        },
+        {
+          "name": "方法说明存在",
+          "type": "required_regex",
+          "pattern": "(?m)^方法说明："
+        }
+      ],
+      "reference_facts": [
+        "A总分 = 92×0.40 + 70×0.25 + 80×0.20 + 85×0.15 = 83.05，ROUND_HALF_UP后为83.1",
+        "B总分 = 87.5×0.40 + 90×0.25 + 75×0.20 + 80×0.15 = 84.5",
+        "C总分 = 95×0.40 + 60×0.25 + 90×0.20 + 90×0.15 = 84.5",
+        "D总分 = 90×0.40 + 80×0.25 + 85×0.20 + 70×0.15 = 83.5",
+        "B与C舍入后同为84.5；C的质量分95高于B的87.5，因此C排在B之前",
+        "最终排名为C、B、D、A"
+      ],
+      "expected_structure": "四行候选评分排名表，加一行方法说明；最终排名为C、B、D、A。",
+      "ambiguity_notes": "四张表故意采用不同候选顺序，必须按候选ID连接。B与C最终同分，必须应用题目给出的质量分tie-break。",
+      "author_notes": "This hard case now exercises every declared rule: ID-based join, weighted aggregation, final-step ROUND_HALF_UP, and a real tie-break. No generic math-engine extension is required."
     }
   ]
 }

@@ -12,10 +12,11 @@ constraints. RMB/CNY presentation, Pareto-based selection analysis.
 
 **In development. Not released. No live paid benchmark has been authorized.**
 Domain 1 (`instruction_constraint_following`, IF-01 … IF-10) is frozen and
-externally approved; domains 2–5 are not yet authored. There is no complete V1
-production dataset (10 of 50 cases), no verified V1 model ID, no verified V1
-price, and no benchmark result. Every run artifact produced so far is synthetic
-dry-run output.
+externally approved. Domain 2 (`structured_information_analysis`, SA-01 …
+SA-10) is frozen and externally approved after the Phase 3B-2.1 patch round.
+Domains 3–5 are not authored. There is no complete V1 production dataset (20 of
+50 cases), no verified V1 model ID, no verified V1 price, and no benchmark
+result. Every run artifact produced so far is synthetic dry-run output.
 
 ## COMPLETED
 
@@ -26,7 +27,7 @@ dry-run output.
 - V1 framework implemented: one shared model registry, deterministic evaluator
   (21 check types), fixed-priority cross-family dual-judge selection, pricing /
   CNY normalization framework, Pareto analytics, standalone leaderboard
-- Test suite and network-isolated dry run passing (260 tests)
+- Test suite and network-isolated dry run passing (283 tests)
 - Phase 3A case design standard and 50-slot coverage matrix (awaiting external
   review; no production prompt written)
 - Case Design Standard approved for Phase 3B authoring (Gate 3A.1 passed)
@@ -52,15 +53,33 @@ dry-run output.
   **frozen** (external final review PASSED after the Phase 3B-1.2 patches)
 - 21 deterministic operators, with centralized deterministic-check declaration
   validation enforced by `run_benchmark.py --validate-only`
+- Domain 2 production cases SA-01 … SA-10 integrated from externally authored
+  canonical definitions (integration only)
+- External Gate 3B-2 result: SA-01/02/03/04/06/07 PASS; SA-05/08/09/10 PATCH;
+  0 REJECT
+- Phase 3B-2.1: the four PATCH cases replaced with externally authored canonical
+  patches (integration only; no new operator)
+- Domain 2 production cases SA-01 … SA-10 externally reviewed and **frozen**
+  (final external review PASSED after the Phase 3B-2.1 patches)
 
 ## CURRENT PHASE
 
-**Phase 3B-2 — Structured Information Analysis.**
+**Phase 3B-3 — Product Reasoning & Decision.**
 
 ## CURRENT STATE
 
-**Waiting for externally authored canonical SA-01 through SA-10 definitions.**
-Domain 1 is frozen; domains 2–5 are not authored.
+**Waiting for externally authored canonical PR-01 through PR-10 definitions.**
+Domains 1 and 2 are frozen; domains 3–5 are not authored.
+
+## NEXT
+
+Integrate the externally authored PR canonical cases, then run the external
+Gate Review.
+
+## THEN
+
+Set the remaining domains (PR, BC, AW) from externally authored canonical
+definitions and complete the 50-case dataset.
 
 ## AFTER THAT
 
@@ -71,10 +90,10 @@ credentials, run a cost projection, and only then execute a paid run.
 ## IMPORTANT
 
 - No live paid benchmark has been authorized. Do not run `--confirm`.
-- **Do not independently author SA production cases** (or any later domain's
-  production cases). Production case semantic authorship is externally
-  controlled; execution agents integrate the externally authored canonical
-  definitions and must not redesign them.
+- **Do not independently author production cases** for any remaining domain
+  (PR/BC/AW). Production case semantic authorship is externally controlled;
+  execution agents integrate the externally authored canonical definitions only
+  and must not redesign them.
 - Never read API keys from `~/.codex`, `~/.codex-deepseek`, shell history, or
   other agent configuration files. Credentials come from environment variables
   only, and are never committed.
@@ -107,12 +126,12 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 
 - Branch: `main`
 - Remote: none configured
-- Latest committed state: the Domain 1 freeze checkpoint
-  (`feat: freeze instruction-following benchmark cases`). It contains the V1
-  framework, the Phase 3A/3A.1 design documents, the frozen Domain 1 production
-  cases IF-01 … IF-10, the Phase 3B-1.1 operators (`section_max_chars`,
-  `section_bullet_count`, `exact_keys`), and deterministic-check declaration
-  validation. Working tree is clean.
+- Latest committed state: the Domain 2 freeze checkpoint
+  (`feat: freeze structured-analysis benchmark cases`). It contains the V1
+  framework, the Phase 3A/3A.1 design documents, the frozen production cases
+  IF-01 … IF-10 and SA-01 … SA-10, the 21 deterministic operators
+  (`section_max_chars`, `section_bullet_count`, `exact_keys` added in Phase
+  3B-1.1), and deterministic-check declaration validation.
 
 ## STILL OPEN (requires human decision)
 
@@ -123,5 +142,5 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 | 3 | Provider credentials for Moonshot, MiniMax, Zhipu, and Volcano Ark are not configured |
 | 4 | No FX snapshot (USD/CNY) is configured, so USD-priced models would have no CNY-normalized cost |
 | 5 | Human calibration protocol and reviewer assignment are undefined |
-| 6 | Only Domain 1 (10 of 50 cases) is authored and frozen; domains 2–5 remain to be authored from externally supplied canonical definitions |
-| 7 | SA-01 … SA-10 (and the later domains) require externally authored canonical definitions before Phase 3B-2 can proceed; DeepSeek must not author them |
+| 6 | Domains 1 and 2 are frozen; domains 3–5 remain to be authored from externally supplied canonical definitions (dataset is 20/50 cases) |
+| 7 | PR/BC/AW require externally authored canonical definitions before they can be integrated; DeepSeek must not author production cases |

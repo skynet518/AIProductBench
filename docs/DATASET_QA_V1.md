@@ -1,8 +1,9 @@
 # AIProductBench CN V1 — Dataset QA Ledger
 
-**Status: Domain 1 (`instruction_constraint_following`) is FROZEN / EXTERNALLY
-APPROVED. Domains 2–5 are not yet authored. The full 50-case production dataset
-is NOT approved. No live paid benchmark is authorized.**
+**Status: Domains 1 and 2 (`instruction_constraint_following`,
+`structured_information_analysis`) are FROZEN / EXTERNALLY APPROVED. Domains 3–5
+are not authored. The full 50-case production dataset (20/50 cases) is NOT
+approved. No live paid benchmark is authorized.**
 
 This is the persistent QA ledger for production benchmark case authoring. It
 tracks each of the five frozen domains through the authoring lifecycle. It is
@@ -35,7 +36,7 @@ not be marked `externally-approved` or `frozen` by the authoring agent.
 | # | Domain | Prefix | Cases | Domain status | Last updated |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `instruction_constraint_following` | IF | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
-| 2 | `structured_information_analysis` | SA | 10 | not started | 2026-09-11 |
+| 2 | `structured_information_analysis` | SA | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
 | 3 | `product_reasoning_decision` | PR | 10 | not started | 2026-09-11 |
 | 4 | `chinese_business_communication` | BC | 10 | not started | 2026-09-11 |
 | 5 | `agent_workflow_planning` | AW | 10 | not started | 2026-09-11 |
@@ -238,14 +239,90 @@ weakened to accommodate it. See `tests/test_check_declarations.py`.
 
 | Field | Value |
 | --- | --- |
-| Domain status | not started |
-| Case IDs | SA-01 … SA-10 (planned) |
-| Authoring date | — |
-| Validation result | — |
-| External review status | not submitted |
-| Final approval status | **not approved** |
+| Domain status | FROZEN / EXTERNALLY APPROVED |
+| Case IDs | SA-01 … SA-10 |
+| Authoring date | 2026-09-11 |
+| Authoring agent | External canonical authorship; Codex/DeepSeek performed integration only (Phase 3B-2 integration, Phase 3B-2.1 patch round) |
+| Dataset file | `data/cases_v1.json` |
+| Validation result | PASS — `python3 run_benchmark.py --validate-only --production-cases` exits 0; schema errors 0; all 10 SA cases' deterministic declarations validate; no new operator was required (operator count remains 21) |
+| External review status | Final external review PASSED on all 10 cases, after the Phase 3B-2.1 patches to SA-05, SA-08, SA-09, and SA-10. No SA case requires further semantic revision. |
+| Final approval status | **APPROVED — Domain 2 frozen (10/10 cases PASS)** |
 
-No known issues. Not started.
+### Case status
+
+| ID | Status |
+| --- | --- |
+| SA-01 | PASS |
+| SA-02 | PASS |
+| SA-03 | PASS |
+| SA-04 | PASS |
+| SA-05 | PASS |
+| SA-06 | PASS |
+| SA-07 | PASS |
+| SA-08 | PASS |
+| SA-09 | PASS |
+| SA-10 | PASS |
+
+### External Gate 3B-2 result (2026-09-11)
+
+| ID | Gate result | Action | Current status |
+| --- | --- | --- | --- |
+| SA-01 | PASS | none | PASS |
+| SA-02 | PASS | none | PASS |
+| SA-03 | PASS | none | PASS |
+| SA-04 | PASS | none | PASS |
+| SA-05 | PATCH | replaced with externally authored canonical patch (verbatim contiguous evidence-span rule) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| SA-06 | PASS | none | PASS |
+| SA-07 | PASS | none | PASS |
+| SA-08 | PATCH | replaced with externally authored canonical patch (fixed reporting order) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| SA-09 | PATCH | replaced with externally authored canonical patch (missing + known-failure interaction) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| SA-10 | PATCH | replaced with externally authored canonical patch (ROUND_HALF_UP + tie-break) | REVISED — EXTERNAL RE-REVIEW PENDING |
+
+The four PATCH cases were replaced with externally authored canonical JSON and
+were **not** rewritten by the executing agent. The six PASS cases (SA-01,
+SA-02, SA-03, SA-04, SA-06, SA-07) are unchanged. This earlier PATCH round is
+preserved here as QA provenance.
+
+### Final external approval (after Phase 3B-2.1)
+
+| ID | Final status |
+| --- | --- |
+| SA-01 | PASS |
+| SA-02 | PASS |
+| SA-03 | PASS |
+| SA-04 | PASS |
+| SA-05 | PASS |
+| SA-06 | PASS |
+| SA-07 | PASS |
+| SA-08 | PASS |
+| SA-09 | PASS |
+| SA-10 | PASS |
+
+The final external review passed after the Phase 3B-2.1 patches. Domain 2
+(`structured_information_analysis`, SA-01 … SA-10) is **FROZEN / EXTERNALLY
+APPROVED**. No SA case requires further semantic revision.
+
+**Scope.** This approval covers **Domain 2 only**. Domains 3–5 are not authored,
+and the full 50-case production dataset is **not** approved.
+
+### Integration provenance
+
+- The canonical case definitions (prompts, evaluation criteria, deterministic
+  checks, reference facts, tags, titles, test intents, and notes) were authored
+  **externally** and treated as authoritative.
+- The integration agent performed **integration only**: no semantic rewriting,
+  paraphrasing, rebalancing, or case redesign was permitted.
+- Every deterministic declaration validated against the existing 21-operator
+  schema. **No new operator was required** and no operator's runtime semantics
+  changed.
+- The integrated SA objects were verified object-for-object against the supplied
+  canonical definitions, and the frozen Domain 1 objects were verified unchanged
+  by hash before and after integration.
+
+### Known issues
+
+No known issues recorded. Domain 2 is frozen; no SA case requires further
+semantic revision.
 
 ---
 
@@ -305,3 +382,7 @@ No known issues. Not started.
 | 2026-09-11 | Second (final) external review completed: 8 IF cases PASS; IF-03 and IF-06 PATCH; 0 REJECT. Domain 1 moved to EXTERNAL FINAL REVIEW PENDING. |
 | 2026-09-11 | Phase 3B-1.2 executed: IF-03 prompt now requires each section to cover every fact category (no omission for the length budget) with a matching criterion; IF-06 lost the two whole-response forbidden-phrase checks that produced false failures. Deterministic-check declaration validation added for all 21 operators. Domain 1 remains EXTERNAL FINAL REVIEW PENDING; not approved. |
 | 2026-09-11 | Final external review PASSED on all 10 IF cases after the Phase 3B-1.2 patches. Domain 1 (`instruction_constraint_following`, IF-01…IF-10) set to FROZEN / EXTERNALLY APPROVED. Domains 2–5 remain not started; the full 50-case dataset is not approved. |
+| 2026-09-11 | Phase 3B-2 integrated the externally authored canonical SA-01…SA-10 (integration only; no semantic rewriting, no new operator). Domain 2 (`structured_information_analysis`) set to AUTHORED — EXTERNAL REVIEW PENDING. Dataset is now 20/50 cases. Domain 1 remains FROZEN. SA is not approved. |
+| 2026-09-11 | External Gate 3B-2 completed: SA-01/02/03/04/06/07 PASS; SA-05/08/09/10 PATCH; 0 REJECT. Domain 2 moved to EXTERNAL RE-REVIEW PENDING. |
+| 2026-09-11 | Phase 3B-2.1 executed: the four PATCH cases were replaced with externally authored canonical patches (integration only; no semantic rewriting, no new operator). SA-05/08/09/10 set to REVISED — EXTERNAL RE-REVIEW PENDING; the six PASS cases retained. Domain 2 remains EXTERNAL RE-REVIEW PENDING; not approved or frozen. |
+| 2026-09-11 | Final external review PASSED on all 10 SA cases after the Phase 3B-2.1 patches. Domain 2 (`structured_information_analysis`, SA-01…SA-10) set to FROZEN / EXTERNALLY APPROVED. Domains 3–5 remain not authored; the full 50-case dataset is not approved. |

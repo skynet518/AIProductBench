@@ -957,3 +957,53 @@ only 10 of 50 cases exist. No live paid benchmark is authorized.
 (`structured_information_analysis`) waits for externally authored canonical
 SA-01 … SA-10 definitions. DeepSeek agents must not independently author SA
 production cases.
+
+---
+
+## D-041 — Freeze Structured Information Analysis after external final review
+**Date:** 2026-09-11
+
+**Decision.** The external final review passed on all ten
+`structured_information_analysis` cases (SA-01 through SA-10) after the
+Phase 3B-2.1 canonical patch round. Domain 2 is **FROZEN / EXTERNALLY
+APPROVED**. The frozen cases are recorded in `data/cases_v1.json` and the QA
+ledger (`docs/DATASET_QA_V1.md`). The earlier Gate 3B-2 PATCH history is
+preserved in the ledger as QA provenance.
+
+The Phase 3B-2.1 patches that closed the review were:
+
+- **SA-05 — provenance rule clarified.** The prompt now requires each `Evidence`
+  entry's `[M#]` and quoted text to come from the same message, with the quoted
+  span taken as a contiguous verbatim source extract (no rewrites, merges, or
+  cross-message stitching). Message IDs stay machine-checked; exact source
+  attribution and verbatim contiguity remain judge-evaluated.
+- **SA-08 — reporting order made deterministic.** A fixed reporting priority
+  (P1事故数 > 已部署版本 > 灰度比例 > 支付转化率) was added solely to determine
+  the *output order*. It does not change source authority: the resolution rules
+  for version, rollout proportion, and P1 count are unchanged, and the payment
+  conversion rate stays unresolved.
+- **SA-09 — missing-data plus known-failure interaction.** Vendor D now has both
+  a missing security result and a known failed accuracy gate, exercising the
+  rule that a known failure yields REJECT even when another required field is
+  missing. B and C remain UNDETERMINED and A remains APPROVE.
+- **SA-10 — ROUND_HALF_UP plus a real tie-break.** The case now specifies
+  decimal ROUND_HALF_UP at the final total and a genuine post-rounding tie
+  (B and C both 84.5) broken by the higher quality score, producing the ranking
+  C > B > D > A.
+
+**Rationale.** The Gate 3B-2 review found six cases already correct and four
+requiring sharper, objectively checkable rules. The Phase 3B-2.1 canonical
+patches supplied those rules without expanding the deterministic framework: no
+new operator was required and the operator count remains 21.
+
+**Scope.** The approval covers **Domain 2 only**. It does not approve the
+50-case dataset, any later domain, any model ID, any price, or any benchmark
+result. `data/cases_v1.json` remains `production_status: "authoring"` because
+only 20 of 50 cases exist. No live paid benchmark is authorized.
+
+**Consequences.** Domain 2 is committed as the Domain 2 freeze checkpoint
+(`feat: freeze structured-analysis benchmark cases`). Phase 3B-3
+(`product_reasoning_decision`) proceeds only with externally authored canonical
+PR-01 … PR-10 definitions, which execution agents integrate but do not author or
+redesign. The same externally controlled semantic authorship applies to the
+remaining domains.
