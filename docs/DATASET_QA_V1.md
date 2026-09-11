@@ -333,11 +333,11 @@ semantic revision.
 | Domain status | FROZEN / EXTERNALLY APPROVED |
 | Case IDs | PR-01 … PR-10 |
 | Authoring date | 2026-09-11 |
-| Authoring agent | External canonical authorship; Codex/DeepSeek performed integration only (Phase 3B-3 integration, Phase 3B-3.1 patch round) |
+| Authoring agent | External canonical authorship; Codex/DeepSeek performed integration only (Phase 3B-3 integration, Phase 3B-3.1 patch round, Phase 3B-3R full-domain replacement, Phase 3B-3R.1 PR-10 patch) |
 | Dataset file | `data/cases_v1.json` |
 | Validation result | PASS — `python3 run_benchmark.py --validate-only --production-cases` exits 0; schema errors 0; all 10 PR cases' deterministic declarations validate; no new operator was required (operator count remains 21) |
-| External review status | Final external review PASSED on all 10 cases, after the Phase 3B-3.1 patches to PR-01, PR-05, PR-06, PR-07, and PR-10. No PR case requires further semantic revision. |
-| Final approval status | **APPROVED — Domain 3 frozen (10/10 cases PASS)** |
+| External review status | Final Matrix Gate: PASS. Final Semantic Gate: PASS. The repaired Matrix-compliant set passed after the Phase 3B-3R.1 PR-10 patch. |
+| Final approval status | **APPROVED — Domain 3 re-frozen (10/10 cases PASS)** |
 
 ### Case status
 
@@ -353,6 +353,81 @@ semantic revision.
 | PR-08 | PASS |
 | PR-09 | PASS |
 | PR-10 | PASS |
+
+### External Gate 3B-3R result (2026-09-11)
+
+| ID | Gate result | Action | Current status |
+| --- | --- | --- | --- |
+| PR-01 | PASS | none | PASS |
+| PR-02 | PASS | none | PASS |
+| PR-03 | PASS | none | PASS |
+| PR-04 | PASS | none | PASS |
+| PR-05 | PASS | none | PASS |
+| PR-06 | PASS | none | PASS |
+| PR-07 | PASS | none | PASS |
+| PR-08 | PASS | none | PASS |
+| PR-09 | PASS | none | PASS |
+| PR-10 | PATCH | replaced in Phase 3B-3R.1 (new-model candidate vs rollback-baseline role separation) | REVISED — EXTERNAL RE-REVIEW PENDING |
+
+The Matrix-compliant replacement passed review on PR-01 … PR-09 at Gate 3B-3R.
+PR-10 was patched in Phase 3B-3R.1 to resolve one contradiction:
+Aster/Birch/Cedar are new-model candidates subject to the new-model hard gates,
+while Legacy is the current production baseline and feature-flag rollback target
+only and is not a new-model candidate; Cedar cannot be a recommendation or
+runner-up because it fails the p95 and cost hard gates. PR-01 … PR-09 are
+unchanged. PR-10 then passed the final Matrix + Semantic Gate (see below).
+
+### Final external re-approval — Matrix + Semantic Gate (after Phase 3B-3R.1)
+
+| ID | Final status |
+| --- | --- |
+| PR-01 | PASS |
+| PR-02 | PASS |
+| PR-03 | PASS |
+| PR-04 | PASS |
+| PR-05 | PASS |
+| PR-06 | PASS |
+| PR-07 | PASS |
+| PR-08 | PASS |
+| PR-09 | PASS |
+| PR-10 | PASS |
+
+The Phase 3B-3R Matrix Gate and the Semantic Gate both passed on the repaired
+set after the Phase 3B-3R.1 PR-10 patch. Domain 3
+(`product_reasoning_decision`, PR-01 … PR-10) is **RE-FROZEN / EXTERNALLY
+APPROVED**. No further PR semantic change is authorized.
+
+**Scope.** This approval covers **Domain 3 only**. Domains 4–5 are not authored,
+and the full 50-case production dataset is **not** approved.
+
+### Phase 3B-3R — Matrix Compliance Repair (2026-09-11)
+
+An external audit found that the Phase 3B-3/3B-3.1 PR set (historical commit
+`e859a6d`) passed semantic quality review but **drifted materially from the
+APPROVED `CASE_MATRIX_V1.md` Domain-3 slot definitions**.
+
+- The historical commit `e859a6d` remains intact and auditable; Git history was
+  **not** reset, reverted, amended, squashed, or rewritten.
+- Domain 3 production status was **reopened**.
+- All ten PR cases were **replaced** by externally authored Matrix-compliant
+  canonical definitions. The superseded definitions remain recoverable from
+  `e859a6d`; no duplicate or archive copy was added to `data/cases_v1.json`.
+- The replacement asserts slot/title, difficulty (2 easy / 5 medium / 3 hard),
+  language (8 zh / 1 en / 1 mixed), output shape, and deterministic plan
+  (8 Partial / 2 None, 0 Strong) compliance with the Matrix.
+- IF and SA remain **FROZEN / EXTERNALLY APPROVED**.
+- No methodology or Matrix change was made — `CASE_MATRIX_V1.md` was already
+  authoritative and unchanged.
+
+Domain status at the end of Phase 3B-3R.1: **REOPENED — MATRIX COMPLIANCE
+EXTERNAL RE-REVIEW PENDING** (PR-01 … PR-09 PASS; PR-10 REVISED). This is
+superseded by the final Matrix + Semantic Gate approval recorded above; the
+provenance is retained.
+
+#### Historical (superseded) PR review record
+
+The records below document the earlier Phase 3B-3 / 3B-3.1 round. They are
+preserved as QA provenance and are **superseded** by the Phase 3B-3R reopen.
 
 ### External Gate 3B-3 result (2026-09-11)
 
@@ -475,3 +550,7 @@ No known issues. Not started.
 | 2026-09-11 | External Gate 3B-3 completed: PR-02/03/04/08/09 PASS; PR-01/05/06/07/10 PATCH; 0 REJECT. Domain 3 moved to EXTERNAL RE-REVIEW PENDING. |
 | 2026-09-11 | Phase 3B-3.1 executed: the five PATCH cases were replaced with externally authored canonical full objects (integration only; no semantic rewriting, no new operator, no winner regexes). PR-01/05/06/07/10 set to REVISED — EXTERNAL RE-REVIEW PENDING; the five PASS cases retained. Domain 3 remains EXTERNAL RE-REVIEW PENDING; not approved or frozen. |
 | 2026-09-11 | Final external review PASSED on all 10 PR cases after the Phase 3B-3.1 patches. Domain 3 (`product_reasoning_decision`, PR-01…PR-10) set to FROZEN / EXTERNALLY APPROVED. Domains 4–5 remain not authored; the full 50-case dataset is not approved. |
+| 2026-09-11 | Phase 3B-3R — Matrix Compliance Repair. External audit found the frozen PR set (historical commit `e859a6d`) had drifted from APPROVED `CASE_MATRIX_V1.md` slot definitions despite passing semantic review. Domain 3 reopened; all ten PR cases replaced by externally authored Matrix-compliant canonical definitions (integration only; no new operator, no winner regexes, no hidden thresholds). `e859a6d` left intact. Domain 3 = REOPENED — MATRIX COMPLIANCE EXTERNAL REVIEW PENDING; PR-01…PR-10 = AUTHORED — EXTERNAL REVIEW PENDING. IF/SA remain frozen; Domains 4–5 unauthored; dataset 30/50; not approved. |
+| 2026-09-11 | External Gate 3B-3R completed: PR-01…PR-09 PASS; PR-10 PATCH; 0 REJECT. Domain 3 = REOPENED — MATRIX COMPLIANCE EXTERNAL RE-REVIEW PENDING. |
+| 2026-09-11 | Phase 3B-3R.1 executed: PR-10 replaced with the externally authored canonical object that separates new-model candidates (Aster/Birch/Cedar) from the Legacy rollback baseline and bars Cedar from recommendation/runner-up. PR-01…PR-09 unchanged. PR-10 = REVISED — EXTERNAL RE-REVIEW PENDING. Also corrected a Phase 3B-3R documentation error that had left Domain 1's QA status mislabeled as reopened. Domain 3 remains EXTERNAL RE-REVIEW PENDING; not approved or frozen. |
+| 2026-09-11 | Final Matrix Gate PASS and final Semantic Gate PASS on the repaired PR set after the Phase 3B-3R.1 patch. Domain 3 (`product_reasoning_decision`, PR-01…PR-10) set to FROZEN / EXTERNALLY APPROVED (re-frozen). Domains 1–2 remain frozen; domains 4–5 unauthored; dataset 30/50; the full dataset is not approved. |

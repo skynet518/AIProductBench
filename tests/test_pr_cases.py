@@ -1,14 +1,18 @@
-"""Product-reasoning-decision (PR) production-domain integrity.
+"""Product-reasoning-decision (PR) production-domain integrity — Matrix-compliant set.
 
-PR-01 … PR-10 were authored externally and integrated as canonical definitions.
-These tests pin the domain shape, validate every deterministic declaration,
-guard the 20 frozen IF/SA objects, and independently recompute the quantitative
-baselines with decimal-safe arithmetic. They deliberately do NOT encode a
-mandatory product recommendation.
+The Phase 3B-3/3B-3.1 PR set passed semantic quality review but drifted from the
+APPROVED CASE_MATRIX_V1.md slots, so Domain 3 was reopened and replaced with the
+externally authored Matrix-compliant canonical definitions (Phase 3B-3R).
+
+These tests pin the Matrix plan (slot/title, difficulty, language, deterministic
+strength), guard the 20 frozen IF/SA objects, validate declarations, and verify
+case-visible source facts. They deliberately do NOT encode a mandatory product
+recommendation, a model winner, or any hidden threshold value.
 """
 
 import hashlib
 import json
+import re
 import unittest
 from collections import Counter
 from decimal import Decimal
@@ -22,8 +26,22 @@ PRODUCTION_CASES = ROOT / "data" / "cases_v1.json"
 PR_IDS = [f"PR-{i:02d}" for i in range(1, 11)]
 FROZEN_IDS = [f"IF-{i:02d}" for i in range(1, 11)] + [f"SA-{i:02d}" for i in range(1, 11)]
 
-# Frozen IF-01 … IF-10 and SA-01 … SA-10 object hashes (sort_keys, compact
-# separators). Integration of later domains must not alter them.
+# PR-01 … PR-09 passed the Phase 3B-3R external review and must not change when
+# PR-10 is patched (Phase 3B-3R.1).
+PR_PASS_IDS = [f"PR-{i:02d}" for i in range(1, 10)]
+PR_PASS_HASHES = {
+    "PR-01": "326c756e1997c22ec2a5c4fa8ddba58e90748c5204e34527f1fa37dfb526fc28",
+    "PR-02": "50f6ffa58c3b985e6d38bb7e7524b0031c6c2a908cd524de4fe8670ab2648b52",
+    "PR-03": "d13cbde921ecf69f982fb11247c2db2da35db14f3f7699b57a9d61f0f4ace8a7",
+    "PR-04": "76a9a3eb460f3677e53e3ec5f100a74165985ef80bef3e7517a1fdaaa73fcc1d",
+    "PR-05": "baa75c94343a96e75a46ec3a57e07f4bbbcf900b97bbb123b88739c52453d87d",
+    "PR-06": "a345e0443c806d3038bc0e87c208126eebb7b09408e53ad4c3410853341a05dc",
+    "PR-07": "2efac9943de42077c203e6fe1e6b083d84bf04df2e40dc728ab5ac7c24dd8e8f",
+    "PR-08": "3585f357fdbec171e0a3af0d06a585415dd7825704b027b1ae5f3775feef1d9c",
+    "PR-09": "008889e3a090c538221b32740bac61c52b2080e08b27804331fff30b4fd29f8b",
+}
+
+# Frozen Domain 1 / Domain 2 object hashes (sort_keys, compact separators).
 FROZEN_HASHES = {
     "IF-01": "397de71403b07772180656167846d1cd32df02d8f6b7c0d887c3e2f65619ce01",
     "IF-02": "8e87960276d118cd4222d7094b19eccaf343efd5f051dd4142b2b0901167e547",
@@ -47,63 +65,35 @@ FROZEN_HASHES = {
     "SA-10": "91a33fea8b0d1c678c4a41a518758c3781887b435ea6af8f8161aa4910d50e91",
 }
 
-# The deterministic regex checks these quantitative cases are allowed to
-# declare, in order. A winner/decision regex would appear here as an extra
-# entry, so pinning the exact list proves no such check was added. The PR-05
-# `Decision:` / `Trade-off:` / `Guardrail:` entries are label-presence checks,
-# not winner matching.
-QUANT_REGEX_PATTERNS = {
-    "PR-04": ["(?m)^量化基线：\\s*A=600；B=600；C=300；A\\+C=900\\s*$"],
-    "PR-05": [
-        "(?m)^Quant baseline:\\s*Flat=25920;\\s*Usage=21840\\s*$",
-        "(?m)^Decision:",
-        "(?m)^Trade-off:",
-        "(?m)^Guardrail:",
-    ],
-    "PR-06": ["(?m)^成本基线：\\s*自研=196000元；供应商=231000元；差额=35000元\\s*$"],
-    "PR-10": ["(?m)^量化基线：\\s*A=108万；B=108万；C=0万；D=88万\\s*$"],
+# APPROVED CASE_MATRIX_V1.md Domain-3 slot tables (working title / diff / lang).
+MATRIX_TITLES = {
+    "PR-01": "本季度只做两件事",
+    "PR-02": "Metric definition for a simple feature",
+    "PR-03": "MVP 范围裁剪",
+    "PR-04": "上线 / 不上线决策",
+    "PR-05": "指标设计含护栏与回滚阈值",
+    "PR-06": "权衡推理：质量 / 成本 / 延迟",
+    "PR-07": "实验设计",
+    "PR-08": "用户问题诊断",
+    "PR-09": "路线图选择",
+    "PR-10": "模型选型与风险回滚",
+}
+MATRIX_LANGUAGE = {
+    "PR-01": "zh", "PR-02": "en", "PR-03": "zh", "PR-04": "zh", "PR-05": "zh",
+    "PR-06": "zh", "PR-07": "zh", "PR-08": "zh", "PR-09": "zh", "PR-10": "mixed",
+}
+MATRIX_DIFFICULTY = {
+    "PR-01": "easy", "PR-02": "easy", "PR-03": "medium", "PR-04": "medium",
+    "PR-05": "medium", "PR-06": "medium", "PR-07": "medium", "PR-08": "hard",
+    "PR-09": "hard", "PR-10": "hard",
 }
 
-QUANT_TYPE_SETS = {
-    "PR-04": {"required_regex", "required_phrases", "ordering"},
-    "PR-05": {"required_regex"},
-    "PR-06": {"required_regex", "required_phrases", "ordering"},
-    "PR-10": {"required_regex", "required_phrases", "ordering"},
-}
-
-# Structure-only cases: these must not gain any regex check (and in particular
-# no winner regex).
-STRUCTURE_ONLY_IDS = ["PR-01", "PR-02", "PR-03", "PR-07", "PR-08", "PR-09"]
-
-# Canonical answers used only to prove the declared baseline/structure checks are
-# satisfiable. They intentionally do NOT encode a graded product recommendation.
-DECLARATION_ANSWERS = {
-    "PR-04": (
-        "量化基线：A=600；B=600；C=300；A+C=900\n"
-        "【推荐方案】\n- 组合选择说明。\n"
-        "【关键取舍】\n- 取舍说明。\n"
-        "【下一步证据】\n- 证据说明。"
-    ),
-    "PR-05": (
-        "Quant baseline: Flat=25920; Usage=21840\n"
-        "Decision: choose a package.\n"
-        "Trade-off: state the trade-off.\n"
-        "Guardrail: state an observable guardrail."
-    ),
-    "PR-06": (
-        "成本基线：自研=196000元；供应商=231000元；差额=35000元\n"
-        "【当前建议】\n- 建议说明。\n"
-        "【为什么不是只看一年成本】\n- 说明。\n"
-        "【三个月后的转向条件】\n- 条件说明。"
-    ),
-    "PR-10": (
-        "量化基线：A=108万；B=108万；C=0万；D=88万\n"
-        "【季度组合】\n- 组合说明。\n"
-        "【组合总成本与直接风险调整价值】\n- 成本与价值说明。\n"
-        "【为什么不选另一个最有诱惑力的组合】\n- 说明。\n"
-        "【下季度重新排序的触发条件】\n- 条件说明。"
-    ),
-}
+# Matrix deterministic plan: 8 Partial (non-empty structural checks), 2 None ([]).
+PARTIAL_IDS = ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-07", "PR-09", "PR-10"]
+NONE_IDS = ["PR-06", "PR-08"]
+# Only structural/Partial-style operators are allowed; no Strong objective
+# operators (exact_keys, numeric_range, valid_json, ...) may appear.
+ALLOWED_PR_CHECK_TYPES = {"ordering", "required_phrases", "required_regex", "exact_bullet_count"}
 
 
 def object_hash(obj) -> str:
@@ -124,6 +114,10 @@ def check_named(case: dict, name: str) -> dict:
     return next(c for c in case["deterministic_checks"] if c["name"] == name)
 
 
+def patterns_of(case: dict) -> list:
+    return [c["pattern"] for c in case["deterministic_checks"] if c["type"] == "required_regex"]
+
+
 class TestPrDomainShape(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -142,21 +136,49 @@ class TestPrDomainShape(unittest.TestCase):
         ids = [c["id"] for c in self.doc["test_cases"]]
         self.assertFalse([i for i in ids if i.startswith(("BC-", "AW-"))], msg=ids)
 
-    def test_pr_difficulty_distribution(self):
-        counts = Counter(self.cases[cid]["difficulty"] for cid in PR_IDS)
-        self.assertEqual(counts, {"easy": 2, "medium": 5, "hard": 3})
+    def test_production_status_is_still_authoring(self):
+        self.assertEqual(self.doc["production_status"], "authoring")
 
-    def test_pr_language_distribution(self):
-        counts = Counter(self.cases[cid]["language"] for cid in PR_IDS)
-        self.assertEqual(counts, {"zh": 8, "en": 1, "mixed": 1})
+
+class TestMatrixCompliance(unittest.TestCase):
+    """Regression guard so the PR domain cannot silently drift from its Matrix slots."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.cases = load_by_id()
+
+    def test_titles_match_approved_matrix_working_titles(self):
+        titles = {cid: self.cases[cid]["title"] for cid in PR_IDS}
+        self.assertEqual(titles, MATRIX_TITLES)
+
+    def test_difficulty_matches_matrix(self):
+        got = {cid: self.cases[cid]["difficulty"] for cid in PR_IDS}
+        self.assertEqual(got, MATRIX_DIFFICULTY)
+        self.assertEqual(Counter(got.values()), {"easy": 2, "medium": 5, "hard": 3})
+
+    def test_language_matches_matrix(self):
+        got = {cid: self.cases[cid]["language"] for cid in PR_IDS}
+        self.assertEqual(got, MATRIX_LANGUAGE)
+        self.assertEqual(Counter(got.values()), {"zh": 8, "en": 1, "mixed": 1})
 
     def test_all_pr_cases_are_product_reasoning_decision(self):
         for cid in PR_IDS:
             with self.subTest(case=cid):
                 self.assertEqual(self.cases[cid]["domain"], "product_reasoning_decision")
 
-    def test_production_status_is_still_authoring(self):
-        self.assertEqual(self.doc["production_status"], "authoring")
+    def test_deterministic_plan_is_8_partial_2_none(self):
+        for cid in PARTIAL_IDS:
+            with self.subTest(case=cid):
+                self.assertTrue(self.cases[cid]["deterministic_checks"], msg=cid)
+        for cid in NONE_IDS:
+            with self.subTest(case=cid):
+                self.assertEqual(self.cases[cid]["deterministic_checks"], [])
+
+    def test_no_pr_case_uses_strong_objective_operators(self):
+        for cid in PR_IDS:
+            with self.subTest(case=cid):
+                types = {c["type"] for c in self.cases[cid]["deterministic_checks"]}
+                self.assertTrue(types <= ALLOWED_PR_CHECK_TYPES, msg=f"{cid}: {types}")
 
 
 class TestFrozenIfSaUnchanged(unittest.TestCase):
@@ -166,6 +188,12 @@ class TestFrozenIfSaUnchanged(unittest.TestCase):
             with self.subTest(case=cid):
                 self.assertEqual(object_hash(cases[cid]), FROZEN_HASHES[cid])
 
+    def test_pr_01_through_pr_09_unchanged(self):
+        cases = load_by_id()
+        for cid in PR_PASS_IDS:
+            with self.subTest(case=cid):
+                self.assertEqual(object_hash(cases[cid]), PR_PASS_HASHES[cid])
+
 
 class TestPrDeclarationValidation(unittest.TestCase):
     def test_every_pr_declaration_validates(self):
@@ -173,184 +201,238 @@ class TestPrDeclarationValidation(unittest.TestCase):
         for cid in PR_IDS:
             for index, check in enumerate(cases[cid]["deterministic_checks"]):
                 with self.subTest(case=cid, check=index):
-                    self.assertEqual(
-                        deterministic.validate_check_declaration(check), []
-                    )
+                    self.assertEqual(deterministic.validate_check_declaration(check), [])
 
 
-class TestNoWinnerChecks(unittest.TestCase):
-    def test_quantitative_cases_only_check_baseline_and_structure(self):
+class TestNoWinnerRegexOrHiddenThreshold(unittest.TestCase):
+    def test_pr04_decision_regex_is_an_enumeration_not_a_winner(self):
+        pattern = patterns_of(load_by_id()["PR-04"])[0]
+        # Both outcomes are allowed by the structure check; neither is pinned.
+        self.assertIn("上线", pattern)
+        self.assertIn("暂缓", pattern)
+        self.assertIn("(上线|暂缓)", pattern)
+
+    def test_pr05_trigger_patterns_check_numeric_presence_only(self):
+        patterns = patterns_of(load_by_id()["PR-05"])
+        row_patterns = [p for p in patterns if p.endswith(r"\d")]
+        self.assertEqual(len(row_patterns), 4)  # PRIMARY + 3 GUARDRAIL rows
+        for baseline in ("18", "6.0", "4.5", "0.7"):
+            self.assertFalse(
+                any(baseline in p for p in patterns),
+                msg=f"hidden baseline threshold literal {baseline} in a pattern",
+            )
+
+    def test_pr10_trigger_patterns_check_numeric_presence_only(self):
+        case = load_by_id()["PR-10"]
+        patterns = patterns_of(case)
+        row_patterns = [p for p in patterns if p.endswith(r"\d")]
+        self.assertEqual(len(row_patterns), 3)  # Quality drift / Latency / Cost
+        for model in ("Aster", "Birch", "Cedar", "Legacy"):
+            self.assertFalse(
+                any(model in p for p in patterns),
+                msg=f"model winner {model} encoded in a deterministic pattern",
+            )
+
+    def test_none_cases_have_no_checks_at_all(self):
         cases = load_by_id()
-        for cid in QUANT_REGEX_PATTERNS:
-            with self.subTest(case=cid):
-                checks = cases[cid]["deterministic_checks"]
-                types = [c["type"] for c in checks]
-                self.assertEqual(
-                    set(types), QUANT_TYPE_SETS[cid]
-                )
-                patterns = [c["pattern"] for c in checks if c["type"] == "required_regex"]
-                self.assertEqual(patterns, QUANT_REGEX_PATTERNS[cid])
-
-    def test_structure_only_cases_have_no_regex_checks(self):
-        cases = load_by_id()
-        for cid in STRUCTURE_ONLY_IDS:
-            with self.subTest(case=cid):
-                types = {c["type"] for c in cases[cid]["deterministic_checks"]}
-                self.assertEqual(types, {"required_phrases", "ordering"})
-
-    def test_declaration_answers_pass_structure_and_baseline_checks(self):
-        cases = load_by_id()
-        for cid, answer in DECLARATION_ANSWERS.items():
-            with self.subTest(case=cid):
-                result = deterministic.evaluate(cases[cid], answer)
-                self.assertTrue(
-                    result["all_passed"],
-                    msg=f"{cid}: "
-                    + "; ".join(
-                        f"{c['name']}: {c['detail']}"
-                        for c in result["checks"]
-                        if not c["passed"]
-                    ),
-                )
+        self.assertEqual(cases["PR-06"]["deterministic_checks"], [])
+        self.assertEqual(cases["PR-08"]["deterministic_checks"], [])
 
 
-class TestPr04Arithmetic(unittest.TestCase):
-    def test_baseline(self):
-        a = Decimal("40000") * Decimal("0.015")
-        b = Decimal("15000") * Decimal("0.04")
-        c = Decimal("25000") * Decimal("0.012")
-        self.assertEqual(a, Decimal("600"))
-        self.assertEqual(b, Decimal("600"))
-        self.assertEqual(c, Decimal("300"))
-        self.assertEqual(a + c, Decimal("900"))
-        # A(3 weeks) + C(2 weeks) fits the 5-week capacity.
-        self.assertEqual(Decimal("3") + Decimal("2"), Decimal("5"))
+class TestPr01Prioritisation(unittest.TestCase):
+    def test_basics(self):
+        case = load_by_id()["PR-01"]
+        order = check_named(case, "决策规则在选择之前")
+        self.assertEqual(order["phrases"], ["决策规则：", "选择：", "理由："])
+        self.assertEqual(order["type"], "ordering")
+        selection = check_named(case, "选择行包含两个项目槽位")["pattern"]
+        # Exactly two slots, drawn from the A-E candidate set (no pinned pair).
+        self.assertIn("[A-E]", selection)
+        self.assertNotIn("A+B", selection)
+        self.assertNotIn("A、C", selection)
 
 
-class TestPr05Arithmetic(unittest.TestCase):
-    def test_baseline_and_finance_floor(self):
-        flat = Decimal("180") * (Decimal("199") - Decimal("55"))
-        usage = Decimal("260") * (Decimal("169") - Decimal("85"))
-        self.assertEqual(flat, Decimal("25920"))
-        self.assertEqual(usage, Decimal("21840"))
-        floor = Decimal("20000")
-        self.assertGreater(flat, floor)
-        self.assertGreater(usage, floor)
-
-
-class TestPr06Arithmetic(unittest.TestCase):
-    def test_build_vs_buy_baseline(self):
-        opportunity = Decimal("8") * Decimal("5") * Decimal("2500")
-        in_house = opportunity + Decimal("12") * Decimal("8000")
-        vendor = Decimal("15000") + Decimal("12") * Decimal("18000")
-        self.assertEqual(opportunity, Decimal("100000"))
-        self.assertEqual(in_house, Decimal("196000"))
-        self.assertEqual(vendor, Decimal("231000"))
-        self.assertEqual(vendor - in_house, Decimal("35000"))
-
-
-class TestPr10ArithmeticAndDependency(unittest.TestCase):
-    def test_risk_adjusted_values(self):
-        a = Decimal("120") * Decimal("0.90")
-        b = Decimal("240") * Decimal("0.45")
-        c = Decimal("0") * Decimal("1.00")
-        d = Decimal("110") * Decimal("0.80")
-        self.assertEqual(a, Decimal("108"))
-        self.assertEqual(b, Decimal("108"))
-        self.assertEqual(c, Decimal("0"))
-        self.assertEqual(d, Decimal("88"))
-
-    def test_combinations_and_dependency(self):
-        # Effort: A=3, B=5, C=2, D=4 weeks; capacity = 9 weeks.
-        effort = {"A": Decimal("3"), "B": Decimal("5"), "C": Decimal("2"), "D": Decimal("4")}
-        value = {"A": Decimal("108"), "B": Decimal("108"), "C": Decimal("0"), "D": Decimal("88")}
-        capacity = Decimal("9")
-
-        self.assertEqual(effort["A"] + effort["D"], Decimal("7"))
-        self.assertEqual(value["A"] + value["D"], Decimal("196"))
-        self.assertEqual(capacity - (effort["A"] + effort["D"]), Decimal("2"))
-        self.assertEqual(effort["A"] + effort["C"] + effort["D"], capacity)
-        self.assertEqual(value["A"] + value["C"] + value["D"], Decimal("196"))
-        self.assertEqual(
-            capacity - (effort["A"] + effort["C"] + effort["D"]), Decimal("0")
+class TestPr02MetricDefinition(unittest.TestCase):
+    def test_output_contract_and_event_limitation(self):
+        case = load_by_id()["PR-02"]
+        phrases = check_named(case, "Required metric labels present")["phrases"]
+        self.assertEqual(phrases, ["Primary metric:", "Guardrail metric:", "Why:"])
+        self.assertIn(
+            "No survey data, revenue data, or page-view event is available", case["prompt"]
         )
+        for event in (
+            "search_run",
+            "filter_saved",
+            "saved_filter_opened",
+            "search_result_clicked",
+            "search_error",
+        ):
+            self.assertIn(event, case["prompt"])
 
-        abc_effort = effort["A"] + effort["B"] + effort["C"]
-        self.assertEqual(abc_effort, Decimal("10"))
-        self.assertGreater(abc_effort, capacity)
 
-        # B depends on C being selected in the same quarter.
-        prompt = load_by_id()["PR-10"]["prompt"]
-        self.assertIn("B只有在同一季度同时选择C时才是有效组合", prompt)
+class TestPr03ScopeReduction(unittest.TestCase):
+    def test_six_items_and_sections(self):
+        case = load_by_id()["PR-03"]
+        prompt = case["prompt"]
+        for item in ("A.", "B.", "C.", "D.", "E.", "F."):
+            self.assertIn(item, prompt)
+        self.assertEqual(check_named(case, "六个候选功能对应六条列表项")["count"], 6)
+        phrases = check_named(case, "三个部分齐全")["phrases"]
+        self.assertEqual(phrases, ["【保留】", "【明确排除】", "【范围原则】"])
 
 
-class TestPhase3b31Patches(unittest.TestCase):
-    """Regression guards for the externally reviewed Phase 3B-3.1 patch."""
+class TestPr04LaunchDecision(unittest.TestCase):
+    def test_visible_hard_gates_and_current_values(self):
+        prompt = load_by_id()["PR-04"]["prompt"]
+        self.assertIn("win rate ≥ 55%", prompt)
+        self.assertIn("严重错误率 ≤ 1.0%", prompt)
+        self.assertIn("p95 延迟 ≤ 1.8 秒", prompt)
+        self.assertIn("成本 ≤ 40000 元", prompt)
+        self.assertIn("严重错误率：1.4%", prompt)
+        self.assertIn("预计每月新增成本：44000 元", prompt)
 
+    def test_regex_is_enumeration_not_winner(self):
+        pattern = patterns_of(load_by_id()["PR-04"])[0]
+        self.assertIn("(上线|暂缓)", pattern)
+
+
+class TestPr05MetricGuardrailRollback(unittest.TestCase):
+    def test_row_labels_and_numeric_trigger_fields(self):
+        case = load_by_id()["PR-05"]
+        phrases = check_named(case, "四种行类型存在")["phrases"]
+        self.assertEqual(phrases, ["PRIMARY", "GUARDRAIL-1", "GUARDRAIL-2", "GUARDRAIL-3"])
+        row_patterns = [p for p in patterns_of(case) if p.endswith(r"\d")]
+        self.assertEqual(len(row_patterns), 4)
+        # The tests do not prescribe any threshold value.
+        for p in patterns_of(case):
+            self.assertNotIn("18", p)
+            self.assertNotIn("0.7", p)
+
+
+class TestPr06Tradeoff(unittest.TestCase):
+    def test_options_gates_and_math(self):
+        case = load_by_id()["PR-06"]
+        self.assertEqual(case["deterministic_checks"], [])
+        prompt = case["prompt"]
+        # All three options clear the hard gates (quality >= 91.5, latency <= 2.0, cost <= 50000).
+        for quality in ("94.0", "92.7", "91.8"):
+            self.assertIn(quality, prompt)
+        self.assertTrue(all(q >= Decimal("91.5") for q in map(Decimal, ("94.0", "92.7", "91.8"))))
+        # A vs B: cost +50%, quality +1.3.
+        cost_increase = (Decimal("48000") - Decimal("32000")) / Decimal("32000")
+        self.assertEqual(cost_increase, Decimal("0.5"))
+        self.assertEqual(Decimal("94.0") - Decimal("92.7"), Decimal("1.3"))
+
+
+class TestPr07ExperimentDesign(unittest.TestCase):
+    def test_seven_fields_and_visible_design_facts(self):
+        case = load_by_id()["PR-07"]
+        expected = [
+            "【假设】", "【随机化单位】", "【实验时长】", "【主指标】",
+            "【护栏指标】", "【成功条件】", "【提前停止条件】",
+        ]
+        self.assertEqual(check_named(case, "实验计划字段齐全")["phrases"], expected)
+        self.assertEqual(check_named(case, "实验计划字段顺序正确")["phrases"], expected)
+        prompt = case["prompt"]
+        self.assertIn("同一团队成员会互相影响", prompt)
+        self.assertIn("激活定义已经固定", prompt)
+
+
+class TestPr08Diagnosis(unittest.TestCase):
+    def test_no_checks_and_visible_signals(self):
+        case = load_by_id()["PR-08"]
+        self.assertEqual(case["deterministic_checks"], [])
+        prompt = case["prompt"]
+        for signal in (
+            "移动端导入完成率基本不变",
+            "桌面端导入完成率",
+            "后端 CSV 上传成功率保持在 98% 左右",
+            "mapping_confirmed",
+            "相关客服工单中，18张提到",
+            "约20%的客户上传的是已经符合系统字段模板的CSV",
+        ):
+            self.assertIn(signal, prompt)
+
+
+class TestPr09RoadmapSequencing(unittest.TestCase):
+    def test_capacity_dependencies_and_renewal_risk(self):
+        case = load_by_id()["PR-09"]
+        prompt = case["prompt"]
+        self.assertIn("各有 8 个工程周容量", prompt)
+        self.assertIn("A. 审计日志完善：3周。是B的前置依赖。", prompt)
+        self.assertIn("E. AI实验基础设施：2周。是F的前置依赖", prompt)
+        self.assertIn("如果Q1仍频繁导出失败，会影响续约讨论", prompt)
+        # No deterministic check encodes a mandatory roadmap winner.
+        types = {c["type"] for c in case["deterministic_checks"]}
+        self.assertTrue(types <= {"required_phrases", "ordering"})
+
+
+class TestPr10ModelSelectionRollback(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.cases = load_by_id()
+        cls.case = load_by_id()["PR-10"]
 
-    def test_pr01_requires_exactly_two_features_and_no_hidden_pair(self):
-        case = self.cases["PR-01"]
-        self.assertIn("恰好两个功能", case["prompt"])
-        self.assertTrue(case["evaluation_criteria"][0].startswith("恰好选择两个功能"))
-        notes = case["author_notes"]
-        self.assertIn("do not exact-match a hidden feature pair", notes)
-        self.assertNotIn("A+B", notes)
-        # No deterministic check encodes a preferred feature pair.
-        blob = json.dumps(case["deterministic_checks"], ensure_ascii=False)
-        self.assertNotIn("A+B", blob)
-        self.assertNotIn("A+C", blob)
-
-    def test_pr05_formula_is_unambiguous(self):
-        prompt = self.cases["PR-05"]["prompt"]
+    def test_new_candidate_and_baseline_roles_are_separated(self):
+        prompt = self.case["prompt"]
+        # Aster/Birch/Cedar are the new-model candidates; Legacy is baseline +
+        # rollback target only and is excluded from new-model gate selection.
+        self.assertIn("Aster、Birch、Cedar 是本轮新模型候选", prompt)
+        self.assertIn("Legacy 是当前 production model", prompt)
+        self.assertIn("只作为现状基线和 rollback target", prompt)
+        self.assertIn("不参与本轮新模型候选的 hard-constraint 准入判断", prompt)
+        facts = " ".join(self.case["reference_facts"])
         self.assertIn(
-            "combined average monthly infra-and-support cost per team", prompt
+            "Legacy不是本轮新模型候选，而是当前production baseline和feature-flag rollback target",
+            facts,
         )
-        # The earlier ambiguous "(average revenue per team - average infra + support cost per team)"
-        # wording must be gone.
-        self.assertNotIn("average infra + support cost per team)", prompt)
 
-    def test_pr06_states_earliest_usable_version_is_week_8(self):
-        case = self.cases["PR-06"]
-        self.assertIn("最早第 8 周", case["prompt"])
-        self.assertTrue(any("最早第8周" in c for c in case["evaluation_criteria"]))
-        self.assertTrue(any("最早第8周" in f for f in case["reference_facts"]))
-        # The determinism does not infer elapsed time from "8 engineering weeks".
-        blob = json.dumps(case["deterministic_checks"], ensure_ascii=False)
-        self.assertNotIn("8工程周", blob)
+    def test_prompt_asks_recommendation_from_new_candidates_only(self):
+        prompt = self.case["prompt"]
+        self.assertIn("请从 Aster、Birch、Cedar 中推荐一个用于 20% traffic pilot 的新模型", prompt)
+        self.assertIn("被硬门槛淘汰的模型不能作为 runner-up", prompt)
 
-    def test_pr07_strategy_neutral_heading(self):
-        case = self.cases["PR-07"]
-        new_heading = "【风险控制与退出条件】"
-        old_heading = "【Beta边界与退出条件】"
-        self.assertIn(new_heading, case["prompt"])
-        self.assertNotIn(old_heading, case["prompt"])
-        blob = json.dumps(case["deterministic_checks"], ensure_ascii=False)
-        self.assertIn(new_heading, blob)
-        self.assertNotIn(old_heading, blob)
-        # Only the four fixed headings are required; Beta is never mandated.
-        expected_phrases = ["【产品决策】", "【各方取舍】", new_heading, "【后续路线图条件】"]
-        for name in ("四个部分齐全", "四个部分顺序正确"):
-            phrases = check_named(case, name)["phrases"]
-            self.assertEqual(phrases, expected_phrases)
-            self.assertFalse(any("Beta" in phrase for phrase in phrases))
-
-    def test_pr10_buffer_vs_option_value_is_judge_evaluated(self):
-        case = self.cases["PR-10"]
-        prompt = case["prompt"]
-        self.assertIn("未分配的工程周可以作为 A/D 的交付缓冲", prompt)
-        self.assertIn("一旦工程周排给 C，就不能同时作为缓冲", prompt)
-        # No deterministic check requires a specific portfolio winner.
-        patterns = [c["pattern"] for c in case["deterministic_checks"] if c["type"] == "required_regex"]
-        self.assertEqual(
-            patterns,
-            ["(?m)^量化基线：\\s*A=108万；B=108万；C=0万；D=88万\\s*$"],
+    def test_aster_and_birch_eligible_cedar_fails(self):
+        facts = " ".join(self.case["reference_facts"])
+        floor_quality, ceiling_latency, ceiling_cost = (
+            Decimal("92.0"), Decimal("2.0"), Decimal("50000"),
         )
-        self.assertFalse(any(("A+D" in p or "A+C+D" in p) for p in patterns))
-        blob = json.dumps(case["deterministic_checks"], ensure_ascii=False)
-        self.assertNotIn("A+C+D", blob)
+        # Aster: 94.2 / 1.9 / 48000 -> eligible.
+        self.assertGreaterEqual(Decimal("94.2"), floor_quality)
+        self.assertLessEqual(Decimal("1.9"), ceiling_latency)
+        self.assertLessEqual(Decimal("48000"), ceiling_cost)
+        # Birch: 92.8 / 1.2 / 33000 -> eligible.
+        self.assertGreaterEqual(Decimal("92.8"), floor_quality)
+        self.assertLessEqual(Decimal("1.2"), ceiling_latency)
+        self.assertLessEqual(Decimal("33000"), ceiling_cost)
+        self.assertIn("Aster与Birch满足全部新模型hard constraints", facts)
+        # Cedar fails p95 and cost -> cannot be recommendation or runner-up.
+        self.assertGreater(Decimal("2.6"), ceiling_latency)
+        self.assertGreater(Decimal("55000"), ceiling_cost)
+        self.assertIn(
+            "Cedar违反p95延迟和成本hard constraints，因此不能被推荐或作为runner-up", facts
+        )
+
+    def test_risk_rows_and_structural_triggers(self):
+        for row in ("Quality drift", "Latency", "Cost"):
+            with self.subTest(row=row):
+                self.assertTrue(
+                    any(p.endswith(r"\d") and row in p for p in patterns_of(self.case))
+                )
+
+    def test_rollback_uses_feature_flag_to_legacy(self):
+        prompt = self.case["prompt"]
+        self.assertIn("Legacy remains available behind a feature flag for immediate rollback", prompt)
+        self.assertIn("如何通过 feature flag 回滚到 Legacy", prompt)
+
+    def test_no_winner_regex_names_a_new_model(self):
+        patterns = patterns_of(self.case)
+        for model in ("Aster", "Birch", "Cedar", "Legacy"):
+            self.assertFalse(any(model in p for p in patterns))
+
+    def test_no_hidden_trigger_thresholds(self):
+        patterns = patterns_of(self.case)
+        for literal in ("2.6", "55000", "1.9", "1.2", "0.9"):
+            self.assertFalse(any(literal in p for p in patterns))
 
 
 if __name__ == "__main__":

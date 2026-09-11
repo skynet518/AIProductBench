@@ -15,8 +15,12 @@ Domain 1 (`instruction_constraint_following`, IF-01 … IF-10) is frozen and
 externally approved. Domain 2 (`structured_information_analysis`, SA-01 …
 SA-10) is frozen and externally approved after the Phase 3B-2.1 patch round.
 Domain 3 (`product_reasoning_decision`, PR-01 … PR-10) is authored from
-externally authored canonical definitions and is frozen / externally approved
-after the Phase 3B-3.1 patch round. Domains 4–5 (BC, AW) are not authored. There
+externally authored canonical definitions. It was **reopened** in Phase 3B-3R
+after an external audit found the earlier frozen set drifted from APPROVED
+`CASE_MATRIX_V1.md` slots; the full domain was replaced with Matrix-compliant
+definitions and, after the Phase 3B-3R.1 PR-10 patch, passed both the Matrix
+Gate and the Semantic Gate and is **re-frozen / externally approved**.
+Domains 4–5 (BC, AW) are not authored. There
 is no complete V1 production dataset (30 of 50 cases), no verified V1 model ID,
 no verified V1 price, and no benchmark
 result. Every run artifact produced so far is synthetic dry-run output.
@@ -30,7 +34,7 @@ result. Every run artifact produced so far is synthetic dry-run output.
 - V1 framework implemented: one shared model registry, deterministic evaluator
   (21 check types), fixed-priority cross-family dual-judge selection, pricing /
   CNY normalization framework, Pareto analytics, standalone leaderboard
-- Test suite and network-isolated dry run passing (305 tests)
+- Test suite and network-isolated dry run passing (317 tests)
 - Phase 3A case design standard and 50-slot coverage matrix (awaiting external
   review; no production prompt written)
 - Case Design Standard approved for Phase 3B authoring (Gate 3A.1 passed)
@@ -72,6 +76,17 @@ result. Every run artifact produced so far is synthetic dry-run output.
   full objects (integration only; no new operator, no winner regexes)
 - Domain 3 production cases PR-01 … PR-10 externally reviewed and **frozen**
   (final semantic review PASSED after the Phase 3B-3.1 patches)
+- Phase 3B-3R: Domain 3 **reopened** for Matrix compliance; all ten PR cases
+  replaced with externally authored Matrix-compliant canonical definitions
+  (integration only; awaiting semantic + Matrix review). Historical commit
+  `e859a6d` left intact.
+- External Gate 3B-3R result: PR-01…PR-09 PASS; PR-10 PATCH. Phase 3B-3R.1
+  replaced only PR-10 (new-model candidate vs Legacy rollback-baseline
+  separation); PR-10 awaits re-review.
+- Phase 3B-3R Matrix Gate PASS + Semantic Gate PASS on the repaired PR set;
+  Domain 3 (PR-01 … PR-10) **re-frozen / externally approved**
+- Matrix-compliance regression coverage for PR (`tests/test_pr_cases.py`):
+  slot/title, difficulty, language, and deterministic-plan guards
 
 ## CURRENT PHASE
 
@@ -84,8 +99,8 @@ Domains 1–3 are frozen; domains 4–5 (BC, AW) are not authored.
 
 ## NEXT
 
-Integrate the externally authored BC canonical definitions, then perform the
-external semantic Gate Review.
+Integrate the externally authored Matrix-compliant BC definitions, then perform
+the Matrix + Semantic external Gate Review.
 
 ## THEN
 
@@ -138,12 +153,15 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 
 - Branch: `main`
 - Remote: none configured
-- Latest committed state: the Domain 3 freeze checkpoint
-  (`feat: freeze product-reasoning benchmark cases`). It contains the V1
+- Latest committed state: the Matrix-compliance re-freeze checkpoint
+  (`fix: align product-reasoning cases with approved matrix`). It holds the V1
   framework, the Phase 3A/3A.1 design documents, the frozen production cases
-  IF-01 … IF-10, SA-01 … SA-10, and PR-01 … PR-10, the 21 deterministic
-  operators (`section_max_chars`, `section_bullet_count`, `exact_keys` added in
-  Phase 3B-1.1), and deterministic-check declaration validation.
+  IF-01 … IF-10, SA-01 … SA-10, and the Matrix-compliant PR-01 … PR-10, the 21
+  deterministic operators (`section_max_chars`, `section_bullet_count`,
+  `exact_keys` added in Phase 3B-1.1), deterministic-check declaration
+  validation, and Matrix-compliance regression coverage for PR.
+- Historical commit `e859a6d` (the earlier, superseded PR freeze) remains intact
+  and auditable; it was not reset, reverted, amended, squashed, or rewritten.
 
 ## STILL OPEN (requires human decision)
 

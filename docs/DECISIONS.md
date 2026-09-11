@@ -1067,3 +1067,103 @@ only 30 of 50 cases exist. No live paid benchmark is authorized.
 canonical BC-01 … BC-10 definitions; the same externally controlled semantic
 authorship applies to BC and AW. Execution agents integrate canonical
 definitions but do not author or redesign them.
+
+---
+
+## D-043 — Reopen Domain 3 for Matrix compliance; CASE_MATRIX_V1 is upstream-authoritative
+**Date:** 2026-09-11
+
+**Decision.** `CASE_MATRIX_V1.md` (APPROVED) is the **upstream-authoritative**
+definition of production slot identity: each slot fixes its capability, output
+shape, language, difficulty, and deterministic-opportunity plan. A case that is
+semantically well-written but does not occupy its approved slot is not a valid
+production case. Following an external audit, Domain 3
+(`product_reasoning_decision`) was **reopened** and its ten cases replaced with
+externally authored Matrix-compliant canonical definitions (Phase 3B-3R).
+
+**Rationale.** The Phase 3B-3/3B-3.1 PR set passed semantic quality review and
+was frozen at commit `e859a6d`, but it had drifted materially from the approved
+Domain-3 slot definitions — different slot capabilities, titles, output shapes,
+and deterministic plan. **Semantic case quality alone is not sufficient if a
+case drifts from its slot.** The matrix is the contract that makes the
+50-slot coverage meaningful and comparable, so compliance is a precondition
+for freezing, not a nice-to-have.
+
+**History preserved.** Commit `e859a6d` remains an **auditable historical
+checkpoint**; Git history was **not** reset, reverted, amended, squashed, or
+rewritten. The PR domain was reopened in place, and the superseded definitions
+remain recoverable from `e859a6d`. No duplicate or archive copy was added to
+`data/cases_v1.json`.
+
+**Matrix-compliant replacement.** The new externally authored PR-01 … PR-10
+restore, per slot: working title (`CASE_MATRIX_V1.md` Domain-3 table),
+capability, language (8 `zh` / 1 `en` / 1 `mixed`), difficulty (2 easy / 5
+medium / 3 hard), output shape, and the deterministic plan (8 Partial / 2 None,
+0 Strong). PR-06 and PR-08 declare no deterministic checks. Objective arithmetic
+and constraints stay deterministic where appropriate; open product
+recommendations, model selection, and model-chosen thresholds remain
+judge-evaluated. No winner regex and no hidden canonical threshold was added.
+No new deterministic operator was required (count remains 21) and no
+methodology or Matrix text was changed.
+
+**Scope.** Domain 3 is **REOPENED — MATRIX COMPLIANCE EXTERNAL REVIEW
+PENDING**; PR-01 … PR-10 are **AUTHORED — EXTERNAL REVIEW PENDING**. Domains 1
+and 2 remain frozen. The 50-case dataset is not approved and no live paid
+benchmark is authorized.
+
+**Consequences.** The replacement stays uncommitted until external semantic +
+Matrix review passes, after which Domain 3 is frozen again. **Future domain
+authoring must assert Matrix compliance (slot, title, language, difficulty,
+shape, deterministic plan) before any semantic freeze.** Matrix compliance is
+now covered by a regression test (`tests/test_pr_cases.py`).
+
+---
+
+## D-044 — Matrix Compliance Repair complete; Domain 3 re-frozen
+**Date:** 2026-09-11
+
+**Decision.** The Phase 3B-3R Matrix Compliance Repair completed successfully.
+The repaired `product_reasoning_decision` set (PR-01 … PR-10) passed **both**
+the Matrix Gate and the Semantic Gate, and Domain 3 is **RE-FROZEN /
+EXTERNALLY APPROVED**. No further PR semantic change is authorized.
+
+**Slot identity.** `CASE_MATRIX_V1.md` (APPROVED) remains
+**upstream-authoritative** for production slot identity. Semantic quality and
+Matrix compliance are **separate mandatory freeze gates**: a case that is
+semantically well-written but does not occupy its approved slot cannot freeze.
+
+**History.** Historical commit `e859a6d` (the earlier PR freeze) remains intact
+and auditable as a superseded checkpoint; Git history was not reset, reverted,
+amended, squashed, or rewritten. The repaired definitions are committed as
+`fix: align product-reasoning cases with approved matrix`.
+
+**PR-10 role separation.** PR-10 explicitly separates the new-model candidates
+(Aster, Birch, Cedar) — which are subject to the new-model hard gates — from
+Legacy, which is the current production baseline and feature-flag rollback
+target only and is not a new-model candidate. Cedar cannot be a recommendation
+or runner-up because it fails the p95 and cost hard gates. Recommended model and
+model-chosen rollback thresholds remain judge-evaluated.
+
+**Judge boundary.** Open or subjective judgment is **not** replaced with
+keyword or winner proxies. Deterministic checks cover structure and concrete
+trigger-field presence only; no winner regex and no hidden threshold was added.
+PR-06 and PR-08 remain `deterministic_checks == []`; the operator count remains
+21 and no runtime semantics changed.
+
+**Forward requirement for remaining domains.** Every future domain freeze gate
+(BC, AW) must verify, in order:
+
+1. **Matrix compliance** — slot, working title, difficulty, language, output
+   shape, and deterministic-opportunity plan match APPROVED `CASE_MATRIX_V1.md`.
+2. **Semantic quality** — external semantic review passes.
+3. **Deterministic / judge boundary** — objective constraints deterministic,
+   open judgment judge-evaluated, no winner proxy or hidden canonical answer.
+4. **Dataset-wide coverage invariants** — domain counts, difficulty/language
+   distributions, and the 50-case target remain consistent.
+5. **Runtime / schema validation** — all declarations validate; the offline
+   validation commands pass.
+
+**Scope.** This approval covers **Domain 3 only**. Domains 4–5 are not authored,
+the 50-case dataset is not approved, and no live paid benchmark is authorized.
+Production case semantics remain externally authored; execution agents
+integrate canonical definitions and do not author or redesign them.
