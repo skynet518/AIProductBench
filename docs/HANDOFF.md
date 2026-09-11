@@ -10,7 +10,7 @@ constraints. RMB/CNY presentation, Pareto-based selection analysis.
 
 ## STATUS
 
-**In development. Not released.**
+**AIProductBench CN V1: RELEASE READY.**
 **The 50-case V1 production dataset is FROZEN / EXTERNALLY APPROVED.** All five
 domains (`instruction_constraint_following`, `structured_information_analysis`,
 `product_reasoning_decision`, `chinese_business_communication`,
@@ -19,11 +19,23 @@ Deterministic-contract, and global coverage/invariant Gates
 (50 PASS / 0 PATCH / 0 REJECT). `production_status` is `"complete"` and the
 semantic freeze manifest is `docs/DATASET_FREEZE_V1.md`.
 
-**The Phase 4D controlled live runtime smoke has PASSED** (targeted probes only:
-IF-07 / AW-04 candidates and two judge routes). The 50-case paid benchmark
-itself has **not** been executed and is **not authorized**: there is still no
-benchmark result, no Pareto ranking, and no leaderboard, and every full-run
-artifact produced so far is synthetic dry-run output.
+**The canonical official full benchmark has been executed, aggregated, and
+published.** Canonical run `official-v1-20260911T103838Z`: 500 / 500 candidate
+units attempted, 990 / 990 judge units attempted, `execution_complete = true`.
+Only 4 / 10 models are COMPLETE and rank-eligible under the frozen strict
+completeness rule (`all_models_complete = false`); the other six are INCOMPLETE
+and are never ranked or Pareto-eligible. Canonical API spend is 109.73182552
+CNY. Public release artifacts are committed under `release/v1/`.
+
+**Release state: local release prepared; remote push pending.** The target is
+the existing GitHub repository `skynet518/AIProductBench`.
+
+> Historical note (superseded): before the canonical run, V1 was in development
+> and unreleased, the full 50-case paid benchmark had not been executed, and all
+> full-run artifacts were synthetic dry-run output. That is no longer the state.
+> The canonical run above is a real paid execution with real results, and the
+> Phase 4D / 4D.1 smoke and probe artifacts remain historically accurate as
+> pre-run runtime validation only.
 
 ## COMPLETED
 
@@ -149,16 +161,21 @@ artifact produced so far is synthetic dry-run output.
 
 ## CURRENT PHASE
 
-**Phase 4D — Live Runtime Validation: COMPLETE.** Case authoring (Phases
-3A/3B) is COMPLETE, the 50 production cases are frozen, the official model
-registry, pricing, FX, and execution configuration are locked, and the
-controlled live candidate + judge runtime has been exercised end to end on a
-targeted subset. **A full 50-case paid benchmark run has not been executed.**
+**Phase 5 — Analysis & Presentation: COMPLETE. Release preparation: DONE.**
+Case authoring (Phases 3A/3B), live runtime validation (Phase 4D), the canonical
+official full run, aggregation, Pareto analysis, RMB/CNY presentation, and the
+human calibration sample are all complete. Case authoring is COMPLETE, the 50
+production cases are frozen, the official model registry, pricing, FX, and
+execution configuration are locked, and the canonical result set is published
+under `release/v1/`.
+
+> This supersedes the earlier statement that a full 50-case paid benchmark run
+> had not been executed.
 
 ## CURRENT STATE
 
-**Runtime envelope revised (D-053); full run NOT yet cleared.** The first
-official attempt was aborted and retained as diagnostic evidence
+**Canonical official full run COMPLETE under the final D-054 runtime envelope.**
+The first official attempt was aborted and retained as diagnostic evidence
 (`results/official_run_v1_20260911T075351Z`, status
 **ABORTED_RUNTIME_ENVELOPE**: 150 candidate attempts, 134 completed responses,
 0 judge calls, 7.20081125 CNY). It proved the previous 2048 / 8192 generation
@@ -206,39 +223,42 @@ Verified live (Phase 4D / 4D.1 targeted probes, not the 50-case run):
 - Judge route Qwen + DeepSeek: PASS (2/2 valid verdicts)
 - Judge route DeepSeek + GLM: PASS (2/2 valid verdicts)
 
-Active snapshots: registry `v1-registry-2026-09-11.2`
-(`992baf5717f8e947448cb4eeb6df53088a88a8516d82c897ad57ea6d3138fcee`) and
-pricing `v1-pricing-2026-09-11.1`
-(`9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42`). No full
-benchmark result exists yet; all full-run artifacts remain synthetic.
+Canonical-run snapshots: registry `v1-registry-2026-09-11.3`
+(`259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab`), pricing
+`v1-pricing-2026-09-11.1`
+(`9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42`), and FX
+`ecb-2026-09-10-usd-cny` (USD/CNY 6.706267217630854). The canonical benchmark
+result exists and is published under `release/v1/`; the earlier statement that
+no full benchmark result existed and that all full-run artifacts were synthetic
+is superseded.
 
 ## NEXT
 
-**Full 50-case paid benchmark run — BLOCKED pending D-053 external review.**
-The candidate and judge paths are live-verified, but the revised 16384-token
-envelope still leaves at least two production cases with
-`finish_reason = length` and empty final content, and 13 previously failed units
-remain unvalidated. The next step is an external decision on the runtime
-envelope, not a leaderboard run. Remaining offline hygiene: official source URLs
-for model IDs and prices still carry `requires_official_verification`.
+**Publish the existing repository.** The local release is prepared and
+committed; the only remaining step is a normal (non-force) push of `main` to the
+existing GitHub repository `skynet518/AIProductBench`. Remaining offline
+hygiene: official source URLs for model IDs and prices still carry
+`requires_official_verification`; the literal model IDs were confirmed live
+(provider echo + accepted request).
 
 ## THEN
 
-Run the calibrated benchmark, and only after that explicit paid-run
-authorization. The full 50-case dataset must not be modified by provider or
+**Human calibration review.** The 60-item calibration sample is prepared and
+human labels remain pending; V1 must not be described as human-calibrated until
+real labels exist. The full 50-case dataset must not be modified by provider or
 runtime work.
 
 ## AFTER THAT
 
-**Phase 5 — Analysis & Presentation.** After the full run: Pareto selection
-analysis, RMB/CNY presentation, and the human calibration plan.
+Post-release follow-ups (outside the V1 release scope): human calibration
+review, official source URLs for model IDs/prices, and any V1.1 work recorded in
+`docs/PRODUCT_SPEC_V1.md` / `docs/DECISIONS.md`.
 
 ## IMPORTANT
 
-- No live paid **full benchmark** has been authorized. Do not run
-  `run_benchmark.py --confirm` without an explicit paid-run authorization. The
-  Phase 4D targeted probes were separately authorized and are recorded in the
-  Phase 4D / 4D.1 results artifacts.
+- The canonical full benchmark (`official-v1-20260911T103838Z`) has been
+  executed and is published. Do not run `run_benchmark.py --confirm` again
+  without a new explicit paid-run authorization.
 - **The frozen production cases must not be modified by provider/runtime work.**
   Production case semantic authorship is externally controlled; any future case
   change requires an explicit versioned reopening plus Matrix, semantic, and
@@ -249,8 +269,9 @@ analysis, RMB/CNY presentation, and the human calibration plan.
 - Never fabricate token, cost, latency, score, or calibration data.
 - Never convert currencies without an explicit dated FX snapshot.
 - Never reuse retired V0.1-era pricing for V1 cost reporting.
-- Do not claim final model IDs, final pricing, benchmark scores, calibration
-  results, or final leaderboard results.
+- V1 benchmark scores and the official leaderboard now exist and are published
+  in `release/v1/`; never claim human calibration results, which do not exist
+  (sample prepared, human review pending).
 
 ## KEY DOCUMENTS
 
@@ -274,13 +295,20 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 ## REPOSITORY STATE
 
 - Branch: `main`
-- Remote: none configured
-- Latest committed state: the final V1 dataset freeze
-  (`feat: freeze AIProductBench CN V1 production dataset`). It holds the V1
-  framework, the Phase 3A/3A.1 design documents, all 50 frozen production cases
-  (IF/SA/PR/BC/AW, 10 each), the 21 deterministic operators, deterministic-check
-  declaration validation, the semantic freeze manifest
-  (`docs/DATASET_FREEZE_V1.md`), and the dataset-freeze regression tests.
+- Remote: `origin` — https://github.com/skynet518/AIProductBench.git (existing
+  repository, not created by this project)
+- Latest committed state: the V1 release commit
+  (`docs: publish AIProductBench CN V1 results`), which rewrote the public
+  `README.md` and added the canonical public release artifacts under
+  `release/v1/` (leaderboard, Pareto, cost, latency, judge disagreement, sample
+  results, run manifest), plus the merge commit that joins the existing GitHub
+  `Initial commit` history into local `main`.
+- Earlier committed state: the final V1 dataset freeze (`feat: freeze
+  AIProductBench CN V1 production dataset`) holds the V1 framework, the Phase
+  3A/3A.1 design documents, all 50 frozen production cases (IF/SA/PR/BC/AW, 10
+  each), the 21 deterministic operators, deterministic-check declaration
+  validation, the semantic freeze manifest (`docs/DATASET_FREEZE_V1.md`), and
+  the dataset-freeze regression tests.
 - Historical commit `e859a6d` (the earlier, superseded PR freeze) remains intact
   and auditable; it was not reset, reverted, amended, squashed, or rewritten.
 - The Phase 4A/4B/C/4D runtime work (registry contract + official model IDs,
@@ -296,8 +324,8 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 | # | Open item |
 | --- | --- |
 | 1 | Provider credentials for Qwen, DeepSeek, Kimi, MiniMax, GLM, and Doubao are now configured and were exercised live; account balances are external to this repo and can change without notice |
-| 2 | No authorization for the **full 50-case paid run** has been given; the next step is that authorization plus a cost projection |
+| 2 | The **canonical full 50-case paid run** has been executed (`official-v1-20260911T103838Z`); a further paid run would require a new explicit authorization plus a cost projection |
 | 3 | Official documentation URLs for model IDs/prices still carry `requires_official_verification`; literal model IDs were instead confirmed live (provider echo + accepted request). Provider thinking/usage field names were confirmed live during Phase 4D |
-| 4 | Human calibration protocol and reviewer assignment are undefined |
-| 5 | The live execution layer is cleared (candidates + both judge routes PASS); the full candidate+judge run is still not authorized pending explicit approval |
+| 4 | Human calibration sample (60 items) is prepared; reviewer assignment and human labels are still pending, so V1 is not human-calibrated |
+| 5 | Local release is prepared and committed; remote push of `main` to the existing GitHub repository is pending |
 | 6 | Any future semantic case modification requires an explicit versioned reopening plus Matrix, semantic, and deterministic/judge-boundary review and a new freeze hash |
