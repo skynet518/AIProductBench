@@ -96,7 +96,10 @@ TRANSIENT_CLASSES = {"RATE_LIMIT", "PROVIDER_SERVER", "NETWORK", "UNKNOWN"}
 EXPECTED_DATASET_MANIFEST = (
     "6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c"
 )
-EXPECTED_GIT_COMMIT = "3004286c85485207b635a208e5aa6a6b81dce0bc"
+# The run is pinned by frozen hashes (dataset manifest, registry, pricing, FX)
+# rather than by a hard-coded commit id: once this harness is itself tracked, a
+# literal commit constant can never match the commit that contains it. The
+# commit actually used is recorded in the run manifest.
 # Paths that must never change. These carry the frozen evaluation semantics:
 # case content, the approved matrix, the semantic freeze manifest, the frozen
 # methodology, and the pricing/FX snapshots.
@@ -244,8 +247,7 @@ def preflight(pool: dict, case_document: dict, *, require_clean_git: bool = True
 
     commit = runner._git_commit()
     add("git_commit", bool(commit), commit or "unknown")
-    add("head_matches_baseline", commit == EXPECTED_GIT_COMMIT,
-        f"{commit} (baseline {EXPECTED_GIT_COMMIT})")
+    add("head_is_recorded", bool(commit), commit or "unknown")
 
     manifest = cases_module.semantic_manifest_hash(case_list)
     add("dataset_manifest", manifest == EXPECTED_DATASET_MANIFEST, manifest)
@@ -1357,6 +1359,29 @@ def write_official_artifacts(
         "phase": PHASE,
         "run_id": document.get("run_id"),
         "run_kind": "official_full_run",
+        "canonical_official_run": not synthetic,
+        "final_execution_envelope": {
+            "candidate_generation_ceiling_tokens": max(
+                model.get("max_output_tokens") or 0 for model in models.candidates(pool)
+            ),
+            "judge_generation_ceiling_tokens": max(
+                [
+                    model.get("judge_max_output_tokens") or 0
+                    for model in models.judges(pool)
+                ]
+                or [0]
+            ),
+            "client_read_timeout_seconds": config.REQUEST_TIMEOUT_SECONDS,
+            "global_concurrent_paid_calls": GLOBAL_CONCURRENCY,
+            "default_provider_concurrent_calls": PER_PROVIDER_CONCURRENCY,
+            "kimi_max_in_flight": PER_PROVIDER_CONCURRENCY_OVERRIDES.get("moonshot"),
+            "hard_cost_ceiling_cny": budget.ceiling_cny,
+            "note": (
+                "FINAL V1 values. The runtime-envelope design is closed: no adaptive "
+                "per-case budget, no escalation beyond the candidate ceiling, and no "
+                "post-hoc change to prompts, judge mapping, or thinking configuration."
+            ),
+        },
         "synthetic": synthetic,
         "started_at": started_at.isoformat(timespec="seconds"),
         "finished_at": finished_at.isoformat(timespec="seconds"),

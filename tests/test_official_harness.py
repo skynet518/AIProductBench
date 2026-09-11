@@ -411,7 +411,8 @@ class PreflightTests(unittest.TestCase):
         self.assertIn("dataset_manifest", names)
         self.assertIn("registry_hash", names)
         self.assertIn("pricing_hash", names)
-        self.assertIn("head_matches_baseline", names)
+        self.assertIn("head_is_recorded", names)
+        self.assertIn("frozen_semantics_unmodified", names)
         self.assertEqual(
             result["dataset_manifest_sha256"], run_official.EXPECTED_DATASET_MANIFEST
         )
