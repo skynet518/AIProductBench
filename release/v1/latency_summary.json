@@ -1,0 +1,81 @@
+{
+  "run_id": "official-v1-20260911T103838Z",
+  "role_separation": "Candidate latency and judge latency are reported separately and never mixed.",
+  "candidate_latency_ms": {
+    "qwen_flagship": {
+      "samples": 49,
+      "avg_latency_ms": 83808.28,
+      "p50_latency_ms": 32765.5,
+      "p95_latency_ms": 311524.98,
+      "max_latency_ms": 497544.0
+    },
+    "qwen_value": {
+      "samples": 49,
+      "avg_latency_ms": 51357.8,
+      "p50_latency_ms": 24203.1,
+      "p95_latency_ms": 188141.22,
+      "max_latency_ms": 301831.2
+    },
+    "kimi_flagship": {
+      "samples": 50,
+      "avg_latency_ms": 79629.32,
+      "p50_latency_ms": 48284.3,
+      "p95_latency_ms": 245163.42,
+      "max_latency_ms": 563047.8
+    },
+    "deepseek_value": {
+      "samples": 50,
+      "avg_latency_ms": 16326.27,
+      "p50_latency_ms": 11044.85,
+      "p95_latency_ms": 47219.45,
+      "max_latency_ms": 104251.2
+    },
+    "glm_value": {
+      "samples": 49,
+      "avg_latency_ms": 32483.76,
+      "p50_latency_ms": 22074.3,
+      "p95_latency_ms": 112560.24,
+      "max_latency_ms": 135052.9
+    },
+    "glm_flagship": {
+      "samples": 49,
+      "avg_latency_ms": 83724.53,
+      "p50_latency_ms": 65804.0,
+      "p95_latency_ms": 228215.04,
+      "max_latency_ms": 320572.1
+    },
+    "deepseek_flagship": {
+      "samples": 50,
+      "avg_latency_ms": 70690.19,
+      "p50_latency_ms": 34323.7,
+      "p95_latency_ms": 219098.25,
+      "max_latency_ms": 349638.1
+    },
+    "minimax_flagship": {
+      "samples": 49,
+      "avg_latency_ms": 17100.0,
+      "p50_latency_ms": 12564.2,
+      "p95_latency_ms": 46145.46,
+      "max_latency_ms": 71207.5
+    },
+    "doubao_flagship": {
+      "samples": 50,
+      "avg_latency_ms": 132562.77,
+      "p50_latency_ms": 102055.15,
+      "p95_latency_ms": 368548.87,
+      "max_latency_ms": 542029.4
+    },
+    "kimi_value": {
+      "samples": 50,
+      "avg_latency_ms": 74542.22,
+      "p50_latency_ms": 50115.5,
+      "p95_latency_ms": 189861.46,
+      "max_latency_ms": 443164.0
+    }
+  },
+  "judge_latency_ms": {
+    "avg_latency_ms": 45202.767,
+    "p95_latency_ms": 114286.8,
+    "samples": 990
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "run_id": "official-v1-20260911T103838Z",
+  "note": "Dual-judge disagreement computed directly from the persisted judge verdicts in this run's checkpoint. Bins are explicit, mutually exclusive half-open intervals; histogram_counts_sum must equal population.",
+  "population_definition": "candidate cases whose two intended cross-family judges both returned a valid structured verdict",
+  "population": 491,
+  "excluded_judge_unavailable_cases": 4,
+  "histogram": [
+    {
+      "bin": "exactly_zero",
+      "definition": "gap == 0",
+      "count": 329
+    },
+    {
+      "bin": "gt0_le0.5",
+      "definition": "0 < gap <= 0.5",
+      "count": 76
+    },
+    {
+      "bin": "gt0.5_le1.0",
+      "definition": "0.5 < gap <= 1.0",
+      "count": 77
+    },
+    {
+      "bin": "gt1.0_le1.5",
+      "definition": "1.0 < gap <= 1.5",
+      "count": 7
+    },
+    {
+      "bin": "gt1.5_le2.0",
+      "definition": "1.5 < gap <= 2.0",
+      "count": 2
+    },
+    {
+      "bin": "gt2.0",
+      "definition": "gap > 2.0",
+      "count": 0
+    }
+  ],
+  "histogram_counts_sum": 491,
+  "mean_gap": 0.2016,
+  "max_gap": 2.0,
+  "exact_agreement_cases": 329,
+  "highest_disagreement_cases": [
+    {
+      "model_key": "glm_flagship",
+      "case_id": "SA-04",
+      "domain": "structured_information_analysis",
+      "judges": [
+        "deepseek_flagship",
+        "qwen_flagship"
+      ],
+      "judge_mean_scores": [
+        5.0,
+        3.0
+      ],
+      "gap": 2.0,
+      "dimension_gaps": {
+        "task_completion": 2,
+        "reasoning_quality": 1,
+        "instruction_following": 3
+      }
+    },
+    {
+      "model_key": "deepseek_value",
+      "case_id": "PR-02",
+      "domain": "product_reasoning_decision",
+      "judges": [
+        "qwen_flagship",
+        "glm_flagship"
+      ],
+      "judge_mean_scores": [
+        3.0,
+        4.667
+      ],
+      "gap": 1.667,
+      "dimension_gaps": {
+        "task_completion": 2,
+        "reasoning_quality": 1,
+        "instruction_following": 2
+      }
+    },
+    {
+      "model_key": "deepseek_flagship",
+      "case_id": "PR-02",
+      "domain": "product_reasoning_decision",
+      "judges": [
+        "qwen_flagship",
+        "glm_flagship"
+      ],
+      "judge_mean_scores": [
+        3.333,
+        4.667
+      ],
+      "gap": 1.334,
+      "dimension_gaps": {
+        "task_completion": 2,
+        "reasoning_quality": 1,
+        "instruction_following": 1
+      }
+    },
+    {
+      "model_key": "glm_value",
+      "case_id": "BC-10",
+      "domain": "chinese_business_communication",
+      "judges": [
+        "deepseek_flagship",
+        "qwen_flagship"
+      ],
+      "judge_mean_scores": [
+        4.333,
+        3.0
+      ],
+      "gap": 1.333,
+      "dimension_gaps": {
+        "task_completion": 2,
+        "reasoning_quality": 1,
+        "instruction_following": 1
+      }
+    },
+    {
+      "model_key": "kimi_value",
+      "case_id": "BC-01",
+      "domain": "chinese_business_communication",
+      "judges": [
+        "deepseek_flagship",
+        "qwen_flagship"
+      ],
+      "judge_mean_scores": [
+        5.0,
+        3.667
+      ],
+      "gap": 1.333,
+      "dimension_gaps": {
+        "task_completion": 1,
+        "reasoning_quality": 1,
+        "instruction_following": 2
+      }
+    },
+    {
+      "model_key": "kimi_value",
+      "case_id": "IF-03",
+      "domain": "instruction_constraint_following",
+      "judges": [
+        "deepseek_flagship",
+        "qwen_flagship"
+      ],
+      "judge_mean_scores": [
+        4.333,
+        3.0
+      ],
+      "gap": 1.333,
+      "dimension_gaps": {
+        "task_completion": 1,
+        "reasoning_quality": 1,
+        "instruction_following": 2
+      }
+    },
+    {
+      "model_key": "kimi_value",
+      "case_id": "PR-02",
+      "domain": "product_reasoning_decision",
+      "judges": [
+        "deepseek_flagship",
+        "qwen_flagship"
+      ],
+      "judge_mean_scores": [
+        5.0,
+        3.667
+      ],
+      "gap": 1.333,
+      "dimension_gaps": {
+        "task_completion": 1,
+        "reasoning_quality": 2,
+        "instruction_following": 1
+      }
+    },
+    {
+      "model_key": "minimax_flagship",
+      "case_id": "BC-07",
+      "domain": "chinese_business_communication",
+      "judges": [
+        "deepseek_flagship",
+        "qwen_flagship"
+      ],
+      "judge_mean_scores": [
+        5.0,
+        3.667
+      ],
+      "gap": 1.333,
+      "dimension_gaps": {
+        "task_completion": 1,
+        "reasoning_quality": 1,
+        "instruction_following": 2
+      }
+    },
+    {
+      "model_key": "minimax_flagship",
+      "case_id": "IF-07",
+      "domain": "instruction_constraint_following",
+      "judges": [
+        "deepseek_flagship",
+        "qwen_flagship"
+      ],
+      "judge_mean_scores": [
+        5.0,
+        3.667
+      ],
+      "gap": 1.333,
+      "dimension_gaps": {
+        "task_completion": 1,
+        "reasoning_quality": 0,
+        "instruction_following": 3
+      }
+    },
+    {
+      "model_key": "deepseek_flagship",
+      "case_id": "BC-10",
+      "domain": "chinese_business_communication",
+      "judges": [
+        "qwen_flagship",
+        "glm_flagship"
+      ],
+      "judge_mean_scores": [
+        4.0,
+        5.0
+      ],
+      "gap": 1.0,
+      "dimension_gaps": {
+        "task_completion": 1,
+        "reasoning_quality": 1,
+        "instruction_following": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "run_id": "official-v1-20260911T103838Z",
+  "rule": "Pareto frontier over rank-eligible (complete) models only. An incomplete model is never placed on the official frontier.",
+  "objectives": [
+    {
+      "field": "overall_score_exact",
+      "direction": "max"
+    },
+    {
+      "field": "cost_per_100_tasks_cny",
+      "direction": "min"
+    }
+  ],
+  "quality_cost": {
+    "objectives": [
+      {
+        "field": "overall_score_exact",
+        "direction": "max"
+      },
+      {
+        "field": "cost_per_100_tasks_cny",
+        "direction": "min"
+      }
+    ],
+    "frontier": [
+      "deepseek_value",
+      "kimi_flagship"
+    ],
+    "dominated": {
+      "kimi_value": "deepseek_value",
+      "doubao_flagship": "deepseek_value"
+    },
+    "not_evaluated": []
+  },
+  "quality_cost_latency": {
+    "objectives": [
+      {
+        "field": "overall_score_exact",
+        "direction": "max"
+      },
+      {
+        "field": "cost_per_100_tasks_cny",
+        "direction": "min"
+      },
+      {
+        "field": "p95_latency_ms",
+        "direction": "min"
+      }
+    ],
+    "frontier": [
+      "deepseek_value",
+      "kimi_flagship"
+    ],
+    "dominated": {
+      "kimi_value": "deepseek_value",
+      "doubao_flagship": "deepseek_value"
+    },
+    "not_evaluated": []
+  },
+  "rank_eligible_models": [
+    "kimi_flagship",
+    "deepseek_value",
+    "doubao_flagship",
+    "kimi_value"
+  ],
+  "excluded_incomplete_models": [
+    {
+      "model_key": "qwen_flagship",
+      "reason": "49 of 50 cases have a valid score; 1 case(s) failed"
+    },
+    {
+      "model_key": "qwen_value",
+      "reason": "47 of 50 cases have a valid score; 2 case(s) were judge-unavailable; 3 case(s) failed"
+    },
+    {
+      "model_key": "glm_value",
+      "reason": "48 of 50 cases have a valid score; 1 case(s) were judge-unavailable; 2 case(s) failed"
+    },
+    {
+      "model_key": "glm_flagship",
+      "reason": "49 of 50 cases have a valid score; 1 case(s) failed"
+    },
+    {
+      "model_key": "deepseek_flagship",
+      "reason": "49 of 50 cases have a valid score; 1 case(s) were judge-unavailable; 1 case(s) failed"
+    },
+    {
+      "model_key": "minimax_flagship",
+      "reason": "49 of 50 cases have a valid score; 1 case(s) failed"
+    }
+  ]
+}

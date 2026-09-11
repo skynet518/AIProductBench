@@ -1,0 +1,11 @@
+official_rank,model_key,model_name,provider,product_tier,provider_model_id,completion_status,overall_quality,overall_quality_exact,deterministic_constraint_pass_rate,candidate_cost_cny,quality_per_cny,cost_per_100_tasks_cny,mean_latency_ms,p50_latency_ms,p95_latency_ms,pareto_quality_cost,pareto_quality_cost_latency,cases_scored,cases_required
+,qwen_flagship,Qwen flagship tier,Alibaba Model Studio,flagship,qwen3.8-max,INCOMPLETE,98.894,98.89448979591836,1.0,5.54097852,,,83808.28,32765.5,311524.98,False,False,49,50
+,qwen_value,Qwen Flash tier,Alibaba Model Studio,value,qwen3.8-flash,INCOMPLETE,98.581,98.58148936170213,1.0,0.36941225,,,51357.8,24203.1,188141.22,False,False,47,50
+1,kimi_flagship,Kimi flagship tier,Moonshot AI,flagship,kimi-k3,COMPLETE,96.333,96.3334,0.9953,13.29462483,7.246,26.58924966,79629.32,48284.3,245163.42,True,True,50,50
+2,deepseek_value,DeepSeek Flash tier,DeepSeek,value,deepseek-v4-flash,COMPLETE,96.333,96.3326,0.9858,0.7391531,130.3283,1.4783062,16326.27,11044.85,47219.45,True,True,50,50
+,glm_value,GLM Flash tier,Zhipu BigModel,value,glm-5.3-flash,INCOMPLETE,96.181,96.180625,0.9758,0.45350495,,,32483.76,22074.3,112560.24,False,False,48,50
+,glm_flagship,GLM flagship tier,Zhipu BigModel,flagship,glm-5.3,INCOMPLETE,94.983,94.9830612244898,0.9758,7.46747282,,,83724.53,65804.0,228215.04,False,False,49,50
+,deepseek_flagship,DeepSeek Pro tier,DeepSeek,flagship,deepseek-v4-pro,INCOMPLETE,94.813,94.81265306122448,0.9953,2.63262353,,,70690.19,34323.7,219098.25,False,False,49,50
+,minimax_flagship,MiniMax flagship tier,MiniMax China,flagship,MiniMax-M3,INCOMPLETE,93.282,93.28183673469388,0.9614,0.72596412,,,17100.0,12564.2,46145.46,False,False,49,50
+3,doubao_flagship,Doubao flagship tier,Volcano Ark,flagship,doubao-seed-2-1-pro-260628,COMPLETE,92.667,92.667,0.9858,9.987852,9.278,19.975704,132562.77,102055.15,368548.87,False,False,50,50
+4,kimi_value,Kimi balanced tier,Moonshot AI,value,kimi-k2.6,COMPLETE,92.583,92.5834,0.9858,3.84376552,24.0866,7.68753104,74542.22,50115.5,189861.46,False,False,50,50

@@ -1,193 +1,252 @@
 # AIProductBench CN
 
-**A practical model-selection benchmark for Chinese LLMs, built for AI product
-teams choosing models under real quality, cost, and latency constraints.**
+**Practical Chinese LLM Model Selection Benchmark for AI Product Teams**
 
-> **Status: AIProductBench CN V1 is in development and has not been released.**
-> No live benchmark has been run. Every artifact currently produced by this
-> repository is synthetic dry-run output. The 50-case production dataset does not
-> exist yet.
+**面向中国 AI 产品团队的模型选型基准**
 
-## Version status
+AIProductBench CN is a practical model-selection benchmark for Chinese LLMs. It
+is built for AI product managers, LLM product teams, AI engineers, and
+model-selection / evaluation teams who have to choose a model under real
+quality, cost, and latency constraints.
 
-| Version | Status |
+It is **not primarily a leaderboard.** The core product question is:
+
+> Which model should a Chinese AI product team choose for a given workload,
+> quality target, cost budget, and latency requirement?
+
+The deliverable is a decision surface — a Pareto view over quality × cost ×
+latency — not a single winner.
+
+## V1 at a glance
+
+| 10 Models | 6 Providers | 50 Production Tasks | 5 Workload Domains |
+| --- | --- | --- | --- |
+| **500 Candidate Evaluations** | **990 Cross-family Judge Evaluations** | **1,490 Formal Evaluation Units** | **¥109.73 Canonical API Spend** |
+
+## V1 results
+
+Canonical run `official-v1-20260911T103838Z` — 10 models, 6 providers, 50 real
+production tasks, 5 workload domains.
+
+| Result | Value |
 | --- | --- |
-| V0.1 | Internal engineering scaffold. Complete. Not for public release. |
-| AIProductBench CN V1 | In development. The intended public release. |
+| Best overall quality | **Kimi K3 — 96.3334** |
+| Near-equal quality, strongest cost/latency trade-off | **DeepSeek V4 Flash — 96.3326** |
+| DeepSeek V4 Flash | **¥1.48 / 100 tasks**, **11.0s median candidate latency** |
+| Official Pareto frontier (quality × cost, and quality × cost × latency) | **Kimi K3 + DeepSeek V4 Flash** |
+| Officially ranked | **4 / 10 models** |
 
-V0.1 proved the pipeline could run end to end with 2 models, 3 domains, 1 judge,
-and 10 cases. It is preserved in git history as the
-`chore: checkpoint v0.1 benchmark scaffold` commit and is not a published
-result.
+Kimi K3 holds the highest official overall quality. DeepSeek V4 Flash is the
+cheaper, faster choice on the frontier; it is **not** claimed to have higher
+quality than Kimi K3.
 
-## What V1 answers
+## Product insight
 
-> Which model should an AI product team choose for a given workload, budget,
-> quality requirement, and latency requirement?
+Kimi K3 achieved the highest official overall quality. DeepSeek V4 Flash was
+only 0.0008 points lower in exact overall score while being dramatically
+cheaper and faster in this benchmark. A 0.0008-point gap is not a meaningful
+separation on its own — V1 does not run repeated sampling or significance
+testing, and it does not claim this difference is statistically significant.
+The point is the decision: near-equal measured quality came with roughly an 18×
+cost difference and a 4× latency difference, so model selection should not be
+based on quality ranking alone.
 
-The deliverable is a decision surface, not a single winner: which models are
-defensible choices, what each one costs in RMB, and what quality and latency you
-give up by choosing it. Results are presented as a Pareto frontier over
-quality × cost rather than a rank-only list.
+## Benchmark design
 
-## Project documentation
+Full detail in [docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md) and
+[docs/CASE_DESIGN_STANDARD_V1.md](docs/CASE_DESIGN_STANDARD_V1.md).
 
-| Document | Contents |
+**50 frozen production tasks**, 10 per domain, across five workload domains:
+
+| # | Domain | Key |
+| --- | --- | --- |
+| 1 | Instruction & Constraint Following | `instruction_constraint_following` |
+| 2 | Structured Information Analysis | `structured_information_analysis` |
+| 3 | Product Reasoning & Decision | `product_reasoning_decision` |
+| 4 | Chinese Business Communication | `chinese_business_communication` |
+| 5 | Agent Workflow Planning | `agent_workflow_planning` |
+
+**Hybrid evaluation.** Deterministic checks score every objectively
+machine-checkable constraint, and cross-family dual LLM judges score every
+response. Neither overrides the other; both are reported.
+
+* **Judge dimensions:** Task Completion, Reasoning Quality, Instruction
+  Following.
+* **Cross-family dual judging:** every response is scored by two judges from
+  other model families — there is no same-family judge substitution.
+* **21 deterministic check types**, reported as `constraint_pass_rate`
+  alongside the judged quality score.
+
+## Model pool
+
+10 candidate models across 6 provider API integrations, declared in
+[data/model_registry_snapshot_v1.json](data/model_registry_snapshot_v1.json).
+No benchmark logic branches on a model name or provider name.
+
+| Provider | Models |
 | --- | --- |
-| [docs/PRODUCT_SPEC_V1.md](docs/PRODUCT_SPEC_V1.md) | Frozen V1 scope, positioning, out-of-scope list |
-| [docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md) | Dataset design, judges, metrics, Pareto analysis |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline, module responsibilities, config schema |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | Chronological decision log with rationale |
-| [docs/HANDOFF.md](docs/HANDOFF.md) | Current operational status — read first |
+| Qwen | `qwen3.8-max`, `qwen3.8-flash` |
+| DeepSeek | `deepseek-v4-pro`, `deepseek-v4-flash` |
+| Kimi | `kimi-k3`, `kimi-k2.6` |
+| MiniMax | `MiniMax-M3` |
+| GLM | `glm-5.3`, `glm-5.3-flash` |
+| Doubao | `doubao-seed-2-1-pro-260628` |
 
-## Repository layout
+## Official ranking (complete models)
+
+Only models complete under the frozen strict completeness rule are ranked.
+Exact quality is the audited value; cost and latency are per-model aggregates
+over the same 50 production tasks.
+
+| Rank | Model | Overall Quality (exact) | Cost / 100 Tasks | Median Latency | Constraint Pass Rate | Pareto |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Kimi K3 (`kimi-k3`) | 96.3334 | ¥26.59 | 48.3s | 0.9953 | yes |
+| 2 | DeepSeek V4 Flash (`deepseek-v4-flash`) | 96.3326 | ¥1.48 | 11.0s | 0.9858 | yes |
+| 3 | Doubao Seed 2.1 Pro (`doubao-seed-2-1-pro-260628`) | 92.667 | ¥19.98 | 102.1s | 0.9858 | — |
+| 4 | Kimi K2.6 (`kimi-k2.6`) | 92.583 | ¥7.69 | 50.1s | 0.9858 | — |
+
+Rounded presentation values above. The exact figures are in
+[release/v1/leaderboard.csv](release/v1/leaderboard.csv) and
+[release/v1/leaderboard.json](release/v1/leaderboard.json) — for example
+DeepSeek V4 Flash is ¥1.4783062 and Kimi K3 is ¥26.58924966 per 100 tasks.
+
+### Incomplete models
+
+V1 ranks **4 of 10** models. Six are INCOMPLETE under the frozen strict
+completeness rule and are **not** Pareto-eligible and **not** ranked:
+
+`deepseek_flagship`, `qwen_flagship`, `qwen_value`, `minimax_flagship`,
+`glm_flagship`, `glm_value`.
+
+An official rank requires all 50 candidate cases plus **both** intended valid
+cross-family judge verdicts. A candidate failure, a transport failure, or an
+invalid required judge verdict makes that model INCOMPLETE. Observed blockers
+included candidate generation-envelope exhaustion, transport failure, and
+required judge invalid-output failure.
+
+This is a **benchmark result, not unfinished execution**:
+`execution_complete = true` (every planned paid unit was attempted and
+persisted) while `all_models_complete = false`. Incomplete models keep their
+diagnostics but are never silently averaged into a rank or a comparative cost
+metric. See [release/v1/run_manifest.json](release/v1/run_manifest.json) and
+[docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md) for details.
+
+## Cost, latency, and Pareto
+
+AIProductBench evaluates **quality × cost × latency** and produces Pareto
+analysis over it.
+
+| Frontier | Models |
+| --- | --- |
+| Official quality × cost | Kimi K3, DeepSeek V4 Flash |
+| Official quality × cost × latency | Kimi K3, DeepSeek V4 Flash |
+
+Incomplete models are never placed on an official frontier. Candidate
+inference cost and judge evaluation cost are kept strictly separate, and
+candidate latency and judge latency are never mixed. Costs are presented in
+RMB/CNY; native provider price and currency are always preserved, and any
+conversion uses an explicit, dated FX snapshot.
+
+## Reproducibility and provenance
+
+| Field | Value |
+| --- | --- |
+| Canonical run | `official-v1-20260911T103838Z` |
+| Execution commit | `f3225f51824f4e3c047b2df3c15092a803231291` |
+| Runtime baseline | `e10ceb0aa89483050ec0b09eb96e7d16c37e4e09` |
+| Dataset semantic manifest | `6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c` |
+| Registry | `v1-registry-2026-09-11.3` |
+| Registry SHA | `259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab` |
+| Pricing | `v1-pricing-2026-09-11.1` |
+| Pricing SHA | `9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42` |
+| FX | `ecb-2026-09-10-usd-cny`, USD/CNY 6.706267217630854 |
+
+### Runtime policy
+
+| Setting | Value |
+| --- | --- |
+| Candidate generation ceiling | 32,768 tokens |
+| Judge generation ceiling | 16,384 tokens |
+| Client timeout | 600 seconds |
+| Global provider concurrency | 6 (per-provider default 2) |
+| Hard cost ceiling | ¥150.00 |
+
+The run is checkpointed and resumable; every completed paid call is preserved
+and only unfinished work is retried (bounded retries), so no paid call is
+duplicated.
+
+## Limitations
+
+V1 does **not** benchmark:
+
+* multimodal / vision input
+* coding
+* RAG or live web search
+* actual tool execution
+* multi-agent execution
+* fine-tuning
+* production routing
+
+Additional honest caveats:
+
+* 10 models and 50 cases is a practical benchmark, not a scientifically
+  comprehensive one. V1 does not perform repeated sampling or significance
+  testing.
+* Two cross-family judges reduce judge-family bias and make it measurable; they
+  do not eliminate it. Judge disagreement is published in
+  [release/v1/judge_disagreement.json](release/v1/judge_disagreement.json).
+* **Human calibration sample prepared. Human review pending.** V1 is not
+  human-calibrated, and no agreement figures are published.
+* Pricing is a dated manual snapshot, not a live billing feed.
+* Latency depends on provider load, region, and network path.
+
+## Project structure
 
 ```
 .
-├── run_benchmark.py                     # CLI
-├── data/
-│   ├── models_v1.json                   # configurable candidate + judge pool
-│   ├── fixtures/synthetic_v1_cases.json # synthetic, framework-validation only
-│   └── archive/test_cases_v0_1.json     # preserved V0.1 dataset
-├── src/
-│   ├── config.py          # paths, versions, 5 domains, rubric, request policy
-│   ├── models.py          # model pool load + validation, family vs provider
-│   ├── cases.py           # case schema load + validation
-│   ├── providers.py       # one provider-native HTTP client + offline client
-│   ├── deterministic.py   # machine-checkable constraint evaluation
-│   ├── judge.py           # judge pool, leave-one-provider-out, strict parsing
-│   ├── pricing.py         # native price, tiering, time-of-day, CNY normalization
-│   ├── analytics.py       # latency percentiles, cost metrics, Pareto frontier
-│   ├── runner.py          # orchestration and snapshot assembly
-│   └── leaderboard.py     # standalone leaderboard.html renderer
-├── tests/                 # standard-library unittest suite
-└── results/               # local artifacts, git-ignored
+├── run_benchmark.py        # CLI: validate-only / estimate / dry-run / confirm
+├── data/                   # case dataset, model registry, pricing + FX snapshots
+├── docs/                   # product spec, methodology, case design, decisions
+├── src/                    # benchmark modules (config, providers, judge, analytics)
+├── tests/                  # standard-library unittest suite
+└── release/v1/             # canonical V1 public release artifacts
 ```
 
-## Quickstart
+Key documents:
+
+| Document | Contents |
+| --- | --- |
+| [docs/PRODUCT_SPEC_V1.md](docs/PRODUCT_SPEC_V1.md) | Frozen V1 scope and out-of-scope list |
+| [docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md) | Frozen evaluation design: dataset, judges, metrics, Pareto |
+| [docs/CASE_DESIGN_STANDARD_V1.md](docs/CASE_DESIGN_STANDARD_V1.md) | Binding rules for authoring production cases |
+| [docs/CASE_MATRIX_V1.md](docs/CASE_MATRIX_V1.md) | Planned coverage of all 50 production slots |
+| [docs/DATASET_QA_V1.md](docs/DATASET_QA_V1.md) | Dataset quality-assurance record |
+| [docs/DATASET_FREEZE_V1.md](docs/DATASET_FREEZE_V1.md) | Immutable dataset freeze manifest |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Chronological decision log with rationale |
+
+## Running it yourself
 
 Requires Python 3.10 or newer. The only dependency is `requests`.
+
+These commands are offline and make **zero network calls**:
 
 ```bash
 pip install -r requirements.txt
 
-python3 run_benchmark.py --validate-only   # check model pool + case schema, no network
-python3 run_benchmark.py --estimate        # projected call count and cost, no network
-python3 run_benchmark.py --dry-run         # full pipeline offline, synthetic output only
-python3 run_benchmark.py --confirm         # real run against native provider APIs
-
-python3 -m unittest discover -s tests -v   # framework test suite
+python3 run_benchmark.py --validate-only
+python3 run_benchmark.py --validate-only --production-cases
+python3 run_benchmark.py --dry-run
+python3 -m unittest discover -s tests -v
 ```
 
-Credentials come from environment variables only — one per provider, named in
-`data/models_v1.json` (`DASHSCOPE_API_KEY`, `DEEPSEEK_API_KEY`,
-`MOONSHOT_API_KEY`, `MINIMAX_API_KEY`, `ZHIPU_API_KEY`, `ARK_API_KEY`). Nothing
-in this repository reads API keys from Codex configuration files, shell history,
-or any other file on disk.
+`--dry-run` produces synthetic, clearly banner-flagged output only and never
+overwrites published results.
 
-## Evaluation design (summary)
-
-Full detail in [docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md).
-
-- **50 cases** across **5 domains**, 10 per domain: `instruction_constraint_following`,
-  `structured_information_analysis`, `product_reasoning_decision`,
-  `chinese_business_communication`, `agent_workflow_planning`. Approximately 40
-  Chinese-first. Each domain is 2 easy / 5 medium / 3 hard.
-- **Hybrid evaluation.** Deterministic checks wherever a constraint is objectively
-  machine-checkable (`constraint_pass_rate`), plus LLM evaluation for judgment.
-  Neither overrides the other; both are reported. The evaluator implements 21
-  check types, listed in [docs/METHODOLOGY_V1.md](docs/METHODOLOGY_V1.md).
-- **Cross-family dual judging.** Two judges score every response, never from the
-  candidate's own model family or provider. Judge selection follows a fixed
-  priority from configuration — Qwen → DeepSeek + GLM, DeepSeek → Qwen + GLM,
-  GLM/Kimi/MiniMax/Doubao → Qwen + DeepSeek — so unrelated candidates are never
-  scored by different judge pairs. Judge agreement is published.
-- **Metrics.** `quality_score`, `constraint_pass_rate`, `task_success_rate`,
-  `overall_score`, `avg`/`p50`/`p95` latency, input/output/reasoning tokens,
-  `candidate_inference_cost`, `judge_evaluation_cost`, `cost_per_100_tasks`,
-  `quality_per_cny`, `judge_agreement`.
-- **Incomplete runs are not silently averaged.** When a run is incomplete,
-  diagnostics are kept (`actual_spend_cny`, `calls_completed`,
-  `cases_completed`, partial tokens and latency) while cross-model comparative
-  metrics (`cost_per_100_tasks`, `quality_per_cny`, Pareto eligibility, rank)
-  are reported as **unavailable** rather than computed over a reduced
-  denominator.
-- **Self-contained cases, no private chain-of-thought.** Every source fact a
-  task needs is in the candidate-visible prompt; `reference_facts` holds only
-  visible facts, invariants, or values derivable from visible input. Reasoning
-  is judged from the observable answer and its stated justification — the
-  benchmark never requires hidden reasoning.
-- **RMB presentation.** Native provider price and currency are preserved;
-  `normalized_cost_cny` is produced only when it can be produced honestly.
-
-## Model pool
-
-The pool is **one shared registry**, not code — 10 model entries across 6 Chinese
-providers (Alibaba, DeepSeek, Moonshot, MiniMax, Zhipu, ByteDance), of which 3
-are also judge-eligible, declared in [data/models_v1.json](data/models_v1.json).
-There are no judge-only duplicate entries: a model may be both a candidate and a
-judge, and those two roles produce strictly separate cost and latency metrics.
-
-Each entry distinguishes **model family** (who trained the model) from
-**inference provider / channel** (who serves it), and carries product tier,
-inference channel, thinking mode, model-ID verification status, and pricing
-metadata. No benchmark logic branches on a model name.
-
-> **All literal model IDs must be verified against provider-native documentation
-> before any paid run.** Unverified entries are deliberately `null` rather than
-> guessed, and a real run refuses to start while any remain unverified.
-
-> **All active V1 pricing is currently unresolved.** Every model is unpriced.
-> Prices verified during the V0.1 review were verified for different model IDs
-> and are retired into a `historical_pricing_archive` marked
-> `historical_inactive`; they are never used for V1 cost reporting. A paid run is
-> refused while active pricing is unresolved.
-
-## Currency and cost honesty
-
-- Native price and native currency are always preserved.
-- A price published in CNY is used directly. No conversion.
-- Any other currency requires an explicit, dated FX snapshot with a named source.
-  Without one, the CNY value is `null` with a stated reason — never a silently
-  converted number, and never a hard-coded permanent rate.
-- Candidate inference cost and judge evaluation cost are separate fields from
-  collection through aggregation to the leaderboard.
-- Missing provider metrics are recorded as `null`. Nothing is estimated into a
-  result.
-
-## Artifacts
-
-| Path | Contents |
-| --- | --- |
-| `sample_results.json` | Canonical results document from an approved real run (not generated yet) |
-| `leaderboard.html` | Self-contained HTML report (not generated yet) |
-| `results/` | Local, git-ignored artifacts; dry runs write here |
-
-Dry-run output is flagged `synthetic: true` throughout, carries a synthetic
-banner, and never overwrites `sample_results.json` or `leaderboard.html`.
-Synthetic pricing and FX fixtures are placeholders for exercising the offline
-pipeline and are never presented as published values.
-
-## Known limitations
-
-- Approximately 10 models and 50 cases is a practical benchmark, not a
-  scientific one. V1 does not perform repeated sampling or significance testing.
-- Two cross-family judges reduce judge-family bias and make it measurable; they
-  do not eliminate it.
-- Human calibration is planned as a base stratified sample of 50 responses plus
-  a risk-based extension of roughly 10–20 (about 50–70 in practice), not yet
-  performed. No agreement figures are published until real human review exists.
-- Pricing is a dated manual snapshot, not a live billing feed.
-- Models whose API model ID is not a dated snapshot are not reproducible against
-  the same weights.
-- Latency depends on provider load, region, and network path.
-
-## Out of scope for V1
-
-Vision and multimodal input, coding, RAG, live web search, real tool execution,
-multi-agent execution, fine-tuning, production routing, and any hosted backend.
-These are documented as V1.1/V2 candidates in
-[docs/PRODUCT_SPEC_V1.md](docs/PRODUCT_SPEC_V1.md).
+A **real paid run** is a different operation. It requires provider API
+credentials supplied through environment variables (one per provider, named in
+the model registry) and it spends real money, so it is refused unless launched
+with `--confirm`. Do not run it without an explicit cost projection and
+authorization.
 
 ## License
 

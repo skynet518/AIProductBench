@@ -1,0 +1,636 @@
+{
+  "artifact": "AIProductBench CN V1 — official run sample results",
+  "run_id": "official-v1-20260911T103838Z",
+  "git_commit": "5c6625558655387cd5b46ae4e4832f173fded0f5",
+  "dataset_manifest_sha256": "6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c",
+  "model_registry_snapshot_id": "v1-registry-2026-09-11.3",
+  "pricing_snapshot_id": "v1-pricing-2026-09-11.1",
+  "fx_snapshot_id": "ecb-2026-09-10-usd-cny",
+  "note": "A compact sample of real official-run results for readers. Values are observed provider usage; no synthetic data is included.",
+  "samples": [
+    {
+      "case_id": "IF-10",
+      "case_title": "在否定约束下重写",
+      "domain": "instruction_constraint_following",
+      "difficulty": "hard",
+      "language": "zh",
+      "model_key": "deepseek_flagship",
+      "model_name": "DeepSeek Pro tier",
+      "provider_model_id": "deepseek-v4-pro",
+      "response_text": "【支付服务异常致歉通知】\n\n9月28日14:02至14:45，支付页面出现无法加载的情况，持续约43分钟。经排查，本次问题由数据库连接池配置变更引发，我们已定位原因并完成回滚。期间约6%的下单请求失败。\n\n这次问题来自我们自身的配置操作，给您带来了不便，我们诚恳致歉。目前支付服务已恢复，团队正在持续监控中。我们将在48小时内发布复盘说明，说明问题原因与后续改进措施。",
+      "deterministic": {
+        "checks_passed": 6,
+        "checks_total": 6,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "qwen_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "glm_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 348,
+      "output_tokens": 1460,
+      "reasoning_tokens": 1351,
+      "cached_input_tokens": 256,
+      "native_cost": 0.00295715,
+      "native_currency": "USD",
+      "normalized_cost_cny": 0.01983144,
+      "latency_ms": 24201.0
+    },
+    {
+      "case_id": "SA-04",
+      "case_title": "Schema conversion between two shapes",
+      "domain": "structured_information_analysis",
+      "difficulty": "medium",
+      "language": "en",
+      "model_key": "deepseek_value",
+      "model_name": "DeepSeek Flash tier",
+      "provider_model_id": "deepseek-v4-flash",
+      "response_text": "{\"customer_id\":\"C-2048\",\"name\":\"Northstar Labs\",\"plan_code\":\"ENT\",\"state\":\"suspended\",\"primary_email\":\"ops@northstar.example\"}",
+      "deterministic": {
+        "checks_passed": 8,
+        "checks_total": 8,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "qwen_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "glm_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 265,
+      "output_tokens": 131,
+      "reasoning_tokens": 95,
+      "cached_input_tokens": 0,
+      "native_cost": 0.00014476,
+      "native_currency": "USD",
+      "normalized_cost_cny": 0.0009708,
+      "latency_ms": 1890.9
+    },
+    {
+      "case_id": "IF-01",
+      "case_title": "用户反馈整理为三条问题陈述",
+      "domain": "instruction_constraint_following",
+      "difficulty": "easy",
+      "language": "zh",
+      "model_key": "doubao_flagship",
+      "model_name": "Doubao flagship tier",
+      "provider_model_id": "doubao-seed-2-1-pro-260628",
+      "response_text": "- 用户注册时需等待十多分钟才能收到验证码，容易卡在注册流程环节。\n- 订单页面存在时间显示错误问题，当日的订单会被错误显示为昨日订单。\n- 搜索无结果时页面呈空白状态，用户不清楚下一步该如何操作。",
+      "deterministic": {
+        "checks_passed": 2,
+        "checks_total": 2,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "qwen_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 204,
+      "output_tokens": 1128,
+      "reasoning_tokens": 1068,
+      "cached_input_tokens": 0,
+      "native_cost": 0.035064,
+      "native_currency": "CNY",
+      "normalized_cost_cny": 0.035064,
+      "latency_ms": 25332.4
+    },
+    {
+      "case_id": "IF-08",
+      "case_title": "长文压缩到固定预算",
+      "domain": "instruction_constraint_following",
+      "difficulty": "hard",
+      "language": "zh",
+      "model_key": "glm_flagship",
+      "model_name": "GLM flagship tier",
+      "provider_model_id": "glm-5.3",
+      "response_text": "【结论】\n8 月 18 日完成灰度发布，首批覆盖 20% 流量；首页点击率升至 4.1%。\n\n【风险】\n详情页转化率由 5.6% 降至 4.9%；新增 1 个 P1 缺陷（推荐位重复展示），12 位用户反馈推荐重复；服务器成本每天增加 1,800 元，超出本季度预算 6%。\n\n【下一步】\n预计 8 月 22 日修复 P1 缺陷；待缺陷修复且详情页转化率回升后，灰度扩展至 50% 流量。",
+      "deterministic": {
+        "checks_passed": 11,
+        "checks_total": 11,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "qwen_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 279,
+      "output_tokens": 6101,
+      "reasoning_tokens": 5945,
+      "cached_input_tokens": 0,
+      "native_cost": 0.027235,
+      "native_currency": "USD",
+      "normalized_cost_cny": 0.18264519,
+      "latency_ms": 74119.6
+    },
+    {
+      "case_id": "SA-08",
+      "case_title": "矛盾检测与可解决性判断",
+      "domain": "structured_information_analysis",
+      "difficulty": "hard",
+      "language": "zh",
+      "model_key": "glm_value",
+      "model_name": "GLM Flash tier",
+      "provider_model_id": "glm-5.3-flash",
+      "response_text": "- 矛盾字段：P1事故数；A值：3；B值：2；状态：可解决；依据：Incident Tracker 导出高于人工事故汇总，因此采信 B 值 2。\n- 矛盾字段：已部署版本；A值：2.4.1；B值：2.4.0；状态：可解决；依据：Deployment Console 导出高于人工周报，因此采信 A 值 2.4.1。\n- 矛盾字段：灰度比例；A值：50%；B值：30%；状态：可解决；依据：Deployment Console 导出高于人工周报，因此采信 A 值 50%。\n- 矛盾字段：支付转化率；A值：4.8%；B值：5.2%；状态：未解决；依据：两来源没有统一统计口径，也没有明确优先级，不能强行选定真值。\n\n总体判断：P1事故数、已部署版本和灰度比例均可依据来源规则解决，支付转化率仍需补充统计口径或来源优先级说明。",
+      "deterministic": {
+        "checks_passed": 6,
+        "checks_total": 6,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "qwen_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 395,
+      "output_tokens": 959,
+      "reasoning_tokens": 715,
+      "cached_input_tokens": 0,
+      "native_cost": 0.00053875,
+      "native_currency": "USD",
+      "normalized_cost_cny": 0.003613,
+      "latency_ms": 11789.2
+    },
+    {
+      "case_id": "SA-05",
+      "case_title": "噪声清理：从群聊提取需求",
+      "domain": "structured_information_analysis",
+      "difficulty": "medium",
+      "language": "zh",
+      "model_key": "kimi_flagship",
+      "model_name": "Kimi flagship tier",
+      "provider_model_id": "kimi-k3",
+      "response_text": "- Requirement: 导出必须同时支持 CSV 与 XLSX 两种格式 | Evidence: [M2] \"本次版本导出必须同时支持 CSV 和 XLSX\"\n- Requirement: 用户必须能选择导出日期范围，且范围最长为 90 天 | Evidence: [M5] \"用户必须可以选择导出日期范围，最长 90 天\"\n- Requirement: 导出文件名必须包含 workspace 名称和导出日期 | Evidence: [M8] \"文件名必须包含 workspace 名称和导出日期\"\n- Requirement: 超过 50MB 的导出文件必须异步生成，并在完成后发送站内通知 | Evidence: [M11] \"超过 50MB 的文件异步生成，完成后发送站内通知\"",
+      "deterministic": {
+        "checks_passed": 5,
+        "checks_total": 5,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "qwen_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 425,
+      "output_tokens": 868,
+      "reasoning_tokens": 699,
+      "cached_input_tokens": null,
+      "native_cost": 0.014295,
+      "native_currency": "USD",
+      "normalized_cost_cny": 0.09586609,
+      "latency_ms": 27762.5
+    },
+    {
+      "case_id": "IF-02",
+      "case_title": "Constrained internal release note",
+      "domain": "instruction_constraint_following",
+      "difficulty": "easy",
+      "language": "en",
+      "model_key": "kimi_value",
+      "model_name": "Kimi balanced tier",
+      "provider_model_id": "kimi-k2.6",
+      "response_text": "Release note:\n- CSV export was added on the Reports page.\n- The bug where saved filters disappeared after logout is fixed.\n- The dashboard now loads up to 5,000 rows without timing out.",
+      "deterministic": {
+        "checks_passed": 5,
+        "checks_total": 5,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "qwen_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 139,
+      "output_tokens": 459,
+      "reasoning_tokens": 416,
+      "cached_input_tokens": null,
+      "native_cost": 0.00196805,
+      "native_currency": "USD",
+      "normalized_cost_cny": 0.01319827,
+      "latency_ms": 12943.6
+    },
+    {
+      "case_id": "AW-09",
+      "case_title": "停止条件与预算约束",
+      "domain": "agent_workflow_planning",
+      "difficulty": "hard",
+      "language": "zh",
+      "model_key": "minimax_flagship",
+      "model_name": "MiniMax flagship tier",
+      "provider_model_id": "MiniMax-M3",
+      "response_text": "# 内部知识库事实核验 Workflow 设计\n\n## 一、总体思路\n\n把核验工作视为**带预算的有限搜索博弈**：5 条事实 × 约 7 次调用/条 = 35 次，留 5 次作为「回访/升级」缓冲。每条事实在状态机中流转，由「信息增益」和「预算水位」共同决定下一步动作。\n\n---\n\n## 二、预算预分配策略\n\n| 预算维度 | 硬上限 | 软上限（开始节流） | 预分配（5 条事实） |\n|---|---|---|---|\n| 调用次数 | 40 | 32（80%） | 7 次/条 + 5 次共享缓冲 |\n| 总耗时 | 180s | 150s（83%） | 同上，按 4s/次估算 |\n| 总成本 | 2.00 元 | 1.60 元（80%） | 同上，0.05 元/次 |\n\n**关键观察**：40 次 × 0.05 元 = 2.00 元正好等于成本上限，40 × 4s = 160s 留 20s 余量给「余震」处理。因此**调用次数是主导约束**，时间和成本作为兜底校验。\n\n---\n\n## 三、单条事实的状态机\n\n为每条事实维护一个状态：\n\n```\nUNVERIFIED (无证据)\n   ↓ 找到 1 份有用文档\nPARTIAL (1 份独立证据)\n   ↓ 找到第 2 份独立且一致的证据\nVERIFIED ✅ ──→ 形成草稿，停止搜索\n   ↓\nCONFLICTED (证据冲突) ──→ 立即停止，升级\n   ↓\nSTALLED (连续 2–3 次无新独立证据) ──→ 标记「证据不足」，升级\n```\n\n**独立证据的判定**：来自不同的文档 ID/来源；不互相引用、不共享同一原始引用链；表述角度或细节不完全雷同（避免两份文档其实是同一篇被复制粘贴的产物）。\n\n---\n\n## 四、Continue / Stop / Escalate 政策\n\n### 4.1 继续搜索（CONTINUE）的条件\n当且仅当**同时满足**：\n- 状态 ∈ {UNVERIFIED, PARTIAL}\n- 本条事实已用调用 < 7 次\n- 全局已用调用 < 32 次（软上限内）\n- 最近 2 次查询中至少产生 1 份「新的」有用文档（信息增益 > 0）\n\n### 4.2 停止本条搜索（STOP-MOVE-ON）的条件\n满足任一：\n- 状态 = VERIFIED → 形成草稿，进入下一条\n- 状态 = CONFLICTED → 保留冲突，**升级**\n- 状态 = STALLED → 标记「证据不足」，**升级**\n- 本条已用 ≥ 7 次 → 强制评估状态，决定是形成草稿还是升级\n\n### 4.3 升级（ESCALATE）的触发条件\n- 证据相互矛盾，且无法在剩余预算内消解\n- 状态连续 3 次查询未升级（无新增独立证据）\n- 用尽本条 7 次配额仍未达 VERIFIED\n- 整批任务进入节流模式时仍存在关键事实未核验\n\n升级时输出结构化报告：已查到的证据、冲突点、已尝试的检索词、建议的人工核实方向。\n\n---\n\n## 五、信息增益与无进展循环检测\n\n这是 workflow 的核心防卡死机制。每次查询后记录：\n\n| 指标 | 用途 |\n|---|---|\n| `seen_docs[fact]` | 累计去重见过的文档 ID 集合 |\n| `independent_supporters[fact]` | 独立支持该事实的文档清单 |\n| `last_2_new_useful` | 最近 2 次查询中产生的新有用文档数 |\n| `queries_on_fact` | 本条已用调用次数 |\n| `stall_counter[fact]` | 连续「零信息增益」次数 |\n\n**无进展判定**：\n- `last_2_new_useful == 0` → 触发 `stall_counter++`\n- `stall_counter ≥ 2` → 状态转为 STALLED\n- 任何一次产生新独立证据 → `stall_counter` 重置\n\n**检索词变换规则**（避免在原地打转）：\n- 第 1–2 次：用直白的产品关键词\n- 第 3–4 次：换同义词/近义词/英文术语\n- 第 5–6 次：换证据类型（如从「功能描述」切到「上线公告」「版本说明」「FAQ」）\n- 第 7 次：交叉验证（用相关产品名、行业语境）\n\n同一 query 不允许连续出现两次（除非上下文强制）。\n\n---\n\n## 六、整批任务的预算保护机制\n\n### 6.1 三道闸门（每次迭代后必查）\n\n```\n闸门 1: 本次调用后 used_calls + 1 ≤ 40 ?\n闸门 2: used_time + 4 ≤ 180s ?\n闸门 3: used_cost + 0.05 ≤ 2.00 元 ?\n任一不满足 → 立即硬停止，整理草稿\n```\n\n### 6.2 节流模式（Soft Cap 触发）\n当 `used_calls ≥ 32` 或 `used_time ≥ 150s`：\n- 切换到「**只验证、不探索**」模式\n- 只对仍为 UNVERIFIED/PARTIAL 的事实再投 1–2 次精准查询\n- 任何一次产生新独立证据即停止（避免在剩余预算上再加码）\n- 优先用剩余预算处理「接近 VERIFIED 但差一份证据」的事实\n\n### 6.3 缓冲池（5 次共享）\n从 40 次总盘中预留 5 次不预先分配：\n- 2 次用于回访 PARTIAL→VERIFIED 的临门一脚\n- 2 次用于消解 CONFLICTED 中的可解冲突\n- 1 次作为整批意外开销的安全垫\n\n---\n\n## 七、迭代循环伪代码\n\n```\nfact_queue ← 按优先级排序的 5 条事实\nglobal_budget ← {calls: 0, time: 0, cost: 0}\nper_fact_state ← {UNVERIFIED for each fact}\n\nwhile fact_queue 非空 且 未触发硬停止:\n    fact ← 取出队首\n    if per_fact_state[fact] ∈ {VERIFIED, CONFLICTED, STALLED}:\n        跳过，输出草稿/升级\n        continue\n    \n    # 闸门检查\n    if 任一预算触顶: 硬停止\n    \n    # 选择下一查询词（基于已尝试词表 + 变换规则）\n    query ← next_query_strategy(fact, seen_queries[fact])\n    \n    # 执行检索（计划层面不真正调用）\n    results ← search(query)  # 最多 3 份候选\n    global_budget += {calls:1, time:4, cost:0.05}\n    \n    # 评估结果\n    更新 seen_docs[fact]、independent_supporters[fact]、stall_counter[fact]\n    更新 per_fact_state[fact]\n    \n    # 决策\n    if state == VERIFIED: 写草稿, continue\n    if state == CONFLICTED: 升级, continue\n    if state == STALLED: 升级, continue\n    if queries_on_fact[fact] ≥ 7: 强制评估, 升级或写「证据不足」草稿\n    \n    # 否则重新入队\n    fact_queue.append(fact)\n```\n\n---\n\n## 八、输出规范（草稿格式）\n\n对每条事实形成以下三态之一的内部草稿：\n\n1. **已验证草稿**：事实陈述 + ≥2 份独立文档引用 + 各文档的原文片段\n2. **冲突升级单**：事实陈述 + 各方证据 + 冲突点 + 已尝试的检索路径\n3. **证据不足单**：事实陈述 + 已找到的相关材料 + 信息缺口 + 升级建议\n\n---\n\n## 九、关键设计原则总结\n\n| 原则 | 实现方式 |\n|---|---|\n| **不止靠预算硬停** | 用 `stall_counter` 在预算内主动识别无进展 |\n| **避免多数票** | 状态机中 CONFLICTED 是终态，不做投票 |\n| **避免原地打转** | 检索词按阶段变换 + 禁止同 query 连续 |\n| **预算可观测** | 每次迭代后更新三维度计数器 |\n| **软硬结合** | 软上限 80% 触发节流，硬上限触发停止 |\n| **缓冲应对意外** | 5 次不预分配，用于高价值回访与冲突消解 |\n\n这套设计保证：在最坏情况下（5 条全部 STALLED），workflow 会在约 35–40 次调用内优雅退出；在最好情况下（5 条全部 VERIFIED），通常 25–30 次即可完成，剩余预算用于加固。",
+      "deterministic": {
+        "checks_passed": 0,
+        "checks_total": 0,
+        "constraint_pass_rate": null,
+        "all_passed": null
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 4,
+            "instruction_following": 5
+          },
+          "mean_score": 4.667,
+          "normalized_score": 91.67,
+          "error": null
+        },
+        {
+          "judge_key": "qwen_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 95.83,
+      "input_tokens": 399,
+      "output_tokens": 3208,
+      "reasoning_tokens": 1303,
+      "cached_input_tokens": 156,
+      "native_cost": 0.02752302,
+      "native_currency": "CNY",
+      "normalized_cost_cny": 0.02752302,
+      "latency_ms": 34355.6
+    },
+    {
+      "case_id": "SA-09",
+      "case_title": "Missing-data discipline",
+      "domain": "structured_information_analysis",
+      "difficulty": "hard",
+      "language": "en",
+      "model_key": "qwen_flagship",
+      "model_name": "Qwen flagship tier",
+      "provider_model_id": "qwen3.8-max",
+      "response_text": "A — APPROVE — all four gates are known and satisfied\nB — UNDETERMINED — security review is missing, and no known gate fails\nC — UNDETERMINED — monthly cost is missing, and no known gate fails\nD — REJECT — accuracy 91.5% is below the required 92.0%\nBounded conclusion: only Vendor A can be approved today.",
+      "deterministic": {
+        "checks_passed": 5,
+        "checks_total": 5,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "glm_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 407,
+      "output_tokens": 829,
+      "reasoning_tokens": 740,
+      "cached_input_tokens": 0,
+      "native_cost": 0.00477593,
+      "native_currency": "USD",
+      "normalized_cost_cny": 0.03202866,
+      "latency_ms": 20501.8
+    },
+    {
+      "case_id": "PR-01",
+      "case_title": "本季度只做两件事",
+      "domain": "product_reasoning_decision",
+      "difficulty": "easy",
+      "language": "zh",
+      "model_key": "qwen_value",
+      "model_name": "Qwen Flash tier",
+      "provider_model_id": "qwen3.8-flash",
+      "response_text": "决策规则：在季度资源有限时，优先选择能直接推动“7天内首次核心协作”或“减少高频可重复支持问题”、且有明确访谈/工单证据支撑、投入成本与收益匹配的项目。\n选择：A、C\n理由：A直接解决14/30新团队邀请成员时不知下一步的激活阻塞，3周内可改善7天内首次核心协作；C对应每周18张无法自行恢复账号的高频工单，2周成本低且能直接减少重复支持问题；D虽有销售吸引力，但4周成本最高、机会尚未签约，且与当前激活和支持目标关联较间接，因此延期。",
+      "deterministic": {
+        "checks_passed": 2,
+        "checks_total": 2,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "glm_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 351,
+      "output_tokens": 844,
+      "reasoning_tokens": 702,
+      "cached_input_tokens": 0,
+      "native_cost": 0.00036207,
+      "native_currency": "USD",
+      "normalized_cost_cny": 0.00242814,
+      "latency_ms": 17767.6
+    },
+    {
+      "case_id": "IF-01",
+      "case_title": "用户反馈整理为三条问题陈述",
+      "domain": "instruction_constraint_following",
+      "difficulty": "easy",
+      "language": "zh",
+      "model_key": "qwen_flagship",
+      "model_name": "Qwen flagship tier",
+      "provider_model_id": "qwen3.8-max",
+      "response_text": "- 注册时验证码需等待十多分钟才能收到，导致用户注册流程受阻。\n- 订单页时间显示错误，当天订单被显示为昨天。\n- 搜索无结果时页面空白，用户不知道下一步该做什么。",
+      "deterministic": {
+        "checks_passed": 2,
+        "checks_total": 2,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        },
+        {
+          "judge_key": "glm_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 5,
+            "reasoning_quality": 5,
+            "instruction_following": 5
+          },
+          "mean_score": 5.0,
+          "normalized_score": 100.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 100.0,
+      "input_tokens": 210,
+      "output_tokens": 227,
+      "reasoning_tokens": 174,
+      "cached_input_tokens": 0,
+      "native_cost": 0.00147038,
+      "native_currency": "USD",
+      "normalized_cost_cny": 0.00986076,
+      "latency_ms": 7622.0
+    },
+    {
+      "case_id": "IF-03",
+      "case_title": "一次事实，三种受众",
+      "domain": "instruction_constraint_following",
+      "difficulty": "medium",
+      "language": "zh",
+      "model_key": "doubao_flagship",
+      "model_name": "Doubao flagship tier",
+      "provider_model_id": "doubao-seed-2-1-pro-260628",
+      "response_text": "【客服团队】\n请知悉：26.10.18 2200-19日0200星河CRM迁库停机4小时，运维负责，联系人李文。客档查询、建工单不可用；报表可导出，数据最多延迟2小时。勿批量导入，超5000条拒；若失败，19日0600前回滚至迁前状态，状态页通知。\n\n【销售团队】\n请提前安排：26.10.18 2200-19日0200星河CRM迁库停机4小时，运维负责，联系人李文。客档查询、建工单不可用；报表可导出，数据最多延迟2小时。勿批量导入，超5000条拒；若失败，19日0600前回滚至迁前状态，状态页通知。\n\n【实施顾问】\n请同步客户：26.10.18 2200-19日0200星河CRM迁库停机4小时，运维负责，联系人李文。客档查询、建工单不可用；报表可导出，数据最多延迟2小时。勿批量导入，超5000条拒；若失败，19日0600前回滚至迁前状态，状态页通知。",
+      "deterministic": {
+        "checks_passed": 5,
+        "checks_total": 5,
+        "constraint_pass_rate": 1.0,
+        "all_passed": true
+      },
+      "judge_scores": [
+        {
+          "judge_key": "deepseek_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 3,
+            "reasoning_quality": 2,
+            "instruction_following": 2
+          },
+          "mean_score": 2.333,
+          "normalized_score": 33.33,
+          "error": null
+        },
+        {
+          "judge_key": "qwen_flagship",
+          "judge_provider_model_id": null,
+          "scores": {
+            "task_completion": 2,
+            "reasoning_quality": 2,
+            "instruction_following": 2
+          },
+          "mean_score": 2.0,
+          "normalized_score": 25.0,
+          "error": null
+        }
+      ],
+      "aggregate_quality": 29.17,
+      "input_tokens": 360,
+      "output_tokens": 22746,
+      "reasoning_tokens": 22454,
+      "cached_input_tokens": 0,
+      "native_cost": 0.68454,
+      "native_currency": "CNY",
+      "normalized_cost_cny": 0.68454,
+      "latency_ms": 374025.1
+    }
+  ]
+}

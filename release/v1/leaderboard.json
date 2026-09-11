@@ -1,0 +1,682 @@
+[
+  {
+    "official_rank": null,
+    "model_key": "qwen_flagship",
+    "model_name": "Qwen flagship tier",
+    "provider_model_id": "qwen3.8-max",
+    "model_family": "Qwen",
+    "provider": "Alibaba Model Studio",
+    "provider_key": "alibaba_model_studio",
+    "region": "cn-beijing",
+    "product_tier": "flagship",
+    "completion_status": "INCOMPLETE",
+    "official_ranking_eligible": false,
+    "incomplete_reason": "49 of 50 cases have a valid score; 1 case(s) failed",
+    "overall_quality": 98.894,
+    "overall_quality_exact": 98.89448979591836,
+    "rubric_dimension_scores": {
+      "task_completion": 4.98,
+      "reasoning_quality": 4.959,
+      "instruction_following": 4.929
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 98.15,
+      "structured_information_analysis": 100.0,
+      "product_reasoning_decision": 97.92,
+      "chinese_business_communication": 98.75,
+      "agent_workflow_planning": 99.58
+    },
+    "deterministic_constraint_pass_rate": 1.0,
+    "deterministic_checks": "207/207",
+    "cases_scored": 49,
+    "cases_required": 50,
+    "cases_failed": 1,
+    "judge_unavailable_cases": 0,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.061,
+      "judge_agreement_samples": 49
+    },
+    "candidate_cost_cny": 5.54097852,
+    "candidate_cost_native": {
+      "USD": 0.82623885
+    },
+    "judge_cost_cny": 6.59528791,
+    "actual_spend_cny": 5.54097852,
+    "cost_per_100_tasks_cny": null,
+    "quality_per_cny": null,
+    "comparative_metrics_available": false,
+    "suppressed_metrics": [
+      "cost_per_100_tasks_cny",
+      "quality_per_cny",
+      "official_rank",
+      "official_pareto_eligibility"
+    ],
+    "latency": {
+      "samples": 49,
+      "avg_latency_ms": 83808.28,
+      "p50_latency_ms": 32765.5,
+      "p95_latency_ms": 311524.98,
+      "max_latency_ms": 497544.0
+    },
+    "tokens": {
+      "input": 16435,
+      "output": 161406,
+      "reasoning": 126072,
+      "cached_input": 0,
+      "total": 177841
+    },
+    "pareto_quality_cost": false,
+    "pareto_quality_cost_latency": false,
+    "dominated_by": null
+  },
+  {
+    "official_rank": null,
+    "model_key": "qwen_value",
+    "model_name": "Qwen Flash tier",
+    "provider_model_id": "qwen3.8-flash",
+    "model_family": "Qwen",
+    "provider": "Alibaba Model Studio",
+    "provider_key": "alibaba_model_studio",
+    "region": "cn-beijing",
+    "product_tier": "value",
+    "completion_status": "INCOMPLETE",
+    "official_ranking_eligible": false,
+    "incomplete_reason": "47 of 50 cases have a valid score; 2 case(s) were judge-unavailable; 3 case(s) failed",
+    "overall_quality": 98.581,
+    "overall_quality_exact": 98.58148936170213,
+    "rubric_dimension_scores": {
+      "task_completion": 4.957,
+      "reasoning_quality": 4.926,
+      "instruction_following": 4.947
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 96.88,
+      "structured_information_analysis": 100.0,
+      "product_reasoning_decision": 97.92,
+      "chinese_business_communication": 98.33,
+      "agent_workflow_planning": 99.54
+    },
+    "deterministic_constraint_pass_rate": 1.0,
+    "deterministic_checks": "207/207",
+    "cases_scored": 47,
+    "cases_required": 50,
+    "cases_failed": 3,
+    "judge_unavailable_cases": 2,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.099,
+      "judge_agreement_samples": 47
+    },
+    "candidate_cost_cny": 0.36941225,
+    "candidate_cost_native": {
+      "USD": 0.05508463
+    },
+    "judge_cost_cny": 6.94210255,
+    "actual_spend_cny": 0.36941225,
+    "cost_per_100_tasks_cny": null,
+    "quality_per_cny": null,
+    "comparative_metrics_available": false,
+    "suppressed_metrics": [
+      "cost_per_100_tasks_cny",
+      "quality_per_cny",
+      "official_rank",
+      "official_pareto_eligibility"
+    ],
+    "latency": {
+      "samples": 49,
+      "avg_latency_ms": 51357.8,
+      "p50_latency_ms": 24203.1,
+      "p95_latency_ms": 188141.22,
+      "max_latency_ms": 301831.2
+    },
+    "tokens": {
+      "input": 16435,
+      "output": 139339,
+      "reasoning": 105816,
+      "cached_input": 0,
+      "total": 155774
+    },
+    "pareto_quality_cost": false,
+    "pareto_quality_cost_latency": false,
+    "dominated_by": null
+  },
+  {
+    "official_rank": 1,
+    "model_key": "kimi_flagship",
+    "model_name": "Kimi flagship tier",
+    "provider_model_id": "kimi-k3",
+    "model_family": "Kimi",
+    "provider": "Moonshot AI",
+    "provider_key": "moonshot",
+    "region": "international",
+    "product_tier": "flagship",
+    "completion_status": "COMPLETE",
+    "official_ranking_eligible": true,
+    "incomplete_reason": null,
+    "overall_quality": 96.333,
+    "overall_quality_exact": 96.3334,
+    "rubric_dimension_scores": {
+      "task_completion": 4.85,
+      "reasoning_quality": 4.8,
+      "instruction_following": 4.91
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 90.83,
+      "structured_information_analysis": 99.17,
+      "product_reasoning_decision": 95.83,
+      "chinese_business_communication": 96.67,
+      "agent_workflow_planning": 99.17
+    },
+    "deterministic_constraint_pass_rate": 0.9953,
+    "deterministic_checks": "211/212",
+    "cases_scored": 50,
+    "cases_required": 50,
+    "cases_failed": 0,
+    "judge_unavailable_cases": 0,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.147,
+      "judge_agreement_samples": 50
+    },
+    "candidate_cost_cny": 13.29462483,
+    "candidate_cost_native": {
+      "USD": 1.982418
+    },
+    "judge_cost_cny": 5.37912582,
+    "actual_spend_cny": 13.29462483,
+    "cost_per_100_tasks_cny": 26.58924966,
+    "quality_per_cny": 7.246,
+    "comparative_metrics_available": true,
+    "suppressed_metrics": [],
+    "latency": {
+      "samples": 50,
+      "avg_latency_ms": 79629.32,
+      "p50_latency_ms": 48284.3,
+      "p95_latency_ms": 245163.42,
+      "max_latency_ms": 563047.8
+    },
+    "tokens": {
+      "input": 16791,
+      "output": 128803,
+      "reasoning": 108809,
+      "cached_input": null,
+      "total": 145594
+    },
+    "pareto_quality_cost": true,
+    "pareto_quality_cost_latency": true,
+    "dominated_by": null
+  },
+  {
+    "official_rank": 2,
+    "model_key": "deepseek_value",
+    "model_name": "DeepSeek Flash tier",
+    "provider_model_id": "deepseek-v4-flash",
+    "model_family": "DeepSeek",
+    "provider": "DeepSeek",
+    "provider_key": "deepseek",
+    "region": "global",
+    "product_tier": "value",
+    "completion_status": "COMPLETE",
+    "official_ranking_eligible": true,
+    "incomplete_reason": null,
+    "overall_quality": 96.333,
+    "overall_quality_exact": 96.3326,
+    "rubric_dimension_scores": {
+      "task_completion": 4.86,
+      "reasoning_quality": 4.85,
+      "instruction_following": 4.85
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 91.25,
+      "structured_information_analysis": 97.92,
+      "product_reasoning_decision": 95.83,
+      "chinese_business_communication": 98.75,
+      "agent_workflow_planning": 97.92
+    },
+    "deterministic_constraint_pass_rate": 0.9858,
+    "deterministic_checks": "209/212",
+    "cases_scored": 50,
+    "cases_required": 50,
+    "cases_failed": 0,
+    "judge_unavailable_cases": 0,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.2,
+      "judge_agreement_samples": 50
+    },
+    "candidate_cost_cny": 0.7391531,
+    "candidate_cost_native": {
+      "USD": 0.11021826
+    },
+    "judge_cost_cny": 8.8841142,
+    "actual_spend_cny": 0.7391531,
+    "cost_per_100_tasks_cny": 1.4783062,
+    "quality_per_cny": 130.3283,
+    "comparative_metrics_available": true,
+    "suppressed_metrics": [],
+    "latency": {
+      "samples": 50,
+      "avg_latency_ms": 16326.27,
+      "p50_latency_ms": 11044.85,
+      "p95_latency_ms": 47219.45,
+      "max_latency_ms": 104251.2
+    },
+    "tokens": {
+      "input": 14336,
+      "output": 162341,
+      "reasoning": 146598,
+      "cached_input": 379,
+      "total": 176677
+    },
+    "pareto_quality_cost": true,
+    "pareto_quality_cost_latency": true,
+    "dominated_by": null
+  },
+  {
+    "official_rank": null,
+    "model_key": "glm_value",
+    "model_name": "GLM Flash tier",
+    "provider_model_id": "glm-5.3-flash",
+    "model_family": "GLM",
+    "provider": "Zhipu BigModel",
+    "provider_key": "zhipu_bigmodel",
+    "region": "global",
+    "product_tier": "value",
+    "completion_status": "INCOMPLETE",
+    "official_ranking_eligible": false,
+    "incomplete_reason": "48 of 50 cases have a valid score; 1 case(s) were judge-unavailable; 2 case(s) failed",
+    "overall_quality": 96.181,
+    "overall_quality_exact": 96.180625,
+    "rubric_dimension_scores": {
+      "task_completion": 4.854,
+      "reasoning_quality": 4.885,
+      "instruction_following": 4.802
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 93.52,
+      "structured_information_analysis": 96.67,
+      "product_reasoning_decision": 99.58,
+      "chinese_business_communication": 93.52,
+      "agent_workflow_planning": 97.08
+    },
+    "deterministic_constraint_pass_rate": 0.9758,
+    "deterministic_checks": "202/207",
+    "cases_scored": 48,
+    "cases_required": 50,
+    "cases_failed": 2,
+    "judge_unavailable_cases": 1,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.222,
+      "judge_agreement_samples": 48
+    },
+    "candidate_cost_cny": 0.45350495,
+    "candidate_cost_native": {
+      "USD": 0.06762405
+    },
+    "judge_cost_cny": 4.7101349,
+    "actual_spend_cny": 0.45350495,
+    "cost_per_100_tasks_cny": null,
+    "quality_per_cny": null,
+    "comparative_metrics_available": false,
+    "suppressed_metrics": [
+      "cost_per_100_tasks_cny",
+      "quality_per_cny",
+      "official_rank",
+      "official_pareto_eligibility"
+    ],
+    "latency": {
+      "samples": 49,
+      "avg_latency_ms": 32483.76,
+      "p50_latency_ms": 22074.3,
+      "p95_latency_ms": 112560.24,
+      "max_latency_ms": 135052.9
+    },
+    "tokens": {
+      "input": 13277,
+      "output": 131265,
+      "reasoning": 111824,
+      "cached_input": 0,
+      "total": 144542
+    },
+    "pareto_quality_cost": false,
+    "pareto_quality_cost_latency": false,
+    "dominated_by": null
+  },
+  {
+    "official_rank": null,
+    "model_key": "glm_flagship",
+    "model_name": "GLM flagship tier",
+    "provider_model_id": "glm-5.3",
+    "model_family": "GLM",
+    "provider": "Zhipu BigModel",
+    "provider_key": "zhipu_bigmodel",
+    "region": "global",
+    "product_tier": "flagship",
+    "completion_status": "INCOMPLETE",
+    "official_ranking_eligible": false,
+    "incomplete_reason": "49 of 50 cases have a valid score; 1 case(s) failed",
+    "overall_quality": 94.983,
+    "overall_quality_exact": 94.9830612244898,
+    "rubric_dimension_scores": {
+      "task_completion": 4.827,
+      "reasoning_quality": 4.806,
+      "instruction_following": 4.765
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 88.89,
+      "structured_information_analysis": 93.75,
+      "product_reasoning_decision": 97.08,
+      "chinese_business_communication": 95.42,
+      "agent_workflow_planning": 99.17
+    },
+    "deterministic_constraint_pass_rate": 0.9758,
+    "deterministic_checks": "202/207",
+    "cases_scored": 49,
+    "cases_required": 50,
+    "cases_failed": 1,
+    "judge_unavailable_cases": 0,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.224,
+      "judge_agreement_samples": 49
+    },
+    "candidate_cost_cny": 7.46747282,
+    "candidate_cost_native": {
+      "USD": 1.1135066
+    },
+    "judge_cost_cny": 5.37114556,
+    "actual_spend_cny": 7.46747282,
+    "cost_per_100_tasks_cny": null,
+    "quality_per_cny": null,
+    "comparative_metrics_available": false,
+    "suppressed_metrics": [
+      "cost_per_100_tasks_cny",
+      "quality_per_cny",
+      "official_rank",
+      "official_pareto_eligibility"
+    ],
+    "latency": {
+      "samples": 49,
+      "avg_latency_ms": 83724.53,
+      "p50_latency_ms": 65804.0,
+      "p95_latency_ms": 228215.04,
+      "max_latency_ms": 320572.1
+    },
+    "tokens": {
+      "input": 13277,
+      "output": 249011,
+      "reasoning": 224292,
+      "cached_input": 640,
+      "total": 262288
+    },
+    "pareto_quality_cost": false,
+    "pareto_quality_cost_latency": false,
+    "dominated_by": null
+  },
+  {
+    "official_rank": null,
+    "model_key": "deepseek_flagship",
+    "model_name": "DeepSeek Pro tier",
+    "provider_model_id": "deepseek-v4-pro",
+    "model_family": "DeepSeek",
+    "provider": "DeepSeek",
+    "provider_key": "deepseek",
+    "region": "global",
+    "product_tier": "flagship",
+    "completion_status": "INCOMPLETE",
+    "official_ranking_eligible": false,
+    "incomplete_reason": "49 of 50 cases have a valid score; 1 case(s) were judge-unavailable; 1 case(s) failed",
+    "overall_quality": 94.813,
+    "overall_quality_exact": 94.81265306122448,
+    "rubric_dimension_scores": {
+      "task_completion": 4.816,
+      "reasoning_quality": 4.724,
+      "instruction_following": 4.837
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 90.83,
+      "structured_information_analysis": 97.08,
+      "product_reasoning_decision": 92.08,
+      "chinese_business_communication": 96.25,
+      "agent_workflow_planning": 98.15
+    },
+    "deterministic_constraint_pass_rate": 0.9953,
+    "deterministic_checks": "211/212",
+    "cases_scored": 49,
+    "cases_required": 50,
+    "cases_failed": 1,
+    "judge_unavailable_cases": 1,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.184,
+      "judge_agreement_samples": 49
+    },
+    "candidate_cost_cny": 2.63262353,
+    "candidate_cost_native": {
+      "USD": 0.39256168
+    },
+    "judge_cost_cny": 9.35123548,
+    "actual_spend_cny": 2.63262353,
+    "cost_per_100_tasks_cny": null,
+    "quality_per_cny": null,
+    "comparative_metrics_available": false,
+    "suppressed_metrics": [
+      "cost_per_100_tasks_cny",
+      "quality_per_cny",
+      "official_rank",
+      "official_pareto_eligibility"
+    ],
+    "latency": {
+      "samples": 50,
+      "avg_latency_ms": 70690.19,
+      "p50_latency_ms": 34323.7,
+      "p95_latency_ms": 219098.25,
+      "max_latency_ms": 349638.1
+    },
+    "tokens": {
+      "input": 16986,
+      "output": 196231,
+      "reasoning": 179953,
+      "cached_input": 11264,
+      "total": 213217
+    },
+    "pareto_quality_cost": false,
+    "pareto_quality_cost_latency": false,
+    "dominated_by": null
+  },
+  {
+    "official_rank": null,
+    "model_key": "minimax_flagship",
+    "model_name": "MiniMax flagship tier",
+    "provider_model_id": "MiniMax-M3",
+    "model_family": "MiniMax",
+    "provider": "MiniMax China",
+    "provider_key": "minimax_china",
+    "region": "cn-domestic",
+    "product_tier": "flagship",
+    "completion_status": "INCOMPLETE",
+    "official_ranking_eligible": false,
+    "incomplete_reason": "49 of 50 cases have a valid score; 1 case(s) failed",
+    "overall_quality": 93.282,
+    "overall_quality_exact": 93.28183673469388,
+    "rubric_dimension_scores": {
+      "task_completion": 4.765,
+      "reasoning_quality": 4.704,
+      "instruction_following": 4.724
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 88.89,
+      "structured_information_analysis": 95.0,
+      "product_reasoning_decision": 93.33,
+      "chinese_business_communication": 91.67,
+      "agent_workflow_planning": 97.08
+    },
+    "deterministic_constraint_pass_rate": 0.9614,
+    "deterministic_checks": "199/207",
+    "cases_scored": 49,
+    "cases_required": 50,
+    "cases_failed": 1,
+    "judge_unavailable_cases": 0,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.32,
+      "judge_agreement_samples": 49
+    },
+    "candidate_cost_cny": 0.72596412,
+    "candidate_cost_native": {
+      "CNY": 0.72596412
+    },
+    "judge_cost_cny": 5.78141429,
+    "actual_spend_cny": 0.72596412,
+    "cost_per_100_tasks_cny": null,
+    "quality_per_cny": null,
+    "comparative_metrics_available": false,
+    "suppressed_metrics": [
+      "cost_per_100_tasks_cny",
+      "quality_per_cny",
+      "official_rank",
+      "official_pareto_eligibility"
+    ],
+    "latency": {
+      "samples": 49,
+      "avg_latency_ms": 17100.0,
+      "p50_latency_ms": 12564.2,
+      "p95_latency_ms": 46145.46,
+      "max_latency_ms": 71207.5
+    },
+    "tokens": {
+      "input": 20570,
+      "output": 82814,
+      "reasoning": 62234,
+      "cached_input": 7661,
+      "total": 103384
+    },
+    "pareto_quality_cost": false,
+    "pareto_quality_cost_latency": false,
+    "dominated_by": null
+  },
+  {
+    "official_rank": 3,
+    "model_key": "doubao_flagship",
+    "model_name": "Doubao flagship tier",
+    "provider_model_id": "doubao-seed-2-1-pro-260628",
+    "model_family": "Doubao",
+    "provider": "Volcano Ark",
+    "provider_key": "volcano_ark",
+    "region": "cn-beijing",
+    "product_tier": "flagship",
+    "completion_status": "COMPLETE",
+    "official_ranking_eligible": true,
+    "incomplete_reason": null,
+    "overall_quality": 92.667,
+    "overall_quality_exact": 92.667,
+    "rubric_dimension_scores": {
+      "task_completion": 4.7,
+      "reasoning_quality": 4.69,
+      "instruction_following": 4.73
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 85.83,
+      "structured_information_analysis": 96.67,
+      "product_reasoning_decision": 95.0,
+      "chinese_business_communication": 87.92,
+      "agent_workflow_planning": 97.92
+    },
+    "deterministic_constraint_pass_rate": 0.9858,
+    "deterministic_checks": "209/212",
+    "cases_scored": 50,
+    "cases_required": 50,
+    "cases_failed": 0,
+    "judge_unavailable_cases": 0,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.28,
+      "judge_agreement_samples": 50
+    },
+    "candidate_cost_cny": 9.987852,
+    "candidate_cost_native": {
+      "CNY": 9.987852
+    },
+    "judge_cost_cny": 5.70411422,
+    "actual_spend_cny": 9.987852,
+    "cost_per_100_tasks_cny": 19.975704,
+    "quality_per_cny": 9.278,
+    "comparative_metrics_available": true,
+    "suppressed_metrics": [],
+    "latency": {
+      "samples": 50,
+      "avg_latency_ms": 132562.77,
+      "p50_latency_ms": 102055.15,
+      "p95_latency_ms": 368548.87,
+      "max_latency_ms": 542029.4
+    },
+    "tokens": {
+      "input": 16597,
+      "output": 329609,
+      "reasoning": 303449,
+      "cached_input": 0,
+      "total": 346206
+    },
+    "pareto_quality_cost": false,
+    "pareto_quality_cost_latency": false,
+    "dominated_by": "deepseek_value"
+  },
+  {
+    "official_rank": 4,
+    "model_key": "kimi_value",
+    "model_name": "Kimi balanced tier",
+    "provider_model_id": "kimi-k2.6",
+    "model_family": "Kimi",
+    "provider": "Moonshot AI",
+    "provider_key": "moonshot",
+    "region": "international",
+    "product_tier": "value",
+    "completion_status": "COMPLETE",
+    "official_ranking_eligible": true,
+    "incomplete_reason": null,
+    "overall_quality": 92.583,
+    "overall_quality_exact": 92.5834,
+    "rubric_dimension_scores": {
+      "task_completion": 4.71,
+      "reasoning_quality": 4.67,
+      "instruction_following": 4.73
+    },
+    "domain_scores": {
+      "instruction_constraint_following": 89.17,
+      "structured_information_analysis": 97.5,
+      "product_reasoning_decision": 90.42,
+      "chinese_business_communication": 90.0,
+      "agent_workflow_planning": 95.83
+    },
+    "deterministic_constraint_pass_rate": 0.9858,
+    "deterministic_checks": "209/212",
+    "cases_scored": 50,
+    "cases_required": 50,
+    "cases_failed": 0,
+    "judge_unavailable_cases": 0,
+    "judge_usage": {
+      "judge_agreement_mean_abs_difference": 0.273,
+      "judge_agreement_samples": 50
+    },
+    "candidate_cost_cny": 3.84376552,
+    "candidate_cost_native": {
+      "USD": 0.57316021
+    },
+    "judge_cost_cny": 5.95779895,
+    "actual_spend_cny": 3.84376552,
+    "cost_per_100_tasks_cny": 7.68753104,
+    "quality_per_cny": 24.0866,
+    "comparative_metrics_available": true,
+    "suppressed_metrics": [],
+    "latency": {
+      "samples": 50,
+      "avg_latency_ms": 74542.22,
+      "p50_latency_ms": 50115.5,
+      "p95_latency_ms": 189861.46,
+      "max_latency_ms": 443164.0
+    },
+    "tokens": {
+      "input": 12891,
+      "output": 140279,
+      "reasoning": 122642,
+      "cached_input": 256,
+      "total": 153170
+    },
+    "pareto_quality_cost": false,
+    "pareto_quality_cost_latency": false,
+    "dominated_by": "deepseek_value"
+  }
+]

@@ -1,0 +1,635 @@
+{
+  "artifact": "AIProductBench CN V1 — official full-run manifest",
+  "phase": "5",
+  "run_id": "official-v1-20260911T103838Z",
+  "run_kind": "official_full_run",
+  "canonical_official_run": true,
+  "canonical_spend": {
+    "candidate_spend_cny": 45.05535164,
+    "judge_spend_cny": 64.67647388,
+    "total_spend_cny": 109.73182552,
+    "candidate_checkpoint_records": 511,
+    "judge_checkpoint_records": 991,
+    "note": "Spend of the canonical paid execution, recovered from the immutable checkpoint. Excludes aborted-run, smoke, probe, D-053 and D-054 validation spend."
+  },
+  "recovery": {
+    "mode": "offline_rebuild_from_canonical_checkpoint",
+    "no_network": true,
+    "no_new_paid_calls": true,
+    "raw_checkpoint_mutated": false,
+    "rebuilt_at": "2026-09-11T16:41:04+00:00",
+    "aggregation_fix": "src/runner.py summarize(): judge verdict token/latency telemetry is read optionally, because valid judge failure records (provider error or unparseable judge output) carry no success-only fields.",
+    "execution_provenance": {
+      "git_execution_commit": "f3225f51824f4e3c047b2df3c15092a803231291",
+      "configuration_baseline_commit": "e10ceb0aa89483050ec0b09eb96e7d16c37e4e09",
+      "note": "The paid execution ran from a harness-only commit whose parent is the D-054 configuration baseline; dataset, registry, pricing and FX are identical to that baseline and are verified by hash in this manifest."
+    }
+  },
+  "execution_git_commit": "f3225f51824f4e3c047b2df3c15092a803231291",
+  "runtime_baseline_commit": "e10ceb0aa89483050ec0b09eb96e7d16c37e4e09",
+  "finalization_commit": "5c6625558655387cd5b46ae4e4832f173fded0f5",
+  "git_commit": "f3225f51824f4e3c047b2df3c15092a803231291",
+  "git_commit_semantics": "Compatibility alias of execution_git_commit: the commit the paid execution ran from. runtime_baseline_commit is the D-054 configuration baseline (its parent) and finalization_commit is null until the recovery/reporting fix is committed. Frozen inputs are identical across all three and are verified by hash in this manifest.",
+  "execution_semantics": {
+    "execution_complete": true,
+    "execution_complete_meaning": "Every planned paid unit was attempted and persisted: candidates 500/500, judges 990/990.",
+    "all_models_complete": false,
+    "all_models_complete_meaning": "A model is complete only when all 50 production cases have a valid candidate result and both intended cross-family judges returned a valid verdict. Fewer than ten complete models is a benchmark result, not an unfinished execution.",
+    "run_complete_legacy_field": {
+      "value": false,
+      "meaning": "Compatibility alias of all_models_complete. It does NOT describe whether the paid execution finished."
+    },
+    "candidate_units_planned": 500,
+    "candidate_units_attempted": 500,
+    "judge_units_planned": 990,
+    "judge_units_attempted": 990
+  },
+  "final_execution_envelope": {
+    "candidate_generation_ceiling_tokens": 32768,
+    "judge_generation_ceiling_tokens": 16384,
+    "client_read_timeout_seconds": 600,
+    "global_concurrent_paid_calls": 6,
+    "default_provider_concurrent_calls": 2,
+    "kimi_max_in_flight": 1,
+    "hard_cost_ceiling_cny": 150.0,
+    "note": "FINAL V1 values. The runtime-envelope design is closed: no adaptive per-case budget, no escalation beyond the candidate ceiling, and no post-hoc change to prompts, judge mapping, or thinking configuration."
+  },
+  "synthetic": false,
+  "started_at": "2026-09-11T16:41:04+00:00",
+  "finished_at": "2026-09-11T16:41:04+00:00",
+  "elapsed_seconds": 0.0,
+  "dataset_name": "AIProductBench CN V1 production cases",
+  "dataset_version": "v1-authoring-2026-09-11",
+  "dataset_manifest_sha256": "6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c",
+  "model_registry_snapshot_id": "v1-registry-2026-09-11.3",
+  "model_registry_snapshot_hash": "259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab",
+  "pricing_snapshot_id": "v1-pricing-2026-09-11.1",
+  "pricing_snapshot_hash": "9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42",
+  "fx_snapshot_id": "ecb-2026-09-10-usd-cny",
+  "fx_rate": 6.706267217630854,
+  "judge_config_snapshot_id": "4231dc9d9c4cad5310158c752667cbc07eaca1ae81b810409a16e07e86272d75",
+  "runtime": {
+    "python_version": "3.14.3",
+    "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+    "benchmark_version": "1.0.0-dev"
+  },
+  "candidate_models": [
+    "qwen_flagship",
+    "qwen_value",
+    "deepseek_flagship",
+    "deepseek_value",
+    "kimi_flagship",
+    "kimi_value",
+    "minimax_flagship",
+    "glm_flagship",
+    "glm_value",
+    "doubao_flagship"
+  ],
+  "judge_plan": {
+    "qwen_flagship": [
+      "deepseek_flagship",
+      "glm_flagship"
+    ],
+    "qwen_value": [
+      "deepseek_flagship",
+      "glm_flagship"
+    ],
+    "deepseek_flagship": [
+      "qwen_flagship",
+      "glm_flagship"
+    ],
+    "deepseek_value": [
+      "qwen_flagship",
+      "glm_flagship"
+    ],
+    "kimi_flagship": [
+      "qwen_flagship",
+      "deepseek_flagship"
+    ],
+    "kimi_value": [
+      "qwen_flagship",
+      "deepseek_flagship"
+    ],
+    "minimax_flagship": [
+      "qwen_flagship",
+      "deepseek_flagship"
+    ],
+    "glm_flagship": [
+      "qwen_flagship",
+      "deepseek_flagship"
+    ],
+    "glm_value": [
+      "qwen_flagship",
+      "deepseek_flagship"
+    ],
+    "doubao_flagship": [
+      "qwen_flagship",
+      "deepseek_flagship"
+    ]
+  },
+  "concurrency": {
+    "global_paid_calls": 6,
+    "per_provider_paid_calls": 2,
+    "per_provider_overrides": {
+      "moonshot": 1
+    },
+    "rate_limit_degrade_threshold": 3,
+    "note": "Provider account concurrency limits are an execution constraint, not a benchmark semantic. Moonshot enforces an organisation-wide concurrency of 1 for Kimi, so Kimi calls are issued one at a time."
+  },
+  "retry_policy": {
+    "max_retries": 2,
+    "backoff_seconds": 2.0,
+    "never_retried": [
+      400,
+      401,
+      403,
+      404,
+      422,
+      402
+    ],
+    "deferred_requeue_passes": 1,
+    "deferred_requeue_classes": [
+      "NETWORK",
+      "PROVIDER_SERVER",
+      "RATE_LIMIT",
+      "UNKNOWN"
+    ]
+  },
+  "runtime_overrides": {
+    "client_read_timeout_seconds": 600.0,
+    "configured_read_timeout_seconds": 600,
+    "reason": "D-053 sets the client read timeout to 600s. The first official attempt recorded a legitimate successful response needing 297.6s, so the previous allowance was not sufficiently separated from observed valid latency. The timeout is only the maximum network/runtime allowance and never changes benchmark latency measurement."
+  },
+  "runtime_envelope": {
+    "candidate_max_output_tokens": [
+      32768
+    ],
+    "judge_max_output_tokens": [
+      16384
+    ],
+    "role_separation": "Candidate execution and judge execution are separate roles with separate generation envelopes, recorded separately here.",
+    "adaptive_per_case_budget": false,
+    "automatic_escalation": false,
+    "kimi_max_in_flight": 1,
+    "note": "D-054: 32768 is the FINAL V1 candidate generation ceiling and 16384 is the judge ceiling. A candidate that reaches 32768 with finish_reason=length and empty final content is a genuine candidate failure; the envelope is never widened again."
+  },
+  "cost_control": {
+    "hard_ceiling_cny": 150.0,
+    "spent_cny": 109.73182552,
+    "reserved_in_flight_cny": 0.0,
+    "remaining_cny": 40.26817448,
+    "ceiling_reached": false,
+    "stop_reason": null,
+    "upper_bound_broken": false,
+    "policy": "Every paid call reserves a per-call upper-bound cost before it is dispatched, so accumulated spend can never exceed the ceiling. The bound uses one token per input character and the model's configured output cap."
+  },
+  "phases": {
+    "candidate": {
+      "report_only": true,
+      "merge": {
+        "cases_with_two_valid_judges": 491,
+        "cases_with_partial_judges": 4,
+        "cases_with_no_valid_judges": 0,
+        "judge_unavailable_cases": 4
+      }
+    }
+  },
+  "completion": {
+    "run_complete": false,
+    "ranking_eligible_models": [
+      "kimi_flagship",
+      "deepseek_value",
+      "doubao_flagship",
+      "kimi_value"
+    ],
+    "incomplete_models": [
+      {
+        "model_key": "qwen_flagship",
+        "reason": "49 of 50 cases have a valid score; 1 case(s) failed"
+      },
+      {
+        "model_key": "qwen_value",
+        "reason": "47 of 50 cases have a valid score; 2 case(s) were judge-unavailable; 3 case(s) failed"
+      },
+      {
+        "model_key": "glm_value",
+        "reason": "48 of 50 cases have a valid score; 1 case(s) were judge-unavailable; 2 case(s) failed"
+      },
+      {
+        "model_key": "glm_flagship",
+        "reason": "49 of 50 cases have a valid score; 1 case(s) failed"
+      },
+      {
+        "model_key": "deepseek_flagship",
+        "reason": "49 of 50 cases have a valid score; 1 case(s) were judge-unavailable; 1 case(s) failed"
+      },
+      {
+        "model_key": "minimax_flagship",
+        "reason": "49 of 50 cases have a valid score; 1 case(s) failed"
+      }
+    ],
+    "note": "A model is INCOMPLETE unless every one of the 50 production cases has a valid candidate result and two valid intended cross-family judge verdicts. INCOMPLETE models keep their diagnostics but are never ranked."
+  },
+  "session_history": [
+    {
+      "session_id": "official-v1-20260911T103838Z",
+      "recorded_at": "2026-09-11T12:46:53+00:00",
+      "phase": "candidate_main",
+      "stats": {
+        "stage": "candidate",
+        "units_total": 500,
+        "units_already_checkpointed": 0,
+        "units_completed": 489,
+        "units_failed": 11,
+        "units_skipped_ceiling": 0,
+        "paid_calls": 500,
+        "attempts_total": 521,
+        "retries": 21,
+        "cost_cny": 41.60773344,
+        "spent_before": 0.0,
+        "by_classification": {
+          "UNKNOWN": 3,
+          "RATE_LIMIT": 6,
+          "NETWORK": 2
+        },
+        "transient_keys": [
+          "candidate|minimax_flagship|IF-03",
+          "candidate|kimi_flagship|IF-03",
+          "candidate|kimi_flagship|IF-04",
+          "candidate|qwen_flagship|IF-03",
+          "candidate|glm_flagship|IF-03",
+          "candidate|kimi_flagship|BC-05",
+          "candidate|kimi_flagship|BC-06",
+          "candidate|kimi_flagship|AW-04",
+          "candidate|kimi_flagship|AW-05",
+          "candidate|qwen_value|IF-03",
+          "candidate|glm_value|IF-03"
+        ],
+        "spent_after": 41.60773344,
+        "budget": {
+          "ceiling_cny": 150.0,
+          "spent_cny": 41.60773344,
+          "reserved_cny": 0.0,
+          "remaining_cny": 108.39226656,
+          "paid_calls": 500,
+          "stopped": false,
+          "stop_reason": null,
+          "last_refusal": null,
+          "bound_broken": false
+        },
+        "transient_key_count": 11
+      }
+    },
+    {
+      "session_id": "official-v1-20260911T103838Z",
+      "recorded_at": "2026-09-11T13:17:04+00:00",
+      "phase": "candidate_requeue",
+      "stats": {
+        "stage": "candidate_requeue",
+        "units_total": 11,
+        "units_already_checkpointed": 0,
+        "units_completed": 6,
+        "units_failed": 5,
+        "units_skipped_ceiling": 0,
+        "paid_calls": 11,
+        "attempts_total": 11,
+        "retries": 0,
+        "cost_cny": 3.4476182,
+        "spent_before": 41.60773344,
+        "by_classification": {
+          "UNKNOWN": 5
+        },
+        "transient_keys": [
+          "candidate|minimax_flagship|IF-03",
+          "candidate|glm_value|IF-03",
+          "candidate|glm_flagship|IF-03",
+          "candidate|qwen_value|IF-03",
+          "candidate|qwen_flagship|IF-03"
+        ],
+        "spent_after": 45.05535164,
+        "budget": {
+          "ceiling_cny": 150.0,
+          "spent_cny": 45.05535164,
+          "reserved_cny": 0.0,
+          "remaining_cny": 104.94464836,
+          "paid_calls": 511,
+          "stopped": false,
+          "stop_reason": null,
+          "last_refusal": null,
+          "bound_broken": false
+        },
+        "transient_key_count": 5
+      }
+    },
+    {
+      "session_id": "official-v1-20260911T103838Z",
+      "recorded_at": "2026-09-11T16:14:02+00:00",
+      "phase": "judge_main",
+      "stats": {
+        "stage": "judge",
+        "units_total": 990,
+        "units_already_checkpointed": 0,
+        "units_completed": 985,
+        "units_failed": 5,
+        "units_skipped_ceiling": 0,
+        "paid_calls": 990,
+        "attempts_total": 990,
+        "retries": 0,
+        "cost_cny": 64.6380013,
+        "spent_before": 45.05535164,
+        "by_classification": {
+          "UNKNOWN": 1,
+          "INVALID_JUDGE_OUTPUT": 4
+        },
+        "transient_keys": [
+          "judge|qwen_flagship|PR-02|deepseek_flagship"
+        ],
+        "spent_after": 109.69335294,
+        "budget": {
+          "ceiling_cny": 150.0,
+          "spent_cny": 109.69335294,
+          "reserved_cny": 0.0,
+          "remaining_cny": 40.30664706,
+          "paid_calls": 1501,
+          "stopped": false,
+          "stop_reason": null,
+          "last_refusal": null,
+          "bound_broken": false
+        },
+        "transient_key_count": 1
+      }
+    },
+    {
+      "session_id": "official-v1-20260911T103838Z",
+      "recorded_at": "2026-09-11T16:14:56+00:00",
+      "phase": "judge_requeue",
+      "stats": {
+        "stage": "judge_requeue",
+        "units_total": 1,
+        "units_already_checkpointed": 0,
+        "units_completed": 1,
+        "units_failed": 0,
+        "units_skipped_ceiling": 0,
+        "paid_calls": 1,
+        "attempts_total": 1,
+        "retries": 0,
+        "cost_cny": 0.03847258,
+        "spent_before": 109.69335294,
+        "by_classification": {},
+        "transient_keys": [],
+        "spent_after": 109.73182552,
+        "budget": {
+          "ceiling_cny": 150.0,
+          "spent_cny": 109.73182552,
+          "reserved_cny": 0.0,
+          "remaining_cny": 40.26817448,
+          "paid_calls": 1502,
+          "stopped": false,
+          "stop_reason": null,
+          "last_refusal": null,
+          "bound_broken": false
+        },
+        "transient_key_count": 0
+      }
+    }
+  ],
+  "session_count": 1,
+  "run_history_note": "This run was executed across multiple sessions. Interrupted sessions preserve every completed paid call; only unfinished work is retried, so no paid call is duplicated. All sessions are recorded here.",
+  "credentials": {
+    "values_recorded": false,
+    "availability": [
+      {
+        "env_var": "DASHSCOPE_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "DEEPSEEK_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "MOONSHOT_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "MINIMAX_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "ZHIPU_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "ARK_API_KEY",
+        "present": true
+      }
+    ]
+  },
+  "preflight": {
+    "checked_at": "2026-09-11T16:41:04+00:00",
+    "git_commit": "5c6625558655387cd5b46ae4e4832f173fded0f5",
+    "git_status_porcelain": [],
+    "dataset_manifest_sha256": "6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c",
+    "registry_snapshot_id": "v1-registry-2026-09-11.3",
+    "registry_snapshot_hash": "259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab",
+    "pricing_snapshot_id": "v1-pricing-2026-09-11.1",
+    "pricing_snapshot_hash": "9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42",
+    "fx_snapshot_id": "ecb-2026-09-10-usd-cny",
+    "fx_rate": 6.706267217630854,
+    "credential_availability": [
+      {
+        "env_var": "DASHSCOPE_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "DEEPSEEK_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "MOONSHOT_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "MINIMAX_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "ZHIPU_API_KEY",
+        "present": true
+      },
+      {
+        "env_var": "ARK_API_KEY",
+        "present": true
+      }
+    ],
+    "judge_plan": {
+      "qwen_flagship": [
+        "deepseek_flagship",
+        "glm_flagship"
+      ],
+      "qwen_value": [
+        "deepseek_flagship",
+        "glm_flagship"
+      ],
+      "deepseek_flagship": [
+        "qwen_flagship",
+        "glm_flagship"
+      ],
+      "deepseek_value": [
+        "qwen_flagship",
+        "glm_flagship"
+      ],
+      "kimi_flagship": [
+        "qwen_flagship",
+        "deepseek_flagship"
+      ],
+      "kimi_value": [
+        "qwen_flagship",
+        "deepseek_flagship"
+      ],
+      "minimax_flagship": [
+        "qwen_flagship",
+        "deepseek_flagship"
+      ],
+      "glm_flagship": [
+        "qwen_flagship",
+        "deepseek_flagship"
+      ],
+      "glm_value": [
+        "qwen_flagship",
+        "deepseek_flagship"
+      ],
+      "doubao_flagship": [
+        "qwen_flagship",
+        "deepseek_flagship"
+      ]
+    },
+    "checks": [
+      {
+        "check": "frozen_semantics_unmodified",
+        "ok": true,
+        "detail": "case/matrix/freeze/methodology/pricing/FX inputs untouched"
+      },
+      {
+        "check": "git_commit",
+        "ok": true,
+        "detail": "5c6625558655387cd5b46ae4e4832f173fded0f5"
+      },
+      {
+        "check": "head_is_recorded",
+        "ok": true,
+        "detail": "5c6625558655387cd5b46ae4e4832f173fded0f5"
+      },
+      {
+        "check": "dataset_manifest",
+        "ok": true,
+        "detail": "6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c"
+      },
+      {
+        "check": "case_count",
+        "ok": true,
+        "detail": "50 cases"
+      },
+      {
+        "check": "case_ids_unique",
+        "ok": true,
+        "detail": "50 unique"
+      },
+      {
+        "check": "production_status",
+        "ok": true,
+        "detail": "complete"
+      },
+      {
+        "check": "registry_snapshot",
+        "ok": true,
+        "detail": "v1-registry-2026-09-11.3"
+      },
+      {
+        "check": "registry_hash",
+        "ok": true,
+        "detail": "259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab"
+      },
+      {
+        "check": "pricing_snapshot",
+        "ok": true,
+        "detail": "v1-pricing-2026-09-11.1"
+      },
+      {
+        "check": "pricing_hash",
+        "ok": true,
+        "detail": "9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42"
+      },
+      {
+        "check": "fx_snapshot",
+        "ok": true,
+        "detail": "ecb-2026-09-10-usd-cny"
+      },
+      {
+        "check": "credentials_present",
+        "ok": true,
+        "detail": "all six environment variables present"
+      },
+      {
+        "check": "schema_validation",
+        "ok": true,
+        "detail": "0 error(s)"
+      },
+      {
+        "check": "candidate_count",
+        "ok": true,
+        "detail": "10 candidates"
+      },
+      {
+        "check": "judges::qwen_flagship",
+        "ok": true,
+        "detail": "deepseek_flagship,glm_flagship"
+      },
+      {
+        "check": "judges::qwen_value",
+        "ok": true,
+        "detail": "deepseek_flagship,glm_flagship"
+      },
+      {
+        "check": "judges::deepseek_flagship",
+        "ok": true,
+        "detail": "qwen_flagship,glm_flagship"
+      },
+      {
+        "check": "judges::deepseek_value",
+        "ok": true,
+        "detail": "qwen_flagship,glm_flagship"
+      },
+      {
+        "check": "judges::kimi_flagship",
+        "ok": true,
+        "detail": "qwen_flagship,deepseek_flagship"
+      },
+      {
+        "check": "judges::kimi_value",
+        "ok": true,
+        "detail": "qwen_flagship,deepseek_flagship"
+      },
+      {
+        "check": "judges::minimax_flagship",
+        "ok": true,
+        "detail": "qwen_flagship,deepseek_flagship"
+      },
+      {
+        "check": "judges::glm_flagship",
+        "ok": true,
+        "detail": "qwen_flagship,deepseek_flagship"
+      },
+      {
+        "check": "judges::glm_value",
+        "ok": true,
+        "detail": "qwen_flagship,deepseek_flagship"
+      },
+      {
+        "check": "judges::doubao_flagship",
+        "ok": true,
+        "detail": "qwen_flagship,deepseek_flagship"
+      }
+    ],
+    "ok": true
+  }
+}

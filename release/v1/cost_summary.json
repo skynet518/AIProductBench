@@ -1,0 +1,106 @@
+{
+  "run_id": "official-v1-20260911T103838Z",
+  "currency": "CNY",
+  "fx_snapshot_id": "ecb-2026-09-10-usd-cny",
+  "fx_rate": 6.706267217630854,
+  "pricing_snapshot_id": "v1-pricing-2026-09-11.1",
+  "candidate_spend_cny": 45.05535164,
+  "judge_spend_cny": 64.67647388,
+  "total_spend_cny": 109.73182552,
+  "hard_ceiling_cny": 150.0,
+  "ceiling_remaining_cny": 40.26817448,
+  "candidate_calls": 500,
+  "judge_calls": 990,
+  "per_model": [
+    {
+      "model_key": "qwen_flagship",
+      "completion_status": "INCOMPLETE",
+      "candidate_cost_cny": 5.54097852,
+      "judge_cost_cny": 6.59528791,
+      "actual_spend_cny": 5.54097852,
+      "cost_per_100_tasks_cny": null,
+      "quality_per_cny": null
+    },
+    {
+      "model_key": "qwen_value",
+      "completion_status": "INCOMPLETE",
+      "candidate_cost_cny": 0.36941225,
+      "judge_cost_cny": 6.94210255,
+      "actual_spend_cny": 0.36941225,
+      "cost_per_100_tasks_cny": null,
+      "quality_per_cny": null
+    },
+    {
+      "model_key": "kimi_flagship",
+      "completion_status": "COMPLETE",
+      "candidate_cost_cny": 13.29462483,
+      "judge_cost_cny": 5.37912582,
+      "actual_spend_cny": 13.29462483,
+      "cost_per_100_tasks_cny": 26.58924966,
+      "quality_per_cny": 7.246
+    },
+    {
+      "model_key": "deepseek_value",
+      "completion_status": "COMPLETE",
+      "candidate_cost_cny": 0.7391531,
+      "judge_cost_cny": 8.8841142,
+      "actual_spend_cny": 0.7391531,
+      "cost_per_100_tasks_cny": 1.4783062,
+      "quality_per_cny": 130.3283
+    },
+    {
+      "model_key": "glm_value",
+      "completion_status": "INCOMPLETE",
+      "candidate_cost_cny": 0.45350495,
+      "judge_cost_cny": 4.7101349,
+      "actual_spend_cny": 0.45350495,
+      "cost_per_100_tasks_cny": null,
+      "quality_per_cny": null
+    },
+    {
+      "model_key": "glm_flagship",
+      "completion_status": "INCOMPLETE",
+      "candidate_cost_cny": 7.46747282,
+      "judge_cost_cny": 5.37114556,
+      "actual_spend_cny": 7.46747282,
+      "cost_per_100_tasks_cny": null,
+      "quality_per_cny": null
+    },
+    {
+      "model_key": "deepseek_flagship",
+      "completion_status": "INCOMPLETE",
+      "candidate_cost_cny": 2.63262353,
+      "judge_cost_cny": 9.35123548,
+      "actual_spend_cny": 2.63262353,
+      "cost_per_100_tasks_cny": null,
+      "quality_per_cny": null
+    },
+    {
+      "model_key": "minimax_flagship",
+      "completion_status": "INCOMPLETE",
+      "candidate_cost_cny": 0.72596412,
+      "judge_cost_cny": 5.78141429,
+      "actual_spend_cny": 0.72596412,
+      "cost_per_100_tasks_cny": null,
+      "quality_per_cny": null
+    },
+    {
+      "model_key": "doubao_flagship",
+      "completion_status": "COMPLETE",
+      "candidate_cost_cny": 9.987852,
+      "judge_cost_cny": 5.70411422,
+      "actual_spend_cny": 9.987852,
+      "cost_per_100_tasks_cny": 19.975704,
+      "quality_per_cny": 9.278
+    },
+    {
+      "model_key": "kimi_value",
+      "completion_status": "COMPLETE",
+      "candidate_cost_cny": 3.84376552,
+      "judge_cost_cny": 5.95779895,
+      "actual_spend_cny": 3.84376552,
+      "cost_per_100_tasks_cny": 7.68753104,
+      "quality_per_cny": 24.0866
+    }
+  ]
+}
