@@ -2301,6 +2301,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--validation-dir", type=Path, default=None,
                         dest="validation_dir",
                         help="reuse an existing validation directory (resumes it)")
+    parser.add_argument("--execution-commit", default=None, dest="execution_commit",
+                        help=("for --report-only: the git commit the paid execution ran "
+                              "from, recorded as execution provenance"))
     parser.add_argument("--ceiling-cny", type=float, default=HARD_CEILING_CNY,
                         help=f"hard spend ceiling in CNY (default {HARD_CEILING_CNY:.0f})")
     return parser.parse_args(argv)
@@ -2339,6 +2342,40 @@ def _record_phase_history(run_dir: Path, record: dict) -> Path:
 
 def _phase_history(run_dir: Path) -> list[dict]:
     return _load_jsonl(run_dir / "checkpoint" / "phase_history.jsonl")
+
+
+EXECUTION_PROVENANCE_FILE = "execution_provenance.json"
+KNOWN_EXECUTION_COMMITS = {
+    # The canonical paid execution of results/official_run_v1_final_20260911T103838Z
+    # ran from this harness commit; its parent e10ceb0 is the D-054 baseline.
+    "official_run_v1_final_20260911T103838Z": (
+        "f3225f51824f4e3c047b2df3c15092a803231291"
+    ),
+}
+
+
+def _resolve_execution_commit(run_dir: Path, explicit, head_commit):
+    """The commit the *paid execution* ran from — never the rebuild-time HEAD.
+
+    A later rebuild (e.g. after committing the finalization fix) must not
+    relabel the execution commit. Precedence: a persisted provenance file in the
+    run directory, then an explicit CLI value, then the known canonical run, and
+    only as a last resort the current HEAD.
+    """
+    path = Path(run_dir) / EXECUTION_PROVENANCE_FILE
+    if path.exists():
+        try:
+            recorded = json.loads(path.read_text(encoding="utf-8"))
+            if recorded.get("git_execution_commit"):
+                return recorded["git_execution_commit"]
+        except (ValueError, OSError):
+            pass
+    if explicit:
+        return explicit
+    known = KNOWN_EXECUTION_COMMITS.get(Path(run_dir).name)
+    if known:
+        return known
+    return head_commit
 
 
 def _slim_phase_stats(stats: dict) -> dict:
@@ -2501,7 +2538,9 @@ def main(argv: list[str] | None = None) -> int:
                 "or unparseable judge output) carry no success-only fields."
             ),
             "execution_provenance": {
-                "git_execution_commit": pre.get("git_commit"),
+                "git_execution_commit": _resolve_execution_commit(
+                    run_dir, args.execution_commit, pre.get("git_commit")
+                ),
                 "configuration_baseline_commit": "e10ceb0aa89483050ec0b09eb96e7d16c37e4e09",
                 "note": (
                     "The paid execution ran from a harness-only commit whose parent is the "
@@ -2510,6 +2549,24 @@ def main(argv: list[str] | None = None) -> int:
                 ),
             },
         }
+        # Persist execution provenance so future rebuilds never relabel the
+        # commit the paid execution actually ran from.
+        _write_json(
+            run_dir / EXECUTION_PROVENANCE_FILE,
+            {
+                "run_id": run_id,
+                "git_execution_commit": document["recovery"]["execution_provenance"][
+                    "git_execution_commit"
+                ],
+                "runtime_baseline_commit": "e10ceb0aa89483050ec0b09eb96e7d16c37e4e09",
+                "recorded_at": started_at.isoformat(timespec="seconds"),
+                "note": (
+                    "The commit the canonical paid execution ran from, recovered from "
+                    "the launch preflight and pinned here so later offline rebuilds "
+                    "cannot mistake a newer finalization commit for it."
+                ),
+            },
+        )
         paths = write_official_artifacts(
             run_dir=run_dir, pool=pool, document=document, results=records,
             case_list=case_list, pre=pre,
