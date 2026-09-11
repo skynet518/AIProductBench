@@ -50,6 +50,10 @@ Canonical Run：
 | **官方 Pareto 前沿** | **Kimi K3 + DeepSeek V4 Flash** |
 | **正式进入排名的模型** | **4 / 10** |
 
+![AIProductBench CN V1 质量 × 成本 Pareto](docs/assets/aiproductbench_v1_quality_cost_pareto.png)
+
+*4 个 COMPLETE、满足排名资格的 V1 模型的官方质量 × 成本 Pareto 视图。*
+
 ### 真正的产品结论
 
 Kimi K3 在 V1 中取得了最高的实测综合质量：
@@ -87,6 +91,11 @@ V1 没有进行重复采样，也没有进行显著性检验。
 
 如果业务能够接受近似同等的实测质量，同时非常关注成本和响应速度，
 那么 DeepSeek V4 Flash 在官方 Pareto 前沿上体现出了更强的产品综合性价比。
+
+![AIProductBench CN V1 产品权衡](docs/assets/aiproductbench_v1_product_tradeoff.png)
+
+*在本次 Benchmark 中，DeepSeek V4 Flash 保留了几乎相同的实测质量，
+但只需要 Kimi K3 一小部分的成本和候选模型中位延迟。*
 
 ---
 
