@@ -1,13 +1,17 @@
 # AIProductBench CN V1 — Product Specification
 
-**Status: IN DEVELOPMENT**
+**Status: RELEASED — V1.0.0**
 
-**Release status: not released. No live benchmark has been authorized.**
+**Release status: public V1 released. Canonical paid benchmark execution completed.**
 
 This document is the frozen product definition for AIProductBench CN V1. It is
 persistent project memory: a new GPT, Codex, DeepSeek, or human contributor
-should be able to read this file and understand what V1 is, why it exists, and
-what it deliberately does not do.
+should be able to read this file and understand what V1 is, why it exists, what
+was released, and what it deliberately does not do.
+
+Canonical official run:
+
+`official-v1-20260911T103838Z`
 
 ---
 
@@ -16,30 +20,59 @@ what it deliberately does not do.
 | Version | Status | Intent |
 | --- | --- | --- |
 | V0.1 | Complete, internal engineering scaffold | Validate the pipeline end to end. Not intended for public release. |
-| AIProductBench CN V1 | In development, unreleased | The public portfolio release. |
+| AIProductBench CN V1.0.0 | Released | Public portfolio release with canonical paid benchmark results. |
 
-V0.1 was never a product. It exists as engineering proof that the pipeline
-runs: cases load, candidates answer, a judge scores, costs and latency are
-tracked, and a leaderboard renders. Phase 1 and Phase 1.5 completed that
-scaffold and it is preserved in git history as a checkpoint.
+V0.1 was never the public product. It existed as engineering proof that the
+pipeline could run end to end: cases load, candidates answer, judges score,
+costs and latency are tracked, and a leaderboard renders.
 
-No live paid benchmark has been run for either version. Every artifact produced
-so far is synthetic dry-run output.
+AIProductBench CN V1.0.0 is the first public benchmark release.
+
+Its canonical paid execution is:
+
+`official-v1-20260911T103838Z`
+
+The canonical run attempted all planned paid evaluation units:
+
+- 500 / 500 candidate evaluation units
+- 990 / 990 judge evaluation units
+- 1,490 formal evaluation units in total
+
+The execution is therefore complete:
+
+`execution_complete = true`
+
+Not every candidate model satisfied the frozen completeness contract:
+
+`all_models_complete = false`
+
+Under the strict equal-denominator rule, 4 of 10 models are complete and
+rank-eligible. Incomplete models retain diagnostic evidence but are excluded
+from the official ranking and Pareto frontier.
+
+Canonical paid API spend:
+
+`¥109.73182552`
+
+The released benchmark artifacts are real paid-run results, not synthetic
+dry-run output.
 
 ---
 
 ## 2. Why this project exists
 
 AI product teams in China face a specific and recurring decision: *which model
-do we build on?* The public information available to answer that question is
-poor. Vendor marketing claims are not comparable. Global leaderboards mix
-workloads that do not match local product work, are usually English-first, and
-publish quality alone without the cost and latency reality that actually decides
-the choice.
+do we build on?*
 
-AIProductBench CN exists to make that decision evidence-based, using tasks that
-resemble real Chinese AI product work and reporting quality, cost, and latency
-together in RMB.
+The public information available to answer that question is often poorly aligned
+with real product work. Vendor marketing claims are not directly comparable.
+Global leaderboards can mix workloads that do not match Chinese product
+scenarios, are frequently English-first, and commonly emphasize quality without
+the cost and latency constraints that materially affect product decisions.
+
+AIProductBench CN exists to make that decision more evidence-based, using tasks
+that resemble real Chinese AI product work and reporting quality, cost, latency,
+and constraint adherence together.
 
 ---
 
@@ -49,52 +82,77 @@ AIProductBench CN is a **practical model-selection benchmark for Chinese LLMs,
 designed for AI product teams choosing models under real quality, cost, and
 latency constraints.**
 
-It is **not** intended to claim a permanent "best Chinese model". Any ranking it
-produces is a snapshot: dated models, dated prices, a dated dataset, and a
-specific workload. A different workload or a later date can legitimately produce
-a different answer.
+It is **not** intended to claim a permanent "best Chinese model".
+
+Any ranking is a snapshot based on:
+
+- dated benchmark cases
+- dated provider/model configuration
+- dated pricing
+- dated FX data
+- a specific evaluation methodology
+- a specific workload distribution
+
+A different workload, model revision, price, or later benchmark version can
+legitimately produce a different answer.
 
 ### The question the benchmark answers
 
 > Which model should an AI product team choose for a given workload, budget,
 > quality requirement, and latency requirement?
 
-The deliverable is therefore not a single winner. It is a decision surface: for
-each workload, which models are defensible choices, what each one costs, and
-what quality and latency you give up by choosing it.
+The deliverable is therefore not a single universal winner.
+
+It is a decision surface showing which models are defensible choices, what each
+one costs, and what quality or latency trade-offs are associated with choosing
+them.
 
 ---
 
 ## 4. Frozen V1 scope
 
-The following is frozen for V1. Changes require an explicit decision logged in
-`DECISIONS.md`.
+The following defines the released V1 scope.
+
+Changes to these assumptions belong in a later benchmark version and should be
+recorded explicitly in `DECISIONS.md`.
 
 | Dimension | V1 scope |
 | --- | --- |
-| Candidate models | Approximately 10 |
-| Model families / providers | Approximately 6 Chinese providers |
-| Tasks | 50 real-world AI product tasks |
+| Candidate models | 10 |
+| Provider integrations | 6 |
+| Tasks | 50 frozen real-world AI product tasks |
 | Capability domains | 5 |
 | Evaluation | Hybrid: deterministic checks + LLM evaluation |
+| Deterministic checks | 21 supported check types |
 | Judges | Cross-family dual-judge |
-| Human calibration | Base stratified sample of 50 responses plus a risk-based extension of 10–20 (≈50–70 total) |
-| Quality metrics | Score, constraint pass rate, task success rate |
-| Cost metrics | Per-call cost, cost per 100 tasks, quality per CNY |
-| Latency metrics | Average, P50, P95 |
-| Currency | RMB / CNY native presentation |
-| Selection analysis | Pareto frontier over quality × cost (optionally × latency) |
-| Reproducibility | Versioned quarterly snapshot |
+| Human calibration | Sampling design prepared; human review not completed in V1.0.0 |
+| Quality metrics | Overall quality, constraint pass rate, task success diagnostics |
+| Cost metrics | Candidate inference cost, cost per 100 tasks, quality / cost analysis |
+| Latency metrics | Mean, P50, P95 candidate latency |
+| Currency | RMB / CNY presentation with frozen FX snapshot |
+| Selection analysis | Pareto frontier over quality × cost and quality × cost × latency |
+| Reproducibility | Frozen dataset, registry, pricing, FX, runtime, and execution provenance |
+
+### Canonical V1 execution envelope
+
+| Setting | V1 value |
+| --- | --- |
+| Candidate generation ceiling | 32,768 tokens |
+| Judge generation ceiling | 16,384 tokens |
+| Client read timeout | 600 seconds |
+| Global concurrent paid calls | 6 |
+| Default per-provider concurrency | 2 |
+| Kimi max in-flight | 1 |
+| Hard cost ceiling | ¥150.00 |
 
 ---
 
 ## 5. Explicitly out of scope for V1
 
-These are **not** V1 deliverables. They must not be implemented while V1 is in
-development, even if they appear cheap to add.
+The following capabilities were **not included in V1.0.0**:
 
 - Vision and image understanding
-- Multimodal evaluation of any kind
+- Multimodal evaluation
 - Coding benchmark
 - RAG benchmark
 - Live web search benchmark
@@ -104,16 +162,22 @@ development, even if they appear cheap to add.
 - Production routing system
 - Hosted SaaS backend
 
-### Documented but not implemented: V1.1 / V2 candidates
+They remain outside the released V1 scope unless a later version explicitly
+introduces them.
 
-Recorded so they are not lost, and so nobody mistakes them for V1 scope:
+### Documented future candidates
+
+Potential later-version extensions include:
 
 - Multi-turn conversation evaluation
 - Context-length stress testing
-- Streaming latency (time to first token)
-- An aggregated gateway track alongside the native-provider track
-- Scheduled quarterly re-runs with published diffs
+- Streaming latency / time to first token
+- Aggregated gateway tracks alongside native-provider tracks
+- Scheduled benchmark re-runs with published diffs
 - Confidence intervals and statistical significance testing
+- Expanded human calibration
+
+These are future candidates, not claims about V1.0.0.
 
 ---
 
@@ -121,27 +185,32 @@ Recorded so they are not lost, and so nobody mistakes them for V1 scope:
 
 | Audience | What they need from this project |
 | --- | --- |
-| AI product managers | A defensible model-selection method and a cost/quality tradeoff view |
-| Engineers | A reproducible, inspectable pipeline they could re-run |
-| Recruiters / reviewers | Evidence of evaluation design, API integration, and analytical rigor |
-| Chinese AI teams | Practical, RMB-native data on models they can actually buy |
+| AI product managers | A defensible model-selection method and a quality / cost / latency trade-off view |
+| Engineers | A reproducible and inspectable evaluation pipeline |
+| Recruiters / reviewers | Evidence of benchmark design, model integration, evaluation governance, and analytical rigor |
+| Chinese AI teams | Practical evidence about models available in the Chinese AI ecosystem |
 
 ---
 
-## 7. What "done" means for V1
+## 7. V1 release criteria
 
-V1 is complete when a new reader can:
+V1 was designed so that a new reader can:
 
-1. Understand the methodology and its limits without reading the code.
-2. See the 50-case dataset and judge the cases as realistic product work.
-3. Reproduce the run from documented commands and pinned model versions.
-4. Read a leaderboard that reports quality, cost, and latency in RMB.
-5. See a Pareto frontier rather than a single "best model" claim.
-6. Understand exactly which decisions are defensible for which workload.
+1. Understand the methodology and its limitations without reading the code.
+2. Inspect the frozen 50-case dataset and judge whether the cases resemble real product work.
+3. Inspect the frozen dataset, registry, pricing, FX, runtime, and execution provenance.
+4. Read official results reporting quality, cost, and candidate latency.
+5. See Pareto analysis instead of relying only on a single quality ranking.
+6. Understand which models are complete and rank-eligible and why incomplete models are excluded.
+7. Trace published conclusions back to canonical public artifacts.
+
+The released public evidence is stored under:
+
+`release/v1/`
 
 ---
 
-## 8. Honesty constraints (frozen)
+## 8. Honesty constraints
 
 These are product requirements, not stylistic preferences.
 
@@ -152,13 +221,51 @@ These are product requirements, not stylistic preferences.
 - Never present an unverified model ID or price as verified.
 - Never present synthetic dry-run output as a real result.
 - Never describe the benchmark as scientifically comprehensive.
-- State the judge-family bias limitation wherever results are published.
+- Never rank an incomplete model using a reduced denominator.
+- Never place an incomplete model on the official Pareto frontier.
+- State judge-family bias and other material limitations wherever results are
+  published.
+- Do not interpret the 0.0008 measured quality difference between Kimi K3 and
+  DeepSeek V4 Flash as statistically significant; V1 does not perform repeated
+  sampling or significance testing.
+- Human calibration review was not completed for V1.0.0 and must not be
+  presented as completed.
 
 ---
 
-## 9. Related documents
+## 9. Released V1 provenance
 
-- `METHODOLOGY_V1.md` — frozen evaluation design
+The canonical public release is tied to the following frozen evidence:
+
+| Field | Canonical V1 |
+| --- | --- |
+| Canonical run | `official-v1-20260911T103838Z` |
+| Execution commit | `f3225f51824f4e3c047b2df3c15092a803231291` |
+| Runtime baseline | `e10ceb0aa89483050ec0b09eb96e7d16c37e4e09` |
+| Dataset semantic manifest | `6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c` |
+| Registry | `v1-registry-2026-09-11.3` |
+| Registry SHA | `259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab` |
+| Pricing | `v1-pricing-2026-09-11.1` |
+| Pricing SHA | `9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42` |
+| FX snapshot | `ecb-2026-09-10-usd-cny` |
+| USD / CNY | `6.706267217630854` |
+
+Published V1 artifacts should be treated as immutable historical evidence.
+
+A future benchmark that changes models, dataset, pricing, methodology, runtime
+configuration, or evaluation logic should be published as a new version rather
+than silently replacing V1.
+
+---
+
+## 10. Related documents
+
+- `METHODOLOGY_V1.md` — released V1 evaluation methodology
 - `ARCHITECTURE.md` — pipeline, modules, and data flow
+- `CASE_DESIGN_STANDARD_V1.md` — production-case authoring standard
+- `CASE_MATRIX_V1.md` — frozen 50-case coverage design
+- `DATASET_QA_V1.md` — production dataset QA record
+- `DATASET_FREEZE_V1.md` — frozen dataset manifest
 - `DECISIONS.md` — chronological decision log
-- `HANDOFF.md` — current operational status
+- `HANDOFF.md` — current post-release operational status
+- `../release/v1/run_manifest.json` — canonical execution and provenance record
