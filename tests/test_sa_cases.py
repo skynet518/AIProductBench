@@ -159,11 +159,9 @@ class TestSaDomainShape(unittest.TestCase):
         self.assertEqual(ids[10:20], SA_IDS)
         self.assertEqual(len(ids), len(set(ids)))
 
-    def test_no_bc_or_aw_production_cases(self):
+    def test_no_aw_production_cases(self):
         ids = [c["id"] for c in self.doc["test_cases"]]
-        self.assertFalse(
-            [i for i in ids if i.startswith(("BC-", "AW-"))], msg=ids
-        )
+        self.assertFalse([i for i in ids if i.startswith("AW-")], msg=ids)
 
     def test_sa_cases_are_all_structured_information_analysis(self):
         for cid in SA_IDS:

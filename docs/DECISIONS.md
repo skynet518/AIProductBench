@@ -1167,3 +1167,86 @@ PR-06 and PR-08 remain `deterministic_checks == []`; the operator count remains
 the 50-case dataset is not approved, and no live paid benchmark is authorized.
 Production case semantics remain externally authored; execution agents
 integrate canonical definitions and do not author or redesign them.
+
+---
+
+## D-045 — Integrate Domain 4 (Chinese business communication) from approved Matrix slots
+**Date:** 2026-09-11
+
+**Decision.** Phase 3B-4 integrated the externally authored canonical
+BC-01 … BC-10 into `data/cases_v1.json` (40/50 cases). Authoring began from the
+APPROVED `CASE_MATRIX_V1.md` Domain-4 slots, and **Matrix compliance was
+asserted before any semantic freeze**, per D-043/D-044. BC is **AUTHORED —
+MATRIX + SEMANTIC EXTERNAL REVIEW PENDING**; it is not approved or frozen.
+
+**Communication scoring.** BC follows **explicit-role / observable-outcome**
+communication scoring: audience adaptation is driven only by the work
+responsibilities stated in the prompt. **No generalized Chinese
+hierarchy/deference (or personality/power-distance/cultural) stereotype is
+scored.** BC-07 encodes this explicitly (business-unit decision maker vs.
+project execution team) and is covered by an anti-stereotype regression test.
+
+**Deterministic / judge boundary.** The supplied deterministic plan is
+3 Strong (BC-01, BC-02, BC-10) / 4 Partial (BC-04, BC-05, BC-07, BC-08) /
+3 None (BC-03, BC-06, BC-09). **BC-03, BC-06, and BC-09 intentionally remain
+judge-only** (`deterministic_checks == []`); no checks were added to them, and
+no semantic proxy checks were introduced. The operator count remains 21 and no
+runtime semantics changed.
+
+**Consequences.** The BC definitions are uncommitted pending external Matrix +
+Semantic Gate Review. IF/SA/PR remain frozen / externally approved. Domain 5
+(AW) is not authored. The 50-case dataset is not approved and no live paid
+benchmark is authorized. Production case semantics remain externally authored;
+execution agents integrate canonical definitions and do not author or redesign
+them.
+
+---
+
+## D-046 — Freeze Chinese Business Communication after Matrix, Semantic, and Deterministic-contract Gates
+**Date:** 2026-09-11
+
+**Decision.** Chinese Business Communication (BC-01 … BC-10) passed the final
+Matrix Gate, Semantic Gate, and **Deterministic-contract Gate**, and Domain 4 is
+**FROZEN / EXTERNALLY APPROVED**. No further BC production-case semantic change
+is authorized. The Phase 3B-4 / 3B-4.1 provenance (initial Matrix-compliant set,
+7 PASS / 3 PATCH, deterministic-contract repair) is preserved in the QA ledger.
+
+**Deterministic-contract repairs recorded.** The Phase 3B-4.1 round replaced the
+three PATCH cases:
+
+- **BC-01** and **BC-10** key-figure checks are **surface-order independent**:
+  each required number/date is a separate presence check, so a correct answer
+  that reorders the numbers is not falsely failed.
+- **BC-04**'s user-visible no-jargon instruction is now response-wide and
+  matches its `forbidden_phrases` checker exactly, removing the earlier
+  prompt/checker scope mismatch.
+
+**Judge boundary.** Communication semantics — factual direction (rise/fall),
+responsibility assignment, relationship preservation, and stakeholder framing —
+remain **judge-evaluated** where a mechanical check would become proxy scoring.
+No winner regex or hidden canonical wording was added; the deterministic plan
+remains 3 Strong / 4 Partial / 3 None, with BC-03, BC-06, and BC-09 intentionally
+`deterministic_checks == []`.
+
+**BC-07.** Audience adaptation uses **explicit organizational responsibilities
+only** (business-unit decision maker vs. project execution team). The benchmark
+does **not** score generalized Chinese hierarchy, deference, personality,
+power-distance, or cultural stereotypes, and this is enforced by an
+anti-stereotype regression test.
+
+**Forward requirement for Domain 5.** The AW freeze must pass, in order:
+
+1. **Matrix compliance** — slot, working title, difficulty, language, output
+   shape, and deterministic-opportunity plan match APPROVED `CASE_MATRIX_V1.md`.
+2. **Semantic quality** — external semantic review passes.
+3. **Deterministic / judge boundary** — objective constraints deterministic,
+   open judgment judge-evaluated, no winner proxy or hidden canonical answer.
+4. **Dataset-wide coverage invariants** — domain counts, difficulty/language
+   distributions, and the 50-case target remain consistent.
+5. **Runtime / schema validation** — all declarations validate; the offline
+   validation commands pass.
+
+**Scope.** This approval covers **Domain 4 only**. Domain 5 (AW) is not
+authored, the 50-case dataset is not approved, and no live paid benchmark is
+authorized. Production case semantics remain externally authored; execution
+agents integrate canonical definitions and do not author or redesign them.

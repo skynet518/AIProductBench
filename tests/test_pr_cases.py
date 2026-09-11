@@ -126,15 +126,20 @@ class TestPrDomainShape(unittest.TestCase):
 
     def test_exactly_pr_01_through_pr_10_once(self):
         ids = [c["id"] for c in self.doc["test_cases"]]
-        self.assertEqual(ids, FROZEN_IDS + PR_IDS)
+        self.assertEqual(ids[:10], FROZEN_IDS[:10])
+        self.assertEqual(ids[10:20], FROZEN_IDS[10:])
+        self.assertEqual(ids[20:30], PR_IDS)
+        self.assertEqual([i for i in ids if i.startswith("PR-")], PR_IDS)
         self.assertEqual(len(ids), len(set(ids)))
 
-    def test_thirty_production_cases(self):
-        self.assertEqual(len(self.doc["test_cases"]), 30)
-
-    def test_no_bc_or_aw_production_cases(self):
+    def test_pr_block_is_exactly_ten_cases(self):
         ids = [c["id"] for c in self.doc["test_cases"]]
-        self.assertFalse([i for i in ids if i.startswith(("BC-", "AW-"))], msg=ids)
+        self.assertEqual(len([i for i in ids if i.startswith("PR-")]), 10)
+        self.assertGreaterEqual(len(ids), 30)
+
+    def test_no_aw_production_cases(self):
+        ids = [c["id"] for c in self.doc["test_cases"]]
+        self.assertFalse([i for i in ids if i.startswith("AW-")], msg=ids)
 
     def test_production_status_is_still_authoring(self):
         self.assertEqual(self.doc["production_status"], "authoring")

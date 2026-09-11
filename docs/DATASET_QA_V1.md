@@ -1,9 +1,10 @@
 # AIProductBench CN V1 — Dataset QA Ledger
 
-**Status: Domains 1, 2, and 3 (`instruction_constraint_following`,
-`structured_information_analysis`, `product_reasoning_decision`) are FROZEN /
-EXTERNALLY APPROVED. Domains 4–5 are not authored. The full 50-case production
-dataset (30/50 cases) is NOT approved. No live paid benchmark is authorized.**
+**Status: Domains 1–4 (`instruction_constraint_following`,
+`structured_information_analysis`, `product_reasoning_decision`,
+`chinese_business_communication`) are FROZEN / EXTERNALLY APPROVED. Domain 5 is
+not authored. The full 50-case production dataset (40/50 cases) is NOT approved.
+No live paid benchmark is authorized.**
 
 This is the persistent QA ledger for production benchmark case authoring. It
 tracks each of the five frozen domains through the authoring lifecycle. It is
@@ -38,7 +39,7 @@ not be marked `externally-approved` or `frozen` by the authoring agent.
 | 1 | `instruction_constraint_following` | IF | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
 | 2 | `structured_information_analysis` | SA | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
 | 3 | `product_reasoning_decision` | PR | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
-| 4 | `chinese_business_communication` | BC | 10 | not started | 2026-09-11 |
+| 4 | `chinese_business_communication` | BC | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
 | 5 | `agent_workflow_planning` | AW | 10 | not started | 2026-09-11 |
 
 ---
@@ -505,14 +506,104 @@ semantic revision.
 
 | Field | Value |
 | --- | --- |
-| Domain status | not started |
-| Case IDs | BC-01 … BC-10 (planned) |
-| Authoring date | — |
-| Validation result | — |
-| External review status | not submitted |
-| Final approval status | **not approved** |
+| Domain status | FROZEN / EXTERNALLY APPROVED |
+| Case IDs | BC-01 … BC-10 |
+| Authoring date | 2026-09-11 |
+| Authoring agent | External canonical authorship; Codex/DeepSeek performed integration only (Phase 3B-4 integration, Phase 3B-4.1 deterministic-contract patch) |
+| Dataset file | `data/cases_v1.json` |
+| Validation result | PASS — `python3 run_benchmark.py --validate-only --production-cases` exits 0; schema errors 0; all 10 BC cases' deterministic declarations validate; no new operator was required (operator count remains 21) |
+| External review status | Final Matrix Gate: PASS. Final Semantic Gate: PASS. Final Deterministic-contract Gate: PASS. Approved after the Phase 3B-4.1 deterministic-contract repair. |
+| Final approval status | **APPROVED — Domain 4 frozen (10/10 cases PASS)** |
 
-No known issues. Not started.
+### Case status
+
+| ID | Status |
+| --- | --- |
+| BC-01 | PASS |
+| BC-02 | PASS |
+| BC-03 | PASS |
+| BC-04 | PASS |
+| BC-05 | PASS |
+| BC-06 | PASS |
+| BC-07 | PASS |
+| BC-08 | PASS |
+| BC-09 | PASS |
+| BC-10 | PASS |
+
+### External Phase 3B-4 Gate result (2026-09-11)
+
+| ID | Gate result | Action | Current status |
+| --- | --- | --- | --- |
+| BC-01 | PATCH | replaced in Phase 3B-4.1 (order-independent numeric checks + 7-day check) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| BC-02 | PASS | none | PASS |
+| BC-03 | PASS | none | PASS |
+| BC-04 | PATCH | replaced in Phase 3B-4.1 (no-jargon instruction aligned to response-wide checker) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| BC-05 | PASS | none | PASS |
+| BC-06 | PASS | none | PASS |
+| BC-07 | PASS | none | PASS |
+| BC-08 | PASS | none | PASS |
+| BC-09 | PASS | none | PASS |
+| BC-10 | PATCH | replaced in Phase 3B-4.1 (independent key-figure presence checks) | REVISED — EXTERNAL RE-REVIEW PENDING |
+
+The three PATCH cases were replaced with externally authored canonical objects
+and were **not** rewritten by the executing agent. The seven PASS cases are
+unchanged. The deterministic plan is unchanged: 3 Strong / 4 Partial /
+3 None, with BC-03, BC-06, and BC-09 still `deterministic_checks == []`.
+
+### Final external approval — Matrix + Semantic + Deterministic-contract Gates (after Phase 3B-4.1)
+
+| ID | Final status |
+| --- | --- |
+| BC-01 | PASS |
+| BC-02 | PASS |
+| BC-03 | PASS |
+| BC-04 | PASS |
+| BC-05 | PASS |
+| BC-06 | PASS |
+| BC-07 | PASS |
+| BC-08 | PASS |
+| BC-09 | PASS |
+| BC-10 | PASS |
+
+The final Matrix Gate, Semantic Gate, and Deterministic-contract Gate all passed
+after the Phase 3B-4.1 repair. Domain 4
+(`chinese_business_communication`, BC-01 … BC-10) is **FROZEN / EXTERNALLY
+APPROVED**. No further BC production-case semantic change is authorized.
+
+**Scope.** This approval covers **Domain 4 only**. Domain 5 (AW) is not
+authored, and the full 50-case production dataset is **not** approved.
+
+### Integration provenance (Phase 3B-4)
+
+- **Semantic authorship is external.** The canonical BC definitions (prompts,
+  evaluation criteria, deterministic checks, reference facts, tags, titles,
+  test intents, and notes) were authored externally and treated as
+  authoritative. Codex/DeepSeek performed **integration only**; no semantic
+  rewriting, paraphrasing, or case redesign was permitted.
+- **Slot identity was checked before authoring/integration.** The BC cases match
+  the APPROVED `CASE_MATRIX_V1.md` Domain-4 slots (working title, difficulty,
+  output shape, deterministic plan).
+- All 10 BC cases are `zh`; difficulty = 2 easy / 5 medium / 3 hard.
+- Deterministic plan = 3 Strong (BC-01, BC-02, BC-10) / 4 Partial (BC-04,
+  BC-05, BC-07, BC-08) / 3 None (BC-03, BC-06, BC-09). **BC-03, BC-06, and
+  BC-09 intentionally have `deterministic_checks == []`** and were not given
+  checks.
+- **BC-07 follows the explicit-role anti-stereotype rule**: audience adaptation
+  is based only on the stated work responsibilities (business-unit decision
+  maker vs. project execution team) and explicitly forbids inferring
+  personality, power-distance, or cultural stereotypes.
+- **Operator count remains 21.** No new operator and no deterministic runtime
+  change.
+- **No semantic proxy checks were added.** Objective/structural checks are
+  exactly the supplied canonical declarations; open or subjective communication
+  quality stays judge-evaluated (no winner regex, no hidden canonical answer).
+- The 30 frozen IF/SA/PR objects were verified unchanged by hash before and
+  after integration.
+
+### Known issues
+
+No known issues recorded. Domain 4 is frozen; no BC case requires further
+semantic revision.
 
 ---
 
@@ -554,3 +645,7 @@ No known issues. Not started.
 | 2026-09-11 | External Gate 3B-3R completed: PR-01…PR-09 PASS; PR-10 PATCH; 0 REJECT. Domain 3 = REOPENED — MATRIX COMPLIANCE EXTERNAL RE-REVIEW PENDING. |
 | 2026-09-11 | Phase 3B-3R.1 executed: PR-10 replaced with the externally authored canonical object that separates new-model candidates (Aster/Birch/Cedar) from the Legacy rollback baseline and bars Cedar from recommendation/runner-up. PR-01…PR-09 unchanged. PR-10 = REVISED — EXTERNAL RE-REVIEW PENDING. Also corrected a Phase 3B-3R documentation error that had left Domain 1's QA status mislabeled as reopened. Domain 3 remains EXTERNAL RE-REVIEW PENDING; not approved or frozen. |
 | 2026-09-11 | Final Matrix Gate PASS and final Semantic Gate PASS on the repaired PR set after the Phase 3B-3R.1 patch. Domain 3 (`product_reasoning_decision`, PR-01…PR-10) set to FROZEN / EXTERNALLY APPROVED (re-frozen). Domains 1–2 remain frozen; domains 4–5 unauthored; dataset 30/50; the full dataset is not approved. |
+| 2026-09-11 | Phase 3B-4 integrated the externally authored canonical BC-01…BC-10 from approved Domain-4 Matrix slots (integration only; no semantic rewriting, no new operator, no proxy checks). Domain 4 (`chinese_business_communication`) set to AUTHORED — MATRIX + SEMANTIC EXTERNAL REVIEW PENDING; each BC case AUTHORED — EXTERNAL REVIEW PENDING. Dataset is now 40/50 cases. Domains 1–3 remain frozen; Domain 5 (AW) unauthored. BC is not approved or frozen. |
+| 2026-09-11 | External Phase 3B-4 Gate completed: BC-02/03/05/06/07/08/09 PASS; BC-01/04/10 PATCH; 0 REJECT. Domain 4 moved to MATRIX + SEMANTIC EXTERNAL RE-REVIEW PENDING. |
+| 2026-09-11 | Phase 3B-4.1 executed: BC-01, BC-04, and BC-10 replaced with externally authored canonical objects (integration only; no semantic rewriting, no new operator). BC-01 numeric checks are now order-independent with the missing 7-day check added; BC-04's no-jargon instruction now matches the response-wide forbidden_phrases checker; BC-10 uses independent key-figure presence checks instead of order-sensitive paired regexes. BC-01/04/10 = REVISED — EXTERNAL RE-REVIEW PENDING; the seven PASS cases retained. Domain 4 remains EXTERNAL RE-REVIEW PENDING; not approved or frozen. |
+| 2026-09-11 | Final Matrix Gate PASS, Semantic Gate PASS, and Deterministic-contract Gate PASS on the BC domain after the Phase 3B-4.1 repair. Domain 4 (`chinese_business_communication`, BC-01…BC-10) set to FROZEN / EXTERNALLY APPROVED. Domains 1–3 remain frozen; Domain 5 (AW) unauthored; dataset 40/50; the full dataset is not approved. |

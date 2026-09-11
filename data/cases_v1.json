@@ -3,7 +3,7 @@
   "dataset_version": "v1-authoring-2026-09-11",
   "synthetic": false,
   "production_status": "authoring",
-  "authoring_note": "Phase 3B production dataset, authored domain by domain. Domain 1 (instruction_constraint_following, IF-01 through IF-10) is frozen and externally approved. Domain 2 (structured_information_analysis, SA-01 through SA-10) is frozen and externally approved. Domain 3 (product_reasoning_decision, PR-01 through PR-10) was repaired for APPROVED CASE_MATRIX_V1 compliance and is now re-frozen and externally approved. Domains 4-5 (chinese_business_communication, agent_workflow_planning) are not yet authored, so this file contains 30 of 50 cases and is NOT a complete V1 production benchmark dataset. Production case semantics are externally authored; integration agents do not author or redesign cases.",
+  "authoring_note": "Phase 3B production dataset, authored domain by domain. Domain 1 (instruction_constraint_following, IF-01 through IF-10) is frozen and externally approved. Domain 2 (structured_information_analysis, SA-01 through SA-10) is frozen and externally approved. Domain 3 (product_reasoning_decision, PR-01 through PR-10) is Matrix-compliant and frozen / externally approved. Domain 4 (chinese_business_communication, BC-01 through BC-10) is Matrix-compliant and frozen / externally approved. Domain 5 (agent_workflow_planning) is not yet authored, so this file contains 40 of 50 cases and is NOT a complete V1 production benchmark dataset. Production case semantics are externally authored; integration agents do not author or redesign cases.",
   "domains": [
     "instruction_constraint_following",
     "structured_information_analysis",
@@ -1927,6 +1927,667 @@
       "expected_structure": "中文Recommendation、三行英文风险表、中文Rollback说明。",
       "ambiguity_notes": "Aster和Birch均满足新模型hard constraints，Cedar不满足延迟和成本约束；Legacy只作为现状基线和rollback target。最终新模型选型以及风险触发值由Judge评价其是否与产品原则和候选数据一致，不通过winner regex或隐藏阈值评分。",
       "author_notes": "Matrix-compliant mixed-language model-selection-and-rollback case. New-model eligibility and rollback-baseline roles are explicitly separated; deterministic checks cover structure and concrete trigger fields only."
+    },
+    {
+      "id": "BC-01",
+      "title": "内部进展改写给管理层",
+      "domain": "chinese_business_communication",
+      "difficulty": "easy",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "executive_register",
+        "fact_preservation",
+        "compression",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把包含工程细节的内部进展改写成结论先行、信息密度高且事实不漂移的管理层摘要，并主动去除空泛术语和不必要的内部技术黑话。",
+      "prompt": "你是项目经理。下面是工程群里关于「企业导出稳定性」项目的最新进展，请改写成一段给事业部管理层看的项目摘要。\n\n原始信息：\n- 当前改造整体完成度约 80%。\n- 4 个关键接口中已有 3 个完成。\n- 过去 7 天，导出失败率从 2.8% 降到 1.1%。\n- 原计划 10 月 18 日完成，现在预计 10 月 22 日完成。\n- 延期原因是工程侧的「回填脚本」和「双写链路」联调比预期多用了 4 天。\n- 如果希望确保 10 月 22 日完成，需要临时追加 2 个后端工程日。\n- 当前有 2 家进入续约讨论的客户正在关注导出稳定性，但题目没有证据表明它们一定会因为延期流失。\n\n要求：\n- 只输出一段正文，不要标题、列表、开场白或结尾客套。\n- 第一处信息先给结论：当前进展、交付时间变化以及需要管理层关注/决定的事项。\n- 全文不超过 180 个字符。\n- 原材料中的所有数字和日期必须保持原意，不得改变。\n- 不要直接使用工程内部术语「回填脚本」「双写链路」，要翻译成管理层可理解的表述。\n- 不要使用这些空泛词：抓手、赋能、拉通、闭环。",
+      "evaluation_criteria": [
+        "摘要结论先行，首先让管理层知道项目约80%完成、交付从10月18日调整到10月22日，以及为了保障新日期需要追加2个后端工程日。",
+        "所有数字与日期保持事实一致：80%、4个接口中3个、7天、2.8%、1.1%、10月18日、10月22日、4天、2个后端工程日、2家续约客户。",
+        "能够把工程内部原因翻译成管理层可理解的联调或数据处理工作，而不是直接搬运「回填脚本」「双写链路」。",
+        "没有把2家客户正在关注稳定性夸大成确定流失，也没有增加不存在的收入、承诺或风险结论。",
+        "正文简洁直接，不超过180字符且没有抓手、赋能、拉通、闭环等空泛表达。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "管理层摘要不超过180字符",
+          "type": "max_chars",
+          "count": 180
+        },
+        {
+          "name": "禁用空泛术语和内部黑话",
+          "type": "forbidden_phrases",
+          "phrases": [
+            "抓手",
+            "赋能",
+            "拉通",
+            "闭环",
+            "回填脚本",
+            "双写链路"
+          ]
+        },
+        {
+          "name": "保留80%",
+          "type": "required_regex",
+          "pattern": "80\\s*[%％]"
+        },
+        {
+          "name": "保留3/4接口事实",
+          "type": "required_regex",
+          "pattern": "(4\\s*个[^\\n]{0,20}3\\s*个|3\\s*个[^\\n]{0,20}4\\s*个|3\\s*/\\s*4)"
+        },
+        {
+          "name": "保留过去7天",
+          "type": "required_regex",
+          "pattern": "7\\s*天"
+        },
+        {
+          "name": "保留2.8%",
+          "type": "required_regex",
+          "pattern": "2\\.8\\s*[%％]"
+        },
+        {
+          "name": "保留1.1%",
+          "type": "required_regex",
+          "pattern": "1\\.1\\s*[%％]"
+        },
+        {
+          "name": "保留原计划10月18日",
+          "type": "required_regex",
+          "pattern": "10\\s*月\\s*18\\s*日"
+        },
+        {
+          "name": "保留预计10月22日",
+          "type": "required_regex",
+          "pattern": "10\\s*月\\s*22\\s*日"
+        },
+        {
+          "name": "保留4天",
+          "type": "required_regex",
+          "pattern": "4\\s*天"
+        },
+        {
+          "name": "保留2个后端工程日",
+          "type": "required_regex",
+          "pattern": "2\\s*个?\\s*后端工程日"
+        },
+        {
+          "name": "保留2家续约客户",
+          "type": "required_regex",
+          "pattern": "2\\s*家"
+        }
+      ],
+      "reference_facts": [
+        "整体完成度约80%",
+        "4个关键接口中3个完成",
+        "过去7天导出失败率从2.8%降到1.1%",
+        "计划完成时间从10月18日调整到10月22日",
+        "工程联调比预期多用4天",
+        "保障10月22日交付需要追加2个后端工程日",
+        "2家进入续约讨论的客户正在关注稳定性，但没有证据说明一定流失"
+      ],
+      "expected_structure": "一段不超过180字符、结论先行的管理层摘要。",
+      "ambiguity_notes": "管理层摘要可以压缩工程细节，也可以调整数字出现顺序，但不能改变任何数字、日期、客户状态、趋势方向或把风险升级成确定事实。",
+      "author_notes": "Matrix-compliant BC-01 Strong case. Numeric presence checks are intentionally order-insensitive; factual direction and executive communication quality remain judge-evaluated."
+    },
+    {
+      "id": "BC-02",
+      "title": "会议纪要转行动项",
+      "domain": "chinese_business_communication",
+      "difficulty": "easy",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "meeting_actions",
+        "owner_discipline",
+        "execution",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把业务会议速记转成清晰、可执行的行动项，只在原纪要明确给出时填写负责人和截止时间，不把一般讨论或明确取消事项包装成任务。",
+      "prompt": "把下面的「渠道上线周会」速记整理成项目群可以直接执行的行动项。\n\n会议速记：\n- 王珂负责确认华东首批客户名单，共 35 家，9 月 16 日前完成。\n- 新版报价模板需要补充税率说明，9 月 17 日前完成，目前负责人还没有确定。\n- 李琳负责和法务确认活动规则，9 月 18 日前完成。\n- 上线当天需要准备异常联系人清单，9 月 19 日前准备好，目前负责人未指定。\n- 会上确认今年不制作线下宣传物料，这是一项范围决定，不需要安排后续行动。\n- 陈伟提到最近客户反馈整体不错，这只是讨论信息，不是行动项。\n\n只输出恰好 4 条行动项，每条都用「- 」开头，格式为：\n- <明确的行动动作>｜负责人：<姓名或未指定>｜截止：<日期>\n\n不要额外解释。负责人没有明确写出的必须填「未指定」，不要自行分配。",
+      "evaluation_criteria": [
+        "恰好输出4条真正需要后续执行的行动项，没有把“不做线下物料”或“客户反馈不错”错误转成任务。",
+        "行动项使用明确可执行的动词，能够让执行人知道需要交付什么。",
+        "王珂和李琳的负责人信息保留正确；另外两项负责人为未指定，没有擅自分配给会议中的其他人。",
+        "四项截止日期分别保持为9月16日、9月17日、9月18日、9月19日。",
+        "除了四条行动项外没有前言、总结或额外建议。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "恰好四条行动项",
+          "type": "exact_bullet_count",
+          "count": 4
+        },
+        {
+          "name": "王珂行动项负责人和日期正确",
+          "type": "required_regex",
+          "pattern": "(?m)^- .*负责人：\\s*王珂\\s*｜\\s*截止：\\s*9\\s*月\\s*16\\s*日\\s*$"
+        },
+        {
+          "name": "报价模板负责人未指定",
+          "type": "required_regex",
+          "pattern": "(?m)^- .*负责人：\\s*未指定\\s*｜\\s*截止：\\s*9\\s*月\\s*17\\s*日\\s*$"
+        },
+        {
+          "name": "李琳行动项负责人和日期正确",
+          "type": "required_regex",
+          "pattern": "(?m)^- .*负责人：\\s*李琳\\s*｜\\s*截止：\\s*9\\s*月\\s*18\\s*日\\s*$"
+        },
+        {
+          "name": "异常联系人负责人未指定",
+          "type": "required_regex",
+          "pattern": "(?m)^- .*负责人：\\s*未指定\\s*｜\\s*截止：\\s*9\\s*月\\s*19\\s*日\\s*$"
+        },
+        {
+          "name": "不把线下物料作为行动项",
+          "type": "forbidden_phrases",
+          "phrases": [
+            "制作线下宣传物料"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "王珂确认华东首批35家客户名单，截止9月16日",
+        "新版报价模板补充税率说明，负责人未指定，截止9月17日",
+        "李琳与法务确认活动规则，截止9月18日",
+        "准备上线异常联系人清单，负责人未指定，截止9月19日",
+        "今年不做线下物料是范围决定，不是行动项",
+        "客户反馈不错只是讨论信息，不是行动项"
+      ],
+      "expected_structure": "恰好四条固定格式的行动项列表。",
+      "ambiguity_notes": "会议中出现的人名不能被当作缺失行动项的默认负责人；只有明确绑定到任务的人才能填写。",
+      "author_notes": "Matrix-compliant BC-02 Strong case. It differs from generic transcription by emphasizing execution clarity and owner discipline in a business meeting context."
+    },
+    {
+      "id": "BC-03",
+      "title": "需求澄清邮件",
+      "domain": "chinese_business_communication",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "clarification",
+        "email",
+        "internal_counterpart",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在内部业务请求信息不足时，用专业、低摩擦的中文邮件提出真正阻塞开工的澄清问题，同时避免把未经确认的口径直接写成假设。",
+      "prompt": "你是产品经理。销售运营负责人周敏发来一条消息：\n\n「麻烦帮我把 Q3 客户流失情况整理一下，周五管理会要看。最好能告诉我哪些原因最重要，顺便给几个建议。」\n\n目前你只知道这段话。你不知道：\n- 她所说的「流失」按合同不续约、账号停用还是收入下降定义；\n- 分析范围是否包含所有客户，还是只看企业客户或重点区域；\n- 哪一套数据源被认可为管理会正式口径；\n- 她希望管理会据此做什么决定。\n\n请写一封给周敏的简短内部澄清邮件。\n\n目标是让对方容易一次性回复真正阻塞分析的问题，然后你再开始工作。不要现在就分析Q3流失原因、给建议或替她假设口径。语气专业、合作，不要显得在把需求退回去。",
+      "evaluation_criteria": [
+        "邮件针对销售运营负责人这一明确内部协作对象，语气专业、合作且直接，不生硬推诿。",
+        "澄清问题具体且容易回答，覆盖真正影响分析结论的流失定义、分析范围、正式数据口径或管理会决策用途等关键缺口。",
+        "没有把未确认的客户范围、数据源、流失定义或原因当作既定事实。",
+        "没有提前开始做流失分析、原因排序或建议方案。",
+        "问题数量和信息密度适中，能够帮助对方一次性补齐关键输入，而不是罗列大量低价值细节。"
+      ],
+      "deterministic_checks": [],
+      "reference_facts": [
+        "请求方为销售运营负责人周敏",
+        "请求是整理Q3客户流失情况供周五管理会使用",
+        "流失定义未知",
+        "客户范围未知",
+        "正式数据源未知",
+        "管理会需要据此做的具体决策未知",
+        "在澄清前不应直接开始原因分析或建议"
+      ],
+      "expected_structure": "一封简短内部澄清邮件，包含自然的说明和少量高价值澄清问题。",
+      "ambiguity_notes": "不规定固定问题数量或固定措辞；评分依据是问题能否真正降低分析歧义以及商务沟通是否低摩擦。",
+      "author_notes": "Matrix-required None-check case. This evaluates clarification as business communication, distinct from IF-04's instruction-following refusal behavior."
+    },
+    {
+      "id": "BC-04",
+      "title": "向技术团队转译业务需求",
+      "domain": "chinese_business_communication",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "cross_functional_translation",
+        "requirements",
+        "actionability",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把业务团队的口语化需求转译成工程团队可以直接理解、实现和验收的产品要求，同时保留业务意图并消除未解释的内部简称。",
+      "prompt": "销售运营给产品团队的原话如下：\n\n「续费季到了，客户经理现在要在好几个页面来回翻。最好在客户列表里直接看到未来30天要到期的客户、合同金额、负责人和风险情况，还得能直接导出。我们内部把近30天出过P1或者健康分低于60的客户叫‘红灯客户’。自动邮件这版先别做。」\n\n你需要把这段话转成给工程团队的需求说明。\n\n已确认的业务规则只有这些：\n- 到期范围：合同到期日在未来30天内。\n- 展示字段：合同金额、客户负责人、风险状态。\n- 风险状态规则：近30天出现过P1，或当前健康分 < 60，即标记为有风险。\n- 当前列表结果需要支持导出。\n- 自动邮件不在本期范围。\n\n严格输出：\n【业务目标】\n<一段简短说明>\n\n【工程需求】\n恰好4条「- 」列表，每条写成可实现、可验收的要求。\n\n【非本期】\n<一句话>\n\n最终输出中不要继续使用销售口语「红灯客户」「来回翻」「续费季到了」，要把这些含义翻译成明确、专业的业务或工程表述。",
+      "evaluation_criteria": [
+        "业务目标准确解释客户经理为什么需要该能力，没有改变原始续费场景。",
+        "恰好4条工程需求分别覆盖未来30天到期范围、所需展示字段、明确的风险状态逻辑以及导出能力。",
+        "每条要求具有足够明确的输入、条件或可观察结果，工程和测试团队可以据此实施或验收。",
+        "风险定义正确保留为「近30天出现P1 OR 当前健康分<60」，没有擅自改成AND或其他规则。",
+        "明确把自动邮件列为非本期，且最终输出不继续使用红灯客户、来回翻、续费季到了等无法直接作为专业规格的业务口语。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "三个部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【业务目标】",
+            "【工程需求】",
+            "【非本期】"
+          ]
+        },
+        {
+          "name": "三个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【业务目标】",
+            "【工程需求】",
+            "【非本期】"
+          ]
+        },
+        {
+          "name": "工程需求恰好四条",
+          "type": "section_bullet_count",
+          "start_marker": "【工程需求】",
+          "end_marker": "【非本期】",
+          "count": 4
+        },
+        {
+          "name": "移除销售口语",
+          "type": "forbidden_phrases",
+          "phrases": [
+            "红灯客户",
+            "来回翻",
+            "续费季到了"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "目标场景是帮助客户经理处理续费客户",
+        "合同到期日在未来30天内",
+        "展示合同金额、客户负责人和风险状态",
+        "风险条件为近30天发生P1或当前健康分低于60",
+        "列表结果需要支持导出",
+        "自动邮件不在本期"
+      ],
+      "expected_structure": "业务目标、一组恰好四条工程需求、一个非本期说明。",
+      "ambiguity_notes": "工程规格可以采用不同措辞，但不能改变OR风险逻辑、30天范围或本期边界；销售口语在整个最终输出中都应被翻译为专业表述。",
+      "author_notes": "Matrix-compliant BC-04 Partial case. The user-visible no-jargon rule now matches the response-wide forbidden_phrases checker exactly."
+    },
+    {
+      "id": "BC-05",
+      "title": "项目风险升级",
+      "domain": "chinese_business_communication",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "risk_escalation",
+        "leadership",
+        "decision_ask",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在项目临近关键节点时，把事实、影响、备选方案和需要领导做出的具体决策清楚分开，形成真正可行动的风险升级信息。",
+      "prompt": "你负责一个CRM数据迁移项目，需要给项目委员会升级风险。\n\n当前事实：\n- 正式切换原定 10 月 25 日。\n- 截至 10 月 22 日，10 张核心数据表中有 6 张完成对账。\n- 剩余 4 张中有 2 张属于计费相关高风险表。\n- 这两张表当前金额差异分别为 1.8% 和 2.4%，上线标准要求都低于 0.5%。\n- 工程团队预计还需要 3 天完成修复和重新对账。\n- 10 月 26 日已经安排了 120 名客户管理员的上线培训。\n\n当前有两个可执行选项：\nA. 正式切换延期3天，完成修复和对账后再上线；客户培训需要重新安排。\nB. 保持10月25日切换，但前48小时关闭计费报表，待两张高风险表通过对账后再开放。\n\n两个方案都能执行，项目团队没有获得授权自行决定。项目委员会需要在今天16:00前选择A或B，才能锁定后续安排。\n\n请写一份简短的项目风险升级信息，严格使用：\n【事实】\n【影响】\n【可选方案】\n【需要决策】\n\n不要替项目委员会虚构第三个方案，也不要把你的个人偏好写成已批准决定。",
+      "evaluation_criteria": [
+        "事实、影响、可选方案和决策请求清晰分离，没有把预测或个人判断混进事实部分。",
+        "准确说明两张高风险计费表仍高于0.5%上线标准，以及工程预计还需要3天。",
+        "影响部分能够说明10月25日切换与10月26日120人培训之间的安排风险。",
+        "A与B两个已知方案都被公平、准确地描述，没有偷偷增加未经题目支持的第三个方案。",
+        "需要决策明确指出项目委员会必须在今天16:00前选择A或B，而不是只写泛泛的“请领导关注”。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "四个升级字段齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【事实】",
+            "【影响】",
+            "【可选方案】",
+            "【需要决策】"
+          ]
+        },
+        {
+          "name": "四个字段顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【事实】",
+            "【影响】",
+            "【可选方案】",
+            "【需要决策】"
+          ]
+        },
+        {
+          "name": "保留决策截止时间",
+          "type": "required_regex",
+          "pattern": "16\\s*[:：]\\s*00"
+        }
+      ],
+      "reference_facts": [
+        "正式切换原定10月25日",
+        "10张核心表中6张已完成对账",
+        "剩余4张中2张为计费高风险表",
+        "两张高风险表差异为1.8%和2.4%，上线标准均低于0.5%",
+        "工程仍需3天",
+        "10月26日已有120名客户管理员培训",
+        "方案A是延期3天并重新安排培训",
+        "方案B是保持10月25日但关闭计费报表48小时",
+        "项目委员会需今天16:00前选择A或B"
+      ],
+      "expected_structure": "事实、影响、可选方案、需要决策四部分组成的风险升级说明。",
+      "ambiguity_notes": "题目没有定义A或B为唯一正确答案；核心是风险升级是否让领导获得做决定所需的信息，而不是替领导完成未授权的选择。",
+      "author_notes": "Matrix-compliant BC-05 Partial case. The decision ask is the semantic hinge."
+    },
+    {
+      "id": "BC-06",
+      "title": "客户延期说明与补救方案",
+      "domain": "chinese_business_communication",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "customer_facing",
+        "delay",
+        "commitment_discipline",
+        "zh"
+      ],
+      "test_intent": "检验模型能否向客户解释延期，承担自身责任并提供具体过渡方案，同时避免甩锅或把工程估计包装成无法支持的确定承诺。",
+      "prompt": "你需要给已经签约的客户写一段延期说明。\n\n已确认事实：\n- 原计划在 10 月 12 日交付实时数据同步功能。\n- 10 月 10 日的最终性能测试发现，高并发情况下可能产生重复同步记录。\n- 问题发生在我方同步服务，不是客户API造成的。\n- 修复已经完成第一轮开发，目前正在验证。\n- 工程当前估计还需要 3–5 个工作日完成修复验证，但还没有足够证据给出一个确定的新交付日期。\n- 在正式功能可用前，我们可以每天18:00向客户提供一次CSV数据文件；它能够覆盖所需字段，但不是实时同步。\n- 原定10月14日的配置和使用培训仍然可以正常进行。\n\n请直接写一段可以发给客户的中文说明。\n\n要求是把延期说清楚、说明接下来怎么补救和什么时候再同步进展。不要归咎客户，不要写「保证某日一定上线」「绝不会再延期」等事实无法支持的承诺，也不要擅自提供赔偿。",
+      "evaluation_criteria": [
+        "明确承认原计划10月12日交付将延期，并清楚说明原因来自我方同步服务的高并发重复记录问题。",
+        "语气承担责任但不过度自责，没有把问题归因给客户API或其他外部方。",
+        "正确区分「工程估计还需3–5个工作日」与「已经承诺的新交付日期」，没有把估计包装成确定保证。",
+        "提供每天18:00 CSV作为具体过渡方案，并明确它不是实时同步。",
+        "说明10月14日培训仍可进行，并给出合理的下一次进展同步安排，而不虚构赔偿或绝对保证。"
+      ],
+      "deterministic_checks": [],
+      "reference_facts": [
+        "原交付日期10月12日",
+        "10月10日最终性能测试发现高并发重复同步记录",
+        "问题在我方同步服务，不是客户API",
+        "修复处于验证阶段",
+        "当前工程估计还需3–5个工作日，但没有确定新交付日期",
+        "每天18:00可提供一次CSV过渡文件，但不是实时同步",
+        "10月14日培训可以正常进行"
+      ],
+      "expected_structure": "一段可以直接发送给客户的延期说明和补救安排。",
+      "ambiguity_notes": "不规定固定模板；评分核心是透明、责任边界、补救可执行性和承诺纪律。",
+      "author_notes": "Matrix-required None-check customer-facing communication case."
+    },
+    {
+      "id": "BC-07",
+      "title": "同一事实面向两类受众改写",
+      "domain": "chinese_business_communication",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "audience_adaptation",
+        "information_density",
+        "framing",
+        "zh"
+      ],
+      "test_intent": "检验模型能否依据两个明确给出的组织角色和沟通任务，用不同的信息密度与重点表达同一组事实，同时保持数字、状态和条件不发生漂移。",
+      "prompt": "请把下面同一组项目事实分别写给两个明确的内部受众。\n\n受众A：事业部负责人。她需要决定是否继续把推荐功能保持在当前灰度比例，并批准额外1个QA工程日。她关注业务结果、主要风险和需要她做的决定。\n\n受众B：推荐项目执行团队。他们需要安排问题修复、验证和下一轮扩量，关注具体状态、负责人、前置条件和下一步动作。\n\n项目事实：\n- 当前灰度为30%流量。\n- 首页点击率从4.2%升到4.8%。\n- 详情页转化率从5.1%降到4.6%。\n- 当前存在1个P1问题：推荐内容可能重复展示；已有7位用户反馈。\n- P1修复负责人是陈泽，计划9月14日完成。\n- 扩大到50%流量的前置条件是：P1关闭，并且详情页转化率恢复到至少5.0%。\n- 为完成回归验证，项目需要额外1个QA工程日。\n\n严格输出：\n【事业部负责人】\n<管理决策版本>\n【项目执行团队】\n<执行版本>\n\n要求：\n- 两个版本不得改变任何数字、状态、负责人或扩量条件。\n- 事业部负责人版本控制在180字符以内，结论、业务影响、重大风险和决策请求优先。\n- 项目执行团队版本可以更详细，强调负责人、修复、验证、扩量条件和下一步动作。\n- 不要根据职位猜测个人性格、权力距离或所谓沟通偏好；只根据题目明确给出的工作职责调整信息。",
+      "evaluation_criteria": [
+        "两个版本保持所有引用事实一致，没有改变30%、4.2%→4.8%、5.1%→4.6%、1个P1、7位用户、陈泽、9月14日、50%、至少5.0%和1个QA工程日等事实。",
+        "事业部负责人版本优先呈现业务结果、转化风险、继续灰度和额外QA资源的决策信息，而不是堆工程细节。",
+        "项目执行团队版本提供更强的操作密度，明确修复负责人、验证工作和扩量前置条件。",
+        "两个版本确实形成不同framing与信息密度，而不是简单复制同一段文字。",
+        "受众适配完全基于题目显式给出的职责，没有引入对管理者或执行团队的文化、性格或层级刻板印象。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "两个受众部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【事业部负责人】",
+            "【项目执行团队】"
+          ]
+        },
+        {
+          "name": "两个受众部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【事业部负责人】",
+            "【项目执行团队】"
+          ]
+        },
+        {
+          "name": "事业部负责人版本不超过180字符",
+          "type": "section_max_chars",
+          "start_marker": "【事业部负责人】",
+          "end_marker": "【项目执行团队】",
+          "count": 180
+        }
+      ],
+      "reference_facts": [
+        "当前灰度30%",
+        "首页点击率4.2%升至4.8%",
+        "详情页转化率5.1%降至4.6%",
+        "存在1个P1重复推荐问题，7位用户反馈",
+        "修复负责人陈泽，计划9月14日完成",
+        "扩量到50%的条件为P1关闭且详情页转化率至少5.0%",
+        "回归验证需要额外1个QA工程日",
+        "事业部负责人需要决定灰度与资源，执行团队需要负责修复、验证与扩量准备"
+      ],
+      "expected_structure": "事业部负责人和项目执行团队两个明确标记的版本。",
+      "ambiguity_notes": "不同受众可以有不同信息选择与强调，但任何被引用的数字、状态、负责人和门槛必须保持一致。角色适配依据工作任务，而非层级或文化刻板印象。",
+      "author_notes": "Matrix-compliant BC-07 Partial case implementing the explicit anti-stereotype rule."
+    },
+    {
+      "id": "BC-08",
+      "title": "避免空话套话的危机沟通",
+      "domain": "chinese_business_communication",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "incident",
+        "crisis",
+        "plain_language",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在内部事故沟通中直接说明影响、原因、当前状态和下一步，不用空话淡化事故，也不通过模糊措辞回避责任。",
+      "prompt": "请把下面的事故速记写成一段发给销售、客服和客户成功团队的内部故障通报。\n\n事实：\n- 9月11日10:05开始，订单创建API出现异常。\n- 10:05–10:42期间约23%的订单创建请求失败。\n- 原因是我方一次配置发布使数据库连接池耗尽。\n- 10:31完成配置回滚，10:42服务完全恢复。\n- 本次事故没有造成数据丢失。\n- 1,146条失败请求已经进入重试队列，计划在14:00前完成重试。\n- 平台团队负责本次事故处理，并将在24小时内发布根因复盘。\n\n沟通要求：\n- 直接写清楚影响、原因、恢复状态和接下来要做什么。\n- 不要把23%的请求失败弱化成笼统的「体验波动」。\n- 不要使用这些套话：高度重视、第一时间、全力以赴、积极推进、赋能、闭环、总体可控、部分用户体验受到影响。\n- 不要把责任推给用户、客户网络或外部供应商。\n\n只输出通报正文，不要写分析过程。",
+      "evaluation_criteria": [
+        "明确写出事故时间范围、约23%订单创建请求失败这一实际影响，而不是用模糊语言淡化。",
+        "原因准确归因为我方配置发布导致数据库连接池耗尽，并说明10:31回滚、10:42恢复。",
+        "正确说明无数据丢失、1,146条失败请求已进入重试队列、14:00前计划完成、24小时内发布复盘。",
+        "责任表达直接，不甩锅用户、客户网络或外部供应商，也不加入题目没有提供的责任人或处罚结论。",
+        "语言简洁、事实型，没有使用被明确禁止的危机公关套话。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "禁用危机沟通套话",
+          "type": "forbidden_phrases",
+          "phrases": [
+            "高度重视",
+            "第一时间",
+            "全力以赴",
+            "积极推进",
+            "赋能",
+            "闭环",
+            "总体可控",
+            "部分用户体验受到影响"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "9月11日10:05开始异常，10:42完全恢复",
+        "10:05至10:42约23%的订单创建请求失败",
+        "原因是我方配置发布导致数据库连接池耗尽",
+        "10:31完成回滚",
+        "没有数据丢失",
+        "1146条失败请求进入重试队列，计划14:00前完成",
+        "平台团队负责处理并将在24小时内发布根因复盘"
+      ],
+      "expected_structure": "一段直接、事实型的内部故障通报。",
+      "ambiguity_notes": "是否构成推诿、是否充分说明影响与责任属于语义判断；不使用关键词穷举代替这些判断。",
+      "author_notes": "Matrix-compliant BC-08 Partial case. Only the explicit filler blacklist is mechanical; incident framing remains judge-evaluated."
+    },
+    {
+      "id": "BC-09",
+      "title": "拒绝不合理请求",
+      "domain": "chinese_business_communication",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "refusal",
+        "relationship_management",
+        "alternative",
+        "zh"
+      ],
+      "test_intent": "检验模型能否明确拒绝一个会制造未经支持承诺的内部请求，同时避免指责对方，并给出能够继续推进商业机会的可执行替代方案。",
+      "prompt": "你是产品负责人。销售负责人为了争取一个重要客户，对你说：\n\n「客户现在就差一句确定的话。你帮我回他们，直接说新权限功能11月1日一定能上线，而且这次肯定不会再延期。先把合同签下来再说。」\n\n你手里确认的事实只有：\n- 工程目前估计还需要2–4周。\n- 上线前还必须完成一次第三方安全审查。\n- 安全审查完成时间不由产品团队控制，目前没有确定日期。\n- 团队目前无法承诺11月1日上线。\n- 客户真正关心的是能否在他们12月初的大规模内部推广前使用该功能。\n- 你可以在本周安排客户、销售、安全和工程做一次联合计划会，并在会后给客户一份带已确认里程碑和风险项的更新计划。\n\n请直接写一段回复给这位销售负责人。\n\n你需要明确拒绝发送未经支持的「11月1日一定上线、绝不延期」承诺，但不要指责销售为了签单不负责任。给出一个仍能帮助销售推进客户的替代方案。",
+      "evaluation_criteria": [
+        "拒绝清楚明确，不能通过模糊措辞实际接受发送11月1日确定上线或绝不延期的承诺。",
+        "拒绝理由建立在工程2–4周估计、第三方安全审查和当前缺乏确定日期这些事实之上，而不是道德化批评销售。",
+        "能够认可销售需要推进客户和客户12月初推广窗口这一真实商业目标，维持合作关系。",
+        "提供可执行替代方案，例如本周联合计划会、确认里程碑和风险、随后给客户透明更新，而不是只说不能做。",
+        "没有擅自创造新的交付日期、安全审查承诺或赔偿方案。"
+      ],
+      "deterministic_checks": [],
+      "reference_facts": [
+        "工程当前估计还需2–4周",
+        "上线前必须完成第三方安全审查",
+        "安全审查时间目前不确定且不由产品团队控制",
+        "不能承诺11月1日上线",
+        "客户希望在12月初内部推广前使用功能",
+        "本周可以组织客户、销售、安全、工程联合计划会并给出已确认里程碑和风险更新"
+      ],
+      "expected_structure": "一段直接回复内部销售负责人的关系维护型拒绝信息。",
+      "ambiguity_notes": "不要求固定拒绝模板。高分回答需要同时做到明确边界、尊重商业目标和提供现实替代路径。",
+      "author_notes": "Matrix-required hard None-check relationship-management case."
+    },
+    {
+      "id": "BC-10",
+      "title": "三页材料压缩成一页汇报稿",
+      "domain": "chinese_business_communication",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "business_communication",
+        "executive_one_pager",
+        "compression",
+        "decision_ask",
+        "fact_preservation",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把跨结果、风险和资源计划的长材料压缩成固定预算的一页管理层汇报，同时保留全部关键数字并让决策请求清晰可见。",
+      "prompt": "下面是一个试点项目的三页汇报材料草稿，请压缩成一页管理层汇报稿。\n\n【第1页：试点结果】\nAI辅助工单功能于8月20日开始灰度，目前覆盖35%流量。团队7天激活率从41.0%提升到47.2%；7天留存率从28.4%提升到29.1%。同时，客户投诉率从0.8%升到1.2%。\n\n【第2页：风险与成本】\n当前严重事实错误率为1.6%，正式扩大流量前的目标是降到≤1.0%。按当前35%流量测算，每月新增模型成本约28000元。工程判断，如果投入2个后端工程周和1个QA工程周，预计需要2周完成主要错误场景修复和回归验证；这是当前计划估计，不是结果保证。\n\n【第3页：需要管理层决定】\n团队建议在修复期间继续保持35%流量，不立即扩大。需要批准2个后端工程周和1个QA工程周。只有当严重事实错误率连续3天≤1.0%，且客户投诉率≤1.2%时，才计划扩大到60%流量。\n\n请压缩成管理层一页汇报。\n\n要求：\n- 全文不超过420个字符。\n- 固定使用并按顺序输出：【结论】【结果】【风险】【决策请求】。\n- 必须保留这些关键事实与数字：8月20日、35%、41.0%→47.2%、28.4%→29.1%、0.8%→1.2%、1.6%、≤1.0%、28000元、2周、2个后端工程周、1个QA工程周、连续3天、60%。\n- 明确区分当前数据、工程估计和管理层需要批准的事项。\n- 不要把2周估计写成确定交付保证。",
+      "evaluation_criteria": [
+        "四个指定部分齐全且顺序正确，全文不超过420字符。",
+        "所有规定的关键日期、比例、成本、时长和资源数字均被保留且方向不发生改变。",
+        "结论能够让管理层快速理解当前建议是维持35%灰度，而不是立即扩大。",
+        "风险部分正确突出1.6%严重事实错误率与≤1.0%扩大目标，并没有把2周工程估计写成保证。",
+        "决策请求明确要求批准2个后端工程周和1个QA工程周，并保留扩大到60%的连续3天≤1.0%且投诉率≤1.2%的条件。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "汇报稿不超过420字符",
+          "type": "max_chars",
+          "count": 420
+        },
+        {
+          "name": "四部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【结论】",
+            "【结果】",
+            "【风险】",
+            "【决策请求】"
+          ]
+        },
+        {
+          "name": "保留8月20日",
+          "type": "required_regex",
+          "pattern": "8\\s*月\\s*20\\s*日"
+        },
+        {
+          "name": "保留35%",
+          "type": "required_regex",
+          "pattern": "35\\s*[%％]"
+        },
+        {
+          "name": "保留41.0%",
+          "type": "required_regex",
+          "pattern": "41\\.0\\s*[%％]"
+        },
+        {
+          "name": "保留47.2%",
+          "type": "required_regex",
+          "pattern": "47\\.2\\s*[%％]"
+        },
+        {
+          "name": "保留28.4%",
+          "type": "required_regex",
+          "pattern": "28\\.4\\s*[%％]"
+        },
+        {
+          "name": "保留29.1%",
+          "type": "required_regex",
+          "pattern": "29\\.1\\s*[%％]"
+        },
+        {
+          "name": "保留0.8%",
+          "type": "required_regex",
+          "pattern": "0\\.8\\s*[%％]"
+        },
+        {
+          "name": "保留1.2%",
+          "type": "required_regex",
+          "pattern": "1\\.2\\s*[%％]"
+        },
+        {
+          "name": "保留1.6%",
+          "type": "required_regex",
+          "pattern": "1\\.6\\s*[%％]"
+        },
+        {
+          "name": "保留≤1.0%",
+          "type": "required_regex",
+          "pattern": "(≤|<=)\\s*1\\.0\\s*[%％]"
+        },
+        {
+          "name": "保留月成本28000元",
+          "type": "required_regex",
+          "pattern": "28000\\s*元"
+        },
+        {
+          "name": "保留2周估计",
+          "type": "required_regex",
+          "pattern": "2\\s*周"
+        },
+        {
+          "name": "保留2个后端工程周",
+          "type": "required_regex",
+          "pattern": "2\\s*个?\\s*后端工程周"
+        },
+        {
+          "name": "保留1个QA工程周",
+          "type": "required_regex",
+          "pattern": "1\\s*个?\\s*QA工程周"
+        },
+        {
+          "name": "保留连续3天",
+          "type": "required_regex",
+          "pattern": "连续\\s*3\\s*天"
+        },
+        {
+          "name": "保留60%",
+          "type": "required_regex",
+          "pattern": "60\\s*[%％]"
+        }
+      ],
+      "reference_facts": [
+        "8月20日开始灰度，目前35%流量",
+        "7天激活率41.0%升至47.2%",
+        "7天留存率28.4%升至29.1%",
+        "客户投诉率0.8%升至1.2%",
+        "严重事实错误率当前1.6%，扩大前目标≤1.0%",
+        "当前35%流量下月新增模型成本约28000元",
+        "投入2个后端工程周和1个QA工程周，当前预计2周完成修复和回归，但不是保证",
+        "建议修复期间保持35%流量",
+        "需要管理层批准2个后端工程周和1个QA工程周",
+        "扩大到60%的条件为严重事实错误率连续3天≤1.0%且投诉率≤1.2%"
+      ],
+      "expected_structure": "不超过420字符的四段式管理层one-pager。",
+      "ambiguity_notes": "压缩允许删除背景解释、调整数字出现顺序和合并重复描述，但不能删除规定的关键事实、改变趋势方向或把计划估计升级成承诺。",
+      "author_notes": "Matrix-compliant BC-10 Strong case. Deterministic checks verify key-figure presence without imposing surface-order wording; trend direction and executive prioritization remain judge-evaluated."
     }
   ]
 }

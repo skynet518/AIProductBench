@@ -20,8 +20,12 @@ after an external audit found the earlier frozen set drifted from APPROVED
 `CASE_MATRIX_V1.md` slots; the full domain was replaced with Matrix-compliant
 definitions and, after the Phase 3B-3R.1 PR-10 patch, passed both the Matrix
 Gate and the Semantic Gate and is **re-frozen / externally approved**.
-Domains 4–5 (BC, AW) are not authored. There
-is no complete V1 production dataset (30 of 50 cases), no verified V1 model ID,
+Domain 4 (`chinese_business_communication`, BC-01 … BC-10) is authored from
+externally authored Matrix-compliant definitions; after the Phase 3B-4.1
+deterministic-contract repair it passed the Matrix, Semantic, and
+Deterministic-contract Gates and is **frozen / externally approved**. Domain 5
+(AW) is not authored. There
+is no complete V1 production dataset (40 of 50 cases), no verified V1 model ID,
 no verified V1 price, and no benchmark
 result. Every run artifact produced so far is synthetic dry-run output.
 
@@ -34,7 +38,7 @@ result. Every run artifact produced so far is synthetic dry-run output.
 - V1 framework implemented: one shared model registry, deterministic evaluator
   (21 check types), fixed-priority cross-family dual-judge selection, pricing /
   CNY normalization framework, Pareto analytics, standalone leaderboard
-- Test suite and network-isolated dry run passing (317 tests)
+- Test suite and network-isolated dry run passing (348 tests)
 - Phase 3A case design standard and 50-slot coverage matrix (awaiting external
   review; no production prompt written)
 - Case Design Standard approved for Phase 3B authoring (Gate 3A.1 passed)
@@ -87,25 +91,34 @@ result. Every run artifact produced so far is synthetic dry-run output.
   Domain 3 (PR-01 … PR-10) **re-frozen / externally approved**
 - Matrix-compliance regression coverage for PR (`tests/test_pr_cases.py`):
   slot/title, difficulty, language, and deterministic-plan guards
+- Domain 4 production cases BC-01 … BC-10 integrated from externally authored
+  Matrix-compliant canonical definitions (integration only; no new operator, no
+  proxy checks; BC-03/06/09 remain deterministic-check-free)
+- External Phase 3B-4 Gate result: BC-02/03/05/06/07/08/09 PASS; BC-01/04/10
+  PATCH. Phase 3B-4.1 replaced only those three (order-independent numeric
+  checks; response-wide no-jargon scope); they await re-review.
+- Phase 3B-4 final Matrix + Semantic + Deterministic-contract Gate PASS; Domain
+  4 (BC-01 … BC-10) **frozen / externally approved**
+- Matrix-compliance regression coverage through Domain 4
+  (`tests/test_bc_cases.py`)
 
 ## CURRENT PHASE
 
-**Phase 3B-4 — Chinese Business Communication.**
+**Phase 3B-5 — Agent Workflow Planning.**
 
 ## CURRENT STATE
 
-**Waiting for externally authored canonical BC-01 through BC-10 definitions.**
-Domains 1–3 are frozen; domains 4–5 (BC, AW) are not authored.
+**Waiting for externally authored canonical AW-01 through AW-10 definitions.**
+Domains 1–4 are frozen; Domain 5 (AW) is not authored.
 
 ## NEXT
 
-Integrate the externally authored Matrix-compliant BC definitions, then perform
+Integrate the externally authored Matrix-compliant AW definitions, then perform
 the Matrix + Semantic external Gate Review.
 
 ## THEN
 
-If BC is approved, freeze it and proceed to the externally authored AW-01
-through AW-10 definitions.
+If AW is approved, freeze it to complete the 50-case V1 production dataset.
 
 ## AFTER THAT
 
@@ -153,13 +166,13 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 
 - Branch: `main`
 - Remote: none configured
-- Latest committed state: the Matrix-compliance re-freeze checkpoint
-  (`fix: align product-reasoning cases with approved matrix`). It holds the V1
-  framework, the Phase 3A/3A.1 design documents, the frozen production cases
-  IF-01 … IF-10, SA-01 … SA-10, and the Matrix-compliant PR-01 … PR-10, the 21
+- Latest committed state: the Chinese-business-communication freeze checkpoint
+  (`feat: freeze chinese-business-communication benchmark cases`). It holds the
+  V1 framework, the Phase 3A/3A.1 design documents, the frozen production cases
+  IF-01 … IF-10, SA-01 … SA-10, PR-01 … PR-10, and BC-01 … BC-10, the 21
   deterministic operators (`section_max_chars`, `section_bullet_count`,
   `exact_keys` added in Phase 3B-1.1), deterministic-check declaration
-  validation, and Matrix-compliance regression coverage for PR.
+  validation, and Matrix-compliance regression coverage through Domain 4.
 - Historical commit `e859a6d` (the earlier, superseded PR freeze) remains intact
   and auditable; it was not reset, reverted, amended, squashed, or rewritten.
 
@@ -172,5 +185,5 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 | 3 | Provider credentials for Moonshot, MiniMax, Zhipu, and Volcano Ark are not configured |
 | 4 | No FX snapshot (USD/CNY) is configured, so USD-priced models would have no CNY-normalized cost |
 | 5 | Human calibration protocol and reviewer assignment are undefined |
-| 6 | Domains 1–3 are frozen; domains 4–5 (BC, AW) remain to be authored from externally supplied canonical definitions (dataset is 30/50 cases) |
-| 7 | BC/AW require externally authored canonical definitions before they can be integrated; DeepSeek must not author production cases |
+| 6 | Domains 1–4 are frozen; Domain 5 (AW) remains to be authored from externally supplied canonical definitions (dataset is 40/50 cases) |
+| 7 | AW requires externally authored canonical definitions before it can be integrated; DeepSeek must not author production cases |
