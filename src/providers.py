@@ -55,6 +55,12 @@ def _endpoint(model: dict) -> str:
     base_url = model["base_url"].rstrip("/")
     if model["wire_api"] == "responses":
         return f"{base_url}/responses"
+    # Some providers expose a non-OpenAI chat path (for example MiniMax China's
+    # /v1/text/chatcompletion_v2). The path is configuration read from the model
+    # pool, so no provider-specific branching lives here.
+    path = model.get("chat_completions_path")
+    if path:
+        return f"{base_url}{path}" if path.startswith("/") else f"{base_url}/{path}"
     return f"{base_url}/chat/completions"
 
 
@@ -138,8 +144,29 @@ def _extract_text_and_usage(data: dict, wire_api: str) -> tuple[str, dict]:
     }
 
 
-# Status codes that will not succeed on retry.
-_FATAL_STATUS = {400, 401, 403, 404, 422}
+# Status codes that will not succeed on retry. 402 Payment Required is a
+# deterministic billing failure, so it is never retried.
+_FATAL_STATUS = {400, 401, 402, 403, 404, 422}
+
+# Some providers report billing/credit failures under a generic status code
+# (for example HTTP 429 carrying an "insufficient balance" body). Those are
+# deterministic too, so the body is checked before deciding to retry.
+_BILLING_BODY_MARKERS = (
+    "insufficient balance",
+    "insufficient_quota",
+    "insufficient_balance_error",
+    "no resource package",
+    "recharge",
+    "arrears",
+    "余额",
+    "欠费",
+    "充值",
+)
+
+
+def _is_billing_body(text: str) -> bool:
+    lowered = (text or "").lower()
+    return any(marker in lowered for marker in _BILLING_BODY_MARKERS)
 
 # Fixed timestamp used for offline dry runs so synthetic cost figures are
 # reproducible and do not depend on when the dry run was executed.
@@ -177,7 +204,9 @@ def chat(
             last_error = f"{type(exc).__name__}: {exc}"
         else:
             latency_ms = round((time.perf_counter() - started) * 1000, 1)
-            if response.status_code in _FATAL_STATUS:
+            if response.status_code in _FATAL_STATUS or (
+                response.status_code >= 400 and _is_billing_body(response.text)
+            ):
                 raise ProviderError(
                     f"{model['display_name']} rejected the request "
                     f"(HTTP {response.status_code}): {response.text[:300]}"

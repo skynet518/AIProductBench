@@ -1,5 +1,5 @@
 {
-  "snapshot_id": "v1-pricing-2026-09-11",
+  "snapshot_id": "v1-pricing-2026-09-11.1",
   "as_of": "2026-09-11",
   "records": [
     {
@@ -178,13 +178,13 @@
     },
     {
       "model_key": "minimax_flagship",
-      "provider": "MiniMax",
-      "provider_key": "minimax",
+      "provider": "MiniMax China",
+      "provider_key": "minimax_china",
       "model_id": "MiniMax-M3",
-      "region": "global",
-      "native_currency": "USD",
+      "region": "cn-domestic",
+      "native_currency": "CNY",
       "unit": "per_1m_tokens",
-      "source": "MiniMax official API Pricing + OpenAI SDK documentation",
+      "source": "MiniMax China (MiniMax 开放平台) official domestic pay-as-you-go pricing page",
       "source_url": null,
       "input": null,
       "output": null,
@@ -194,24 +194,24 @@
         {
           "label": "context <= 512K",
           "max_input_tokens": 512000,
-          "input": 0.3,
-          "output": 1.2,
-          "cached_input": 0.06
+          "input": 2.1,
+          "output": 8.4,
+          "cached_input": 0.42
         },
         {
           "label": "context >512K and <=1M",
           "max_input_tokens": 1000000,
-          "input": 0.6,
-          "output": 2.4,
-          "cached_input": 0.12
+          "input": 4.2,
+          "output": 16.8,
+          "cached_input": 0.84
         }
       ],
       "time_of_day": null,
       "cache_storage": null,
       "notes": [
+        "MiniMax China domestic (mainland) pay-as-you-go rates, as of 2026-09-11, native CNY; native CNY normalization is 1.0 (no FX conversion).",
         "Context-tiered pricing selected from the request input length.",
-        "Official page displays these as the current 'Permanent 50% off' payable rate; list prices are 0.60/2.40/0.12 and 1.20/4.80/0.24.",
-        "The payable current rate is used for V1 cost accounting."
+        "No separate reasoning-token price is recorded: the provider does not expose one."
       ]
     },
     {
@@ -286,5 +286,5 @@
       ]
     }
   ],
-  "content_sha256": "3d03267601e2978f664408543dd97094f0c2bb3c1284958951915662af3ce1b6"
+  "content_sha256": "9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42"
 }

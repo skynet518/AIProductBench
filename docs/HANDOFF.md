@@ -10,15 +10,19 @@ constraints. RMB/CNY presentation, Pareto-based selection analysis.
 
 ## STATUS
 
-**In development. Not released. No live paid benchmark has been authorized.**
+**In development. Not released.**
 **The 50-case V1 production dataset is FROZEN / EXTERNALLY APPROVED.** All five
 domains (`instruction_constraint_following`, `structured_information_analysis`,
 `product_reasoning_decision`, `chinese_business_communication`,
 `agent_workflow_planning`), 10 cases each, passed the Matrix, Semantic,
 Deterministic-contract, and global coverage/invariant Gates
 (50 PASS / 0 PATCH / 0 REJECT). `production_status` is `"complete"` and the
-semantic freeze manifest is `docs/DATASET_FREEZE_V1.md`. There is still no
-verified V1 model ID, no verified V1 price, and no benchmark result; every run
+semantic freeze manifest is `docs/DATASET_FREEZE_V1.md`.
+
+**The Phase 4D controlled live runtime smoke has PASSED** (targeted probes only:
+IF-07 / AW-04 candidates and two judge routes). The 50-case paid benchmark
+itself has **not** been executed and is **not authorized**: there is still no
+benchmark result, no Pareto ranking, and no leaderboard, and every full-run
 artifact produced so far is synthetic dry-run output.
 
 ## COMPLETED
@@ -125,47 +129,87 @@ artifact produced so far is synthetic dry-run output.
   (`ecb-2026-09-10-usd-cny`) created; provider-default thinking/request configs
   implemented and the global temperature=0 override removed; run-manifest gaps
   closed; registry snapshot (`v1-registry-2026-09-11`) added.
+- Phase 4A/4B/C/4D: provider adapter fatal/billing error policy hardened (402
+  never retried; billing-marker bodies treated as fatal), `run_smoke.py` and
+  `run_probe.py` harnesses added with a cross-invocation CNY spend ledger, and
+  regression coverage added for provider error policy and the smoke harness.
+- Phase 4D controlled live smoke (first attempt) and Phase 4D.1 blocker
+  clearance: the first smoke exposed account/auth and billing blockers plus a
+  DeepSeek runtime output-budget issue; each blocker was then cleared with
+  targeted probes. All of that failure history is preserved in the Phase 4D /
+  4D.1 results artifacts and in D-052.
+- Phase 4D final live runtime checkpoint: Qwen executor auth PASS; Qwen
+  candidates (`qwen3.8-max`, `qwen3.8-flash`) PASS on IF-07 with literal model
+  IDs verified by provider echo, `enable_thinking=true` accepted, usage /
+  reasoning / cached-token / latency / native-cost / CNY-cost captured, and the
+  deterministic evaluator executing; judge route **Qwen + DeepSeek PASS** (2/2
+  valid verdicts on the stored MiniMax-M3 China IF-07 response); judge route
+  **DeepSeek + GLM PASS** (2/2 valid verdicts on the Qwen IF-07 response). No
+  candidate response was regenerated for either judge route.
 
 ## CURRENT PHASE
 
-**Phase 4B/C — Official Registry + Execution Readiness: COMPLETE.** Case
-authoring (Phases 3A/3B) is COMPLETE, the 50 production cases are frozen, and
-the official model registry, pricing, FX, and execution configuration are locked
-offline.
+**Phase 4D — Live Runtime Validation: COMPLETE.** Case authoring (Phases
+3A/3B) is COMPLETE, the 50 production cases are frozen, the official model
+registry, pricing, FX, and execution configuration are locked, and the
+controlled live candidate + judge runtime has been exercised end to end on a
+targeted subset. **A full 50-case paid benchmark run has not been executed.**
 
 ## CURRENT STATE
 
-**Execution configuration frozen for controlled live smoke.** All five domains
-are FROZEN / EXTERNALLY APPROVED and the 50-case migration manifest is the
-immutable case baseline (`docs/DATASET_FREEZE_V1.md`, aggregate SHA-256
+**Live runtime validated; full run READY but not executed.** All five domains
+are FROZEN / EXTERNALLY APPROVED and the 50-case manifest is the immutable case
+baseline (`docs/DATASET_FREEZE_V1.md`, aggregate SHA-256
 `6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`). The ten
 logical slots carry verified literal model IDs (`as_of` 2026-09-11), an immutable
-pricing snapshot, a fixed ECB FX snapshot, provider-default thinking configs, and
-a complete run manifest. `--validate-only` reports "model IDs verified
-(credentials still required)".
+pricing snapshot, a fixed ECB FX snapshot, provider thinking/request configs, and
+a complete run manifest.
+
+Verified live (Phase 4D / 4D.1 targeted probes, not the 50-case run):
+
+- Qwen candidate: `qwen3.8-max` and `qwen3.8-flash` PASS (IF-07)
+- DeepSeek candidate: PASS (AW-04); runtime output-budget issue **resolved** with
+  a bounded 8192-token output budget
+- Kimi candidate: PASS (IF-07, SA-03, AW-04)
+- MiniMax-M3 China candidate: PASS (IF-07); the same `MiniMax-M3` model migrated
+  from the international API route to the official China domestic
+  pay-as-you-go route
+- GLM candidate: PASS (IF-07)
+- Doubao candidate: PASS (IF-07, SA-03, AW-04)
+- Judge route Qwen + DeepSeek: PASS (2/2 valid verdicts)
+- Judge route DeepSeek + GLM: PASS (2/2 valid verdicts)
+
+Active snapshots: registry `v1-registry-2026-09-11.1`
+(`c339688f35c653c079a50c0a5477287168e12e82bee710387d1b67ad4fb63899`) and
+pricing `v1-pricing-2026-09-11.1`
+(`9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42`). No full
+benchmark result exists yet; all full-run artifacts remain synthetic.
 
 ## NEXT
 
-**Controlled live provider/model/judge smoke test** once provider credentials are
-configured and an explicit paid-run authorization is given. **No full benchmark
-run yet.** Confirm source URLs and provider thinking/usage field names during the
-smoke test.
+**Full 50-case paid benchmark run — READY but NOT authorized.** The live
+execution layer is cleared; the next step is an explicit paid-run authorization,
+a cost projection, and then a single calibrated full run. **No full benchmark
+run yet.** Remaining offline hygiene: official source URLs for model IDs and
+prices still carry `requires_official_verification`.
 
 ## THEN
 
-Run the calibrated benchmark once credentials, verified model IDs, verified
-pricing, and an FX snapshot exist — and only after an explicit paid-run
-authorization.
+Run the calibrated benchmark, and only after that explicit paid-run
+authorization. The full 50-case dataset must not be modified by provider or
+runtime work.
 
 ## AFTER THAT
 
-**Phase 4 — Native APIs & Live Benchmark.** Verify literal model IDs against
-provider-native documentation, verify active pricing and an FX snapshot, obtain
-credentials, run a cost projection, and only then execute a paid run.
+**Phase 5 — Analysis & Presentation.** After the full run: Pareto selection
+analysis, RMB/CNY presentation, and the human calibration plan.
 
 ## IMPORTANT
 
-- No live paid benchmark has been authorized. Do not run `--confirm`.
+- No live paid **full benchmark** has been authorized. Do not run
+  `run_benchmark.py --confirm` without an explicit paid-run authorization. The
+  Phase 4D targeted probes were separately authorized and are recorded in the
+  Phase 4D / 4D.1 results artifacts.
 - **The frozen production cases must not be modified by provider/runtime work.**
   Production case semantic authorship is externally controlled; any future case
   change requires an explicit versioned reopening plus Matrix, semantic, and
@@ -210,17 +254,21 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
   (`docs/DATASET_FREEZE_V1.md`), and the dataset-freeze regression tests.
 - Historical commit `e859a6d` (the earlier, superseded PR freeze) remains intact
   and auditable; it was not reset, reverted, amended, squashed, or rewritten.
-- The Phase 4A/4B/C work (registry contract + official model IDs, pricing/FX
-  snapshots, provider thinking/request configs, run-manifest gaps, audit doc,
-  and readiness tests) is **uncommitted** pending review.
+- The Phase 4A/4B/C/4D runtime work (registry contract + official model IDs,
+  pricing/FX snapshots, MiniMax China migration and domestic pricing, DeepSeek
+  bounded output budget, provider error policy, smoke/probe harnesses,
+  regression tests, and this handoff/decision update) was committed as
+  `fix: validate V1 live benchmark runtime`.
+- Live probe artifacts under `results/` (including the preserved Phase 4D /
+  4D.1 failures) are gitignored and are **not** committed.
 
 ## STILL OPEN (requires human decision)
 
 | # | Open item |
 | --- | --- |
-| 1 | Provider credentials for Moonshot, MiniMax, Zhipu, and Volcano Ark (and Qwen/DeepSeek) are not configured |
-| 2 | No paid-run authorization has been given; the next step is a controlled live smoke test, not the full run |
-| 3 | Official documentation URLs for model IDs/prices, and provider thinking/usage field names, still need confirmation against provider-native docs |
+| 1 | Provider credentials for Qwen, DeepSeek, Kimi, MiniMax, GLM, and Doubao are now configured and were exercised live; account balances are external to this repo and can change without notice |
+| 2 | No authorization for the **full 50-case paid run** has been given; the next step is that authorization plus a cost projection |
+| 3 | Official documentation URLs for model IDs/prices still carry `requires_official_verification`; literal model IDs were instead confirmed live (provider echo + accepted request). Provider thinking/usage field names were confirmed live during Phase 4D |
 | 4 | Human calibration protocol and reviewer assignment are undefined |
-| 5 | The full candidate+judge benchmark run is not authorized until the smoke test passes |
+| 5 | The live execution layer is cleared (candidates + both judge routes PASS); the full candidate+judge run is still not authorized pending explicit approval |
 | 6 | Any future semantic case modification requires an explicit versioned reopening plus Matrix, semantic, and deterministic/judge-boundary review and a new freeze hash |

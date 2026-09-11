@@ -150,7 +150,16 @@ def print_pricing(pool: dict, fx_snapshot: dict | None, *, synthetic: bool) -> N
     print(f"Priced models     : {len(verified)} of {len(snapshot['models'])}")
     for entry in verified:
         schedule = entry.get("time_of_day")
-        if schedule:
+        tiers = entry.get("input_tiers")
+        if tiers:
+            rendered = ", ".join(
+                f"{tier.get('label')} {tier['input']}/{tier['output']}" for tier in tiers
+            )
+            print(
+                f"  {entry['display_name']:<26} {entry['native_currency']} "
+                f"{rendered} per 1M"
+            )
+        elif schedule:
             print(
                 f"  {entry['display_name']:<26} {entry['native_currency']} "
                 f"peak {schedule['peak']['input']}/{schedule['peak']['output']}, "

@@ -33,7 +33,7 @@ EXPECTED_ENDPOINTS = {
     "deepseek_value": "https://api.deepseek.com",
     "kimi_flagship": "https://api.moonshot.ai/v1",
     "kimi_value": "https://api.moonshot.ai/v1",
-    "minimax_flagship": "https://api.minimax.io/v1",
+    "minimax_flagship": "https://api.minimaxi.com",
     "glm_flagship": "https://api.z.ai/api/paas/v4",
     "glm_value": "https://api.z.ai/api/paas/v4",
     "doubao_flagship": "https://ark.cn-beijing.volces.com/api/v3",
@@ -80,6 +80,20 @@ class TestLockedRegistry(unittest.TestCase):
     def test_pool_validates(self):
         self.assertEqual(models.validate_model_pool(self.pool)["errors"], [])
 
+    def test_minimax_international_pricing_preserved_as_provenance(self):
+        # Phase 4D.1 replaced the active international USD pricing with the China
+        # domestic CNY pricing, but the retired international route must remain
+        # recorded as historical provenance rather than being silently dropped.
+        retired = self.by_key["minimax_flagship"]["superseded_provider_route"]
+        self.assertEqual(retired["status"], "historical_inactive")
+        self.assertEqual(retired["provider_key"], "minimax")
+        self.assertEqual(retired["region"], "global")
+        self.assertEqual(retired["native_currency"], "USD")
+        self.assertEqual(retired["input_tiers"][0]["input"], 0.3)
+        # The V0.1-era historical archive is untouched by this migration.
+        archive = models.historical_pricing(self.pool)
+        self.assertEqual(len(archive["entries"]), 3)
+
 
 class TestThinkingAndRequestConfig(unittest.TestCase):
     @classmethod
@@ -112,6 +126,19 @@ class TestThinkingAndRequestConfig(unittest.TestCase):
                 self.assertNotIn("temperature", payload)
                 self.assertNotIn("top_p", payload)
 
+    def test_deepseek_output_budget_allows_reasoning_plus_answer(self):
+        # Phase 4D.1: AW-04 showed reasoning consuming the whole 2048-token
+        # budget and finishing with finish_reason=length and empty content.
+        # The DeepSeek runtime output budget is raised to a bounded 8192 so
+        # reasoning plus a final answer fit.
+        for key in ("deepseek_flagship", "deepseek_value"):
+            with self.subTest(model=key):
+                model = self.by_key[key]
+                self.assertEqual(model["max_output_tokens"], 8192)
+                self.assertEqual(model["request_config"]["max_output_tokens"], 8192)
+                payload = providers._build_payload(model, [{"role": "user", "content": "hi"}])
+                self.assertEqual(payload["max_tokens"], 8192)
+
     def test_kimi_contracts(self):
         k3 = providers._build_payload(self.by_key["kimi_flagship"], [])
         self.assertEqual(k3.get("reasoning_effort"), "max")
@@ -122,11 +149,27 @@ class TestThinkingAndRequestConfig(unittest.TestCase):
         self.assertEqual(self.by_key["kimi_value"]["thinking_config"]["provider_default_temperature"], 1.0)
         self.assertEqual(self.by_key["kimi_value"]["thinking_config"]["provider_default_top_p"], 0.95)
 
-    def test_minimax_adaptive_thinking_with_reasoning_split(self):
+    def test_minimax_china_uses_provider_default_reasoning(self):
+        # Phase 4D.1: MiniMax-M3 runs on the China domestic route and sends no
+        # international-only reasoning extension; provider-default behavior is used.
         model = self.by_key["minimax_flagship"]
-        self.assertEqual(model["thinking_config"]["mode"], "adaptive")
+        self.assertEqual(model["region"], "cn-domestic")
+        self.assertEqual(model["provider"], "MiniMax China")
+        self.assertEqual(model["thinking_mode"], "provider_default")
+        self.assertEqual(model["thinking_config"]["mode"], "provider_default")
         payload = providers._build_payload(model, [])
-        self.assertTrue(payload.get("reasoning_split"))
+        self.assertNotIn("reasoning_split", payload)
+        self.assertNotIn("temperature", payload)
+        self.assertNotIn("top_p", payload)
+
+    def test_minimax_china_domestic_endpoint(self):
+        model = self.by_key["minimax_flagship"]
+        self.assertEqual(model["base_url"], "https://api.minimaxi.com")
+        self.assertEqual(model["chat_completions_path"], "/v1/text/chatcompletion_v2")
+        self.assertEqual(
+            providers._endpoint(model),
+            "https://api.minimaxi.com/v1/text/chatcompletion_v2",
+        )
 
     def test_glm_and_doubao_preserve_provider_defaults(self):
         for key in ("glm_flagship", "glm_value", "doubao_flagship"):
@@ -175,8 +218,26 @@ class TestPricingSnapshot(unittest.TestCase):
         model = self.by_key["minimax_flagship"]
         small = pricing.native_price_call(model, 100_000, 0)
         large = pricing.native_price_call(model, 600_000, 0)
-        self.assertEqual(small["input_rate"], 0.30)
-        self.assertEqual(large["input_rate"], 0.60)
+        # Phase 4D.1: MiniMax China domestic CNY pay-as-you-go rates.
+        self.assertEqual(small["input_rate"], 2.1)
+        self.assertEqual(large["input_rate"], 4.2)
+        self.assertEqual(small["native_currency"], "CNY")
+
+    def test_minimax_domestic_pricing_is_native_cny(self):
+        records = {r["model_key"]: r for r in self.snapshot["records"]}
+        minimax = records["minimax_flagship"]
+        self.assertEqual(minimax["native_currency"], "CNY")
+        self.assertEqual(minimax["region"], "cn-domestic")
+        tiers = minimax["input_tiers"]
+        self.assertEqual(
+            (tiers[0]["input"], tiers[0]["output"], tiers[0]["cached_input"]),
+            (2.1, 8.4, 0.42),
+        )
+        self.assertEqual(
+            (tiers[1]["input"], tiers[1]["output"], tiers[1]["cached_input"]),
+            (4.2, 16.8, 0.84),
+        )
+        self.assertIsNone(minimax["reasoning"])
 
     def test_cached_input_billing(self):
         model = self.by_key["qwen_flagship"]

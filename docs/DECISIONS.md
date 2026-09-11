@@ -1493,3 +1493,114 @@ and pricing is resolved, but provider credentials are still absent, official
 source URLs still need confirmation, and no paid-run authorization has been
 given. The next step is a controlled live smoke test; the full candidate+judge
 benchmark run is **not** authorized. The frozen 50-case dataset is unchanged.
+
+---
+
+## D-052 — Phase 4D.1: MiniMax-M3 migration to MiniMax China (domestic) + DeepSeek output budget
+**Date:** 2026-09-11
+
+**Decision.** The MiniMax benchmark MODEL is unchanged and remains exactly
+`MiniMax-M3`; this supersedes only the *execution route* locked in D-051. The
+candidate moved from the MiniMax International route to the **MiniMax China
+domestic official Open Platform**: provider `MiniMax China`, provider key
+`minimax_china`, region `cn-domestic`, host `api.minimaxi.com`, text-generation
+path `/v1/text/chatcompletion_v2` (no `/chat/completions` suffix appended). The
+path is expressed as a new config-driven `chat_completions_path` field in the
+model pool so the provider adapter still contains no provider-specific
+branching. The international-only `reasoning_split` extension was dropped;
+MiniMax-M3 now runs on provider-default reasoning behavior
+(`thinking_mode = provider_default`).
+
+**Pricing.** The active V1 MiniMax-M3 pricing record is replaced with the
+current China domestic CNY pay-as-you-go rates (as_of 2026-09-11, per 1M tokens,
+native CNY → normalization 1.0): input context ≤ 512K → input 2.1 / output 8.4 /
+cached_input 0.42; input context > 512K and ≤ 1M → input 4.2 / output 16.8 /
+cached_input 0.84. No separate reasoning-token price is recorded because the
+provider does not expose one. The retired international USD pricing is **not
+deleted**: it is preserved inside the MiniMax entry as `superseded_provider_route`
+(`historical_inactive`) for provenance, and the V0.1-era `historical_pricing_archive`
+is untouched.
+
+**Snapshots.** Registry snapshot `v1-registry-2026-09-11.1` and pricing snapshot
+`v1-pricing-2026-09-11.1` were recomputed. The registry snapshot now records
+`chat_completions_path` so the domestic route is explicit. The dataset version,
+dataset semantic manifest, case hashes, judge mapping, and every other
+model/provider pricing record are unchanged.
+
+**DeepSeek runtime output budget.** The AW-04 diagnostic showed both DeepSeek
+models returning HTTP 200 with `finish_reason = length`, empty final content,
+and the entire 2048-token budget consumed by reasoning (reasoning_content 3514 /
+3477 chars, 2048/2048 reasoning tokens). This is case A (reasoning exhausted the
+generation budget). Only the DeepSeek runtime output budget was raised to a
+bounded 8192 (`max_output_tokens` and `request_config.max_output_tokens`); no
+sampling parameter, model ID, price, or judge mapping changed. A single AW-04
+rerun per DeepSeek model then returned final content (554 and 593 chars) with
+reasoning + cached token fields captured.
+
+**Scope.** Targeted blocker-clearance probes only, under a 20 CNY phase ceiling;
+no full smoke rerun and no 50-case benchmark. The frozen 50-case dataset is
+unchanged.
+
+---
+
+## D-053 — Phase 4D final: live runtime validated (Qwen judge route + checkpoint)
+**Date:** 2026-09-11
+
+**Decision.** Close Phase 4D as COMPLETE on live-runtime evidence. The Phase 4D
+controlled live smoke is recorded as **PASS**: all six candidate providers have a
+verified live candidate path and both frozen cross-family dual-judge routes have
+produced 2/2 valid verdicts. The full 50-case paid benchmark remains
+**READY but NOT executed and NOT authorized**.
+
+**What was verified live in the final checkpoint.**
+
+- *Qwen executor auth:* re-verified inside the execution process (HTTP 200 from
+  the Beijing DashScope compatible endpoint). Credential values were never
+  printed or written to any artifact.
+- *Qwen candidates:* `qwen3.8-max` and `qwen3.8-flash` each ran frozen IF-07
+  exactly once and returned `PROBE_PASS`: HTTP 200, literal model ID echoed back
+  verbatim, `enable_thinking=true` accepted, final content returned, usage and
+  reasoning-token counts captured, cached-input tokens captured (0), latency
+  recorded, native USD cost resolved, CNY cost resolved through the fixed ECB FX
+  snapshot, and 8/8 deterministic checks executing.
+- *Judge route Qwen + DeepSeek:* PASS on the **stored** MiniMax-M3 China IF-07
+  candidate response (no candidate regeneration). `qwen3.8-max` and
+  `deepseek-v4-pro` each returned a valid structured verdict, 2/2, with the
+  requested route matching the frozen route exactly.
+- *Judge route DeepSeek + GLM:* PASS on the stored Qwen IF-07 candidate
+  response, 2/2 valid verdicts, frozen route matched.
+
+**Why the Qwen judge route was proved on a MiniMax candidate.** The first Phase
+4D smoke reached the judge stage for Kimi and Doubao candidates but persisted
+only response lengths, never response text, and no 4D.1 probe artifact exists for
+those models. Reusing a stored MiniMax-M3 China IF-07 response was therefore used
+instead: every non-Qwen, non-DeepSeek, non-GLM candidate family — Kimi, MiniMax,
+GLM and Doubao alike — maps to the identical frozen judge route
+`qwen_flagship > deepseek_flagship` (D-051). The route proved is the exact route
+those candidates receive; the candidate source substitution was explicitly
+authorized for this step, and no judge was substituted.
+
+**Cost.** The final checkpoint made 2 paid calls for 0.05768222 CNY. The Phase
+4D.1 + 4D probe ledger stands at 0.36870636 CNY in total, far below the 20 CNY
+phase ceiling and below the 2 CNY checkpoint ceiling.
+
+**Failure history preserved.** The first controlled live smoke did **not** pass:
+Qwen was rejected with HTTP 401 (invalid API key), MiniMax and GLM were rejected
+as unbilled, and DeepSeek returned empty content because reasoning exhausted the
+2048-token budget. Those failures remain recorded in the Phase 4D / 4D.1 results
+artifacts and are not to be rewritten. D-052 records the MiniMax China migration
+and the DeepSeek bounded 8192 output-token budget that cleared them.
+
+**Snapshots.** Active registry `v1-registry-2026-09-11.1`
+(`c339688f35c653c079a50c0a5477287168e12e82bee710387d1b67ad4fb63899`) and active
+pricing `v1-pricing-2026-09-11.1`
+(`9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42`) match the
+recomputed canonical hashes exactly. The MiniMax China migration and the
+DeepSeek output-budget change are both captured inside the `.1` snapshot
+revision, so no further hash recomputation was required.
+
+**Scope.** Targeted probes and offline regression only; no 50-case benchmark, no
+leaderboard, no Pareto ranking. The frozen dataset is unchanged (manifest
+`6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`), the judge
+mapping and rubric are unchanged, and no credentials or result artifacts are
+committed.

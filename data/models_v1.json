@@ -1,5 +1,5 @@
 {
-  "pool_version": "v1-registry-2026-09-11",
+  "pool_version": "v1-registry-2026-09-11.1",
   "target_candidate_models": 10,
   "registry_note": "ONE shared model registry. Every entry is a real model entry; a model may be both an evaluated candidate and a judge. There must be no judge-only duplicate of a model that already exists as a candidate. Candidate execution and judge execution are distinct ROLES over the same registry, and their cost and latency metrics are never mixed.",
   "verification_note": "Official model IDs for the ten V1 slots were locked on 2026-09-11 from provider-native documentation. Literal provider model IDs are configured and marked verified. Base URLs must still be confirmed for the chosen region at run time; source URLs for model IDs and prices are recorded as labels with URL confirmation pending.",
@@ -234,10 +234,11 @@
       "base_url": "https://api.deepseek.com",
       "api_key_env": "DEEPSEEK_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 8192,
       "request_config": {
         "temperature": null,
         "top_p": null,
+        "max_output_tokens": 8192,
         "extra_body": {
           "reasoning_effort": "high"
         }
@@ -317,10 +318,11 @@
       "base_url": "https://api.deepseek.com",
       "api_key_env": "DEEPSEEK_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 8192,
       "request_config": {
         "temperature": null,
         "top_p": null,
+        "max_output_tokens": 8192,
         "extra_body": {
           "reasoning_effort": "high"
         }
@@ -492,53 +494,49 @@
       "key": "minimax_flagship",
       "display_name": "MiniMax flagship tier",
       "model_family": "MiniMax",
-      "provider": "MiniMax",
-      "provider_key": "minimax",
+      "provider": "MiniMax China",
+      "provider_key": "minimax_china",
       "product_tier": "flagship",
       "inference_channel": "native",
       "enabled": true,
-      "region": "global",
-      "thinking_mode": "enabled",
+      "region": "cn-domestic",
+      "thinking_mode": "provider_default",
       "thinking_config": {
-        "mode": "adaptive",
-        "reasoning_split": true
+        "mode": "provider_default",
+        "source": "provider_default"
       },
       "model_id": "MiniMax-M3",
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11",
       "model_id_source": {
-        "label": "MiniMax official model catalog",
+        "label": "MiniMax China domestic official model catalog",
         "url": null,
         "url_status": "requires_official_verification"
       },
-      "base_url": "https://api.minimax.io/v1",
+      "base_url": "https://api.minimaxi.com",
+      "chat_completions_path": "/v1/text/chatcompletion_v2",
       "api_key_env": "MINIMAX_API_KEY",
       "wire_api": "chat_completions",
       "max_output_tokens": 2048,
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {
-          "reasoning_split": true
-        }
+        "extra_body": {}
       },
       "candidate": true,
       "judge_eligible": false,
-      "pricing": {
-        "status": "verified",
-        "snapshot_date": "2026-09-11",
+      "superseded_provider_route": {
+        "status": "historical_inactive",
+        "superseded_on": "2026-09-11",
+        "note": "Phase 4D.1 migration: the MiniMax-M3 benchmark model moved from the MiniMax International execution route to the MiniMax China domestic official Open Platform. This international route metadata and its USD pricing are preserved for provenance only and are never used for V1 cost accounting.",
+        "provider": "MiniMax",
+        "provider_key": "minimax",
+        "region": "global",
+        "base_url": "https://api.minimax.io/v1",
         "native_currency": "USD",
         "unit": "per_1m_tokens",
+        "snapshot_date": "2026-09-11",
         "source": "MiniMax official API Pricing + OpenAI SDK documentation",
-        "source_url": null,
-        "source_url_status": "requires_official_verification",
-        "applies_to_model_id": "MiniMax-M3",
-        "region": "global",
-        "input": null,
-        "output": null,
-        "cached_input": null,
-        "reasoning": null,
-        "input_tier_limit_tokens": null,
         "input_tiers": [
           {
             "label": "context <= 512K",
@@ -554,12 +552,44 @@
             "output": 2.4,
             "cached_input": 0.12
           }
+        ]
+      },
+      "pricing": {
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "CNY",
+        "unit": "per_1m_tokens",
+        "source": "MiniMax China (MiniMax 开放平台) official domestic pay-as-you-go pricing page",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "MiniMax-M3",
+        "region": "cn-domestic",
+        "input": null,
+        "output": null,
+        "cached_input": null,
+        "reasoning": null,
+        "input_tier_limit_tokens": null,
+        "input_tiers": [
+          {
+            "label": "context <= 512K",
+            "max_input_tokens": 512000,
+            "input": 2.1,
+            "output": 8.4,
+            "cached_input": 0.42
+          },
+          {
+            "label": "context >512K and <=1M",
+            "max_input_tokens": 1000000,
+            "input": 4.2,
+            "output": 16.8,
+            "cached_input": 0.84
+          }
         ],
         "time_of_day": null,
         "notes": [
+          "MiniMax China domestic (mainland) pay-as-you-go rates, as of 2026-09-11, native CNY; native CNY normalization is 1.0 (no FX conversion).",
           "Context-tiered pricing selected from the request input length.",
-          "Official page displays these as the current 'Permanent 50% off' payable rate; list prices are 0.60/2.40/0.12 and 1.20/4.80/0.24.",
-          "The payable current rate is used for V1 cost accounting."
+          "No separate reasoning-token price is recorded: the provider does not expose one."
         ]
       }
     },

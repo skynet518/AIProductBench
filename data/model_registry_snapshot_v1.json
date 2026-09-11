@@ -1,5 +1,5 @@
 {
-  "snapshot_id": "v1-registry-2026-09-11",
+  "snapshot_id": "v1-registry-2026-09-11.1",
   "as_of": "2026-09-11",
   "models": [
     {
@@ -11,6 +11,7 @@
       "tier": "flagship",
       "region": "cn-beijing",
       "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "chat_completions_path": null,
       "wire_api": "chat_completions",
       "thinking_mode": "enabled",
       "thinking_config": {
@@ -37,6 +38,7 @@
       "tier": "value",
       "region": "cn-beijing",
       "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "chat_completions_path": null,
       "wire_api": "chat_completions",
       "thinking_mode": "enabled",
       "thinking_config": {
@@ -63,6 +65,7 @@
       "tier": "flagship",
       "region": "global",
       "base_url": "https://api.deepseek.com",
+      "chat_completions_path": null,
       "wire_api": "chat_completions",
       "thinking_mode": "enabled",
       "thinking_config": {
@@ -73,6 +76,7 @@
       "request_config": {
         "temperature": null,
         "top_p": null,
+        "max_output_tokens": 8192,
         "extra_body": {
           "reasoning_effort": "high"
         }
@@ -89,6 +93,7 @@
       "tier": "value",
       "region": "global",
       "base_url": "https://api.deepseek.com",
+      "chat_completions_path": null,
       "wire_api": "chat_completions",
       "thinking_mode": "enabled",
       "thinking_config": {
@@ -99,6 +104,7 @@
       "request_config": {
         "temperature": null,
         "top_p": null,
+        "max_output_tokens": 8192,
         "extra_body": {
           "reasoning_effort": "high"
         }
@@ -115,6 +121,7 @@
       "tier": "flagship",
       "region": "international",
       "base_url": "https://api.moonshot.ai/v1",
+      "chat_completions_path": null,
       "wire_api": "chat_completions",
       "thinking_mode": "enabled",
       "thinking_config": {
@@ -140,6 +147,7 @@
       "tier": "value",
       "region": "international",
       "base_url": "https://api.moonshot.ai/v1",
+      "chat_completions_path": null,
       "wire_api": "chat_completions",
       "thinking_mode": "enabled",
       "thinking_config": {
@@ -157,25 +165,24 @@
     },
     {
       "logical_model_id": "minimax_flagship",
-      "provider": "MiniMax",
-      "provider_key": "minimax",
+      "provider": "MiniMax China",
+      "provider_key": "minimax_china",
       "provider_model_id": "MiniMax-M3",
       "model_family": "MiniMax",
       "tier": "flagship",
-      "region": "global",
-      "base_url": "https://api.minimax.io/v1",
+      "region": "cn-domestic",
+      "base_url": "https://api.minimaxi.com",
+      "chat_completions_path": "/v1/text/chatcompletion_v2",
       "wire_api": "chat_completions",
-      "thinking_mode": "enabled",
+      "thinking_mode": "provider_default",
       "thinking_config": {
-        "mode": "adaptive",
-        "reasoning_split": true
+        "mode": "provider_default",
+        "source": "provider_default"
       },
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {
-          "reasoning_split": true
-        }
+        "extra_body": {}
       },
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
@@ -189,6 +196,7 @@
       "tier": "flagship",
       "region": "global",
       "base_url": "https://api.z.ai/api/paas/v4",
+      "chat_completions_path": null,
       "wire_api": "chat_completions",
       "thinking_mode": "enabled",
       "thinking_config": {
@@ -213,6 +221,7 @@
       "tier": "value",
       "region": "global",
       "base_url": "https://api.z.ai/api/paas/v4",
+      "chat_completions_path": null,
       "wire_api": "chat_completions",
       "thinking_mode": "enabled",
       "thinking_config": {
@@ -237,6 +246,7 @@
       "tier": "flagship",
       "region": "cn-beijing",
       "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+      "chat_completions_path": null,
       "wire_api": "chat_completions",
       "thinking_mode": "provider_default",
       "thinking_config": {
@@ -252,5 +262,5 @@
       "model_id_verified_as_of": "2026-09-11"
     }
   ],
-  "content_sha256": "5a0175a3e1879ec5f7cdfcd0fbc46a1ab7b838602ad536f7a552dd67f8c01970"
+  "content_sha256": "c339688f35c653c079a50c0a5477287168e12e82bee710387d1b67ad4fb63899"
 }

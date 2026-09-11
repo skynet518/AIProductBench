@@ -24,7 +24,7 @@ class PricingError(ValueError):
     """Raised when a cost cannot be derived without guessing."""
 
 
-PRICING_SNAPSHOT_ID = "v1-pricing-2026-09-11"
+PRICING_SNAPSHOT_ID = "v1-pricing-2026-09-11.1"
 PRICING_SNAPSHOT_AS_OF = "2026-09-11"
 PRICING_SNAPSHOT_FILE = config.DATA_DIR / "pricing_snapshot_v1.json"
 

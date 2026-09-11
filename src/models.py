@@ -16,7 +16,7 @@ from pathlib import Path
 
 from src import config
 
-REGISTRY_SNAPSHOT_ID = "v1-registry-2026-09-11"
+REGISTRY_SNAPSHOT_ID = "v1-registry-2026-09-11.1"
 REGISTRY_SNAPSHOT_AS_OF = "2026-09-11"
 REGISTRY_SNAPSHOT_FILE = config.DATA_DIR / "model_registry_snapshot_v1.json"
 
@@ -383,6 +383,7 @@ def build_registry_snapshot(pool: dict) -> dict:
                 "tier": model.get("product_tier"),
                 "region": model.get("region"),
                 "base_url": model.get("base_url"),
+                "chat_completions_path": model.get("chat_completions_path"),
                 "wire_api": model.get("wire_api"),
                 "thinking_mode": model.get("thinking_mode"),
                 "thinking_config": model.get("thinking_config"),
