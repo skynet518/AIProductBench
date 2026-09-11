@@ -44,6 +44,10 @@ Canonical run: `official-v1-20260911T103838Z`
 | **Official Pareto frontier** | **Kimi K3 + DeepSeek V4 Flash** |
 | **Officially ranked** | **4 / 10 models** |
 
+![AIProductBench CN V1 Quality × Cost Pareto](docs/assets/aiproductbench_v1_quality_cost_pareto.png)
+
+*Official Quality × Cost Pareto view for the four COMPLETE, rank-eligible V1 models.*
+
 ### The product decision
 
 Kimi K3 achieved the highest measured overall quality.
@@ -71,6 +75,11 @@ V1.
 For workloads where near-equal measured quality is acceptable and cost /
 latency matter materially, DeepSeek V4 Flash is the more attractive product
 trade-off on the official Pareto frontier.
+
+![AIProductBench CN V1 Product Trade-off](docs/assets/aiproductbench_v1_product_tradeoff.png)
+
+*DeepSeek V4 Flash retains almost the same measured quality while requiring a
+fraction of Kimi K3's cost and median candidate latency in this benchmark.*
 
 ---
 
