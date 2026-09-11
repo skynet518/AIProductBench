@@ -1,0 +1,256 @@
+{
+  "snapshot_id": "v1-registry-2026-09-11",
+  "as_of": "2026-09-11",
+  "models": [
+    {
+      "logical_model_id": "qwen_flagship",
+      "provider": "Alibaba Model Studio",
+      "provider_key": "alibaba_model_studio",
+      "provider_model_id": "qwen3.8-max",
+      "model_family": "Qwen",
+      "tier": "flagship",
+      "region": "cn-beijing",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "wire_api": "chat_completions",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "adaptive",
+        "source": "provider_default",
+        "enable_thinking": true
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "enable_thinking": true
+        }
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    },
+    {
+      "logical_model_id": "qwen_value",
+      "provider": "Alibaba Model Studio",
+      "provider_key": "alibaba_model_studio",
+      "provider_model_id": "qwen3.8-flash",
+      "model_family": "Qwen",
+      "tier": "value",
+      "region": "cn-beijing",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "wire_api": "chat_completions",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "adaptive",
+        "source": "provider_default",
+        "enable_thinking": true
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "enable_thinking": true
+        }
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    },
+    {
+      "logical_model_id": "deepseek_flagship",
+      "provider": "DeepSeek",
+      "provider_key": "deepseek",
+      "provider_model_id": "deepseek-v4-pro",
+      "model_family": "DeepSeek",
+      "tier": "flagship",
+      "region": "global",
+      "base_url": "https://api.deepseek.com",
+      "wire_api": "chat_completions",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "reasoning_effort": "high",
+        "omit_sampling": true
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "reasoning_effort": "high"
+        }
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    },
+    {
+      "logical_model_id": "deepseek_value",
+      "provider": "DeepSeek",
+      "provider_key": "deepseek",
+      "provider_model_id": "deepseek-v4-flash",
+      "model_family": "DeepSeek",
+      "tier": "value",
+      "region": "global",
+      "base_url": "https://api.deepseek.com",
+      "wire_api": "chat_completions",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "reasoning_effort": "high",
+        "omit_sampling": true
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "reasoning_effort": "high"
+        }
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    },
+    {
+      "logical_model_id": "kimi_flagship",
+      "provider": "Moonshot AI",
+      "provider_key": "moonshot",
+      "provider_model_id": "kimi-k3",
+      "model_family": "Kimi",
+      "tier": "flagship",
+      "region": "international",
+      "base_url": "https://api.moonshot.ai/v1",
+      "wire_api": "chat_completions",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "always",
+        "reasoning_effort": "max"
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "reasoning_effort": "max"
+        }
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    },
+    {
+      "logical_model_id": "kimi_value",
+      "provider": "Moonshot AI",
+      "provider_key": "moonshot",
+      "provider_model_id": "kimi-k2.6",
+      "model_family": "Kimi",
+      "tier": "value",
+      "region": "international",
+      "base_url": "https://api.moonshot.ai/v1",
+      "wire_api": "chat_completions",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "provider_default_temperature": 1.0,
+        "provider_default_top_p": 0.95
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {}
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    },
+    {
+      "logical_model_id": "minimax_flagship",
+      "provider": "MiniMax",
+      "provider_key": "minimax",
+      "provider_model_id": "MiniMax-M3",
+      "model_family": "MiniMax",
+      "tier": "flagship",
+      "region": "global",
+      "base_url": "https://api.minimax.io/v1",
+      "wire_api": "chat_completions",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "adaptive",
+        "reasoning_split": true
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "reasoning_split": true
+        }
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    },
+    {
+      "logical_model_id": "glm_flagship",
+      "provider": "Zhipu BigModel",
+      "provider_key": "zhipu_bigmodel",
+      "provider_model_id": "glm-5.3",
+      "model_family": "GLM",
+      "tier": "flagship",
+      "region": "global",
+      "base_url": "https://api.z.ai/api/paas/v4",
+      "wire_api": "chat_completions",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "source": "provider_default",
+        "preserve_default_sampling": true
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {}
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    },
+    {
+      "logical_model_id": "glm_value",
+      "provider": "Zhipu BigModel",
+      "provider_key": "zhipu_bigmodel",
+      "provider_model_id": "glm-5.3-flash",
+      "model_family": "GLM",
+      "tier": "value",
+      "region": "global",
+      "base_url": "https://api.z.ai/api/paas/v4",
+      "wire_api": "chat_completions",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "source": "provider_default",
+        "preserve_default_sampling": true
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {}
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    },
+    {
+      "logical_model_id": "doubao_flagship",
+      "provider": "Volcano Ark",
+      "provider_key": "volcano_ark",
+      "provider_model_id": "doubao-seed-2-1-pro-260628",
+      "model_family": "Doubao",
+      "tier": "flagship",
+      "region": "cn-beijing",
+      "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+      "wire_api": "chat_completions",
+      "thinking_mode": "provider_default",
+      "thinking_config": {
+        "mode": "provider_default",
+        "source": "provider_default"
+      },
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {}
+      },
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11"
+    }
+  ],
+  "content_sha256": "5a0175a3e1879ec5f7cdfcd0fbc46a1ab7b838602ad536f7a552dd67f8c01970"
+}

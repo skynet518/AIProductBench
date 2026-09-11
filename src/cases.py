@@ -11,10 +11,28 @@ production cases cannot drift apart.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
 from src import config, deterministic
+
+
+def canonical_hash(obj) -> str:
+    """Order-insensitive SHA-256 over canonical JSON (UTF-8, keys sorted)."""
+    blob = json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def semantic_manifest(cases: list[dict]) -> str:
+    """The frozen freeze-manifest text: sorted `<case_id> <sha256>` lines."""
+    return "\n".join(
+        f"{case['id']} {canonical_hash(case)}" for case in sorted(cases, key=lambda c: c["id"])
+    ) + "\n"
+
+
+def semantic_manifest_hash(cases: list[dict]) -> str:
+    return hashlib.sha256(semantic_manifest(cases).encode("utf-8")).hexdigest()
 
 REQUIRED_FIELDS = (
     "id",

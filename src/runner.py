@@ -10,9 +10,28 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import platform
 from pathlib import Path
 
 from src import analytics, cases as cases_module, config, deterministic, judge, models, pricing, providers
+
+
+def _git_commit() -> str | None:
+    """Best-effort local git commit id for the run manifest (no network)."""
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(config.PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        commit = result.stdout.strip()
+        return commit or None
+    except Exception:  # pragma: no cover - defensive
+        return None
 
 
 # --------------------------------------------------------------------------
@@ -44,8 +63,7 @@ def check_pricing_ready(pool: dict) -> list[str]:
         model["key"]
         for model in pool["models"]
         if model["pricing"].get("status") != "verified"
-        or model["pricing"].get("input") is None
-        or model["pricing"].get("output") is None
+        or not models.pricing_has_rates(model["pricing"])
     ]
     if not unresolved:
         return []
@@ -111,6 +129,7 @@ def _base_record(case: dict, model: dict, dry_run: bool) -> dict:
         "output_tokens": None,
         "total_tokens": None,
         "reasoning_tokens": None,
+        "cached_input_tokens": None,
         "native_cost": None,
         "native_currency": None,
         "normalized_cost_cny": None,
@@ -143,6 +162,7 @@ def _evaluate_case(
             "output_tokens": response["output_tokens"],
             "total_tokens": response["total_tokens"],
             "reasoning_tokens": response.get("reasoning_tokens"),
+            "cached_input_tokens": response.get("cached_input_tokens"),
             "native_cost": response["native_cost"],
             "native_currency": response["native_currency"],
             "normalized_cost_cny": response["normalized_cost_cny"],
@@ -288,10 +308,13 @@ def summarize(results: list[dict], pool: dict, required_cases: int | None = None
                 "model_id": model.get("model_id"),
                 "model_family": model["model_family"],
                 "provider": model["provider"],
+                "provider_key": model["provider_key"],
+                "region": model.get("region"),
                 "product_tier": model["product_tier"],
                 "inference_channel": model["inference_channel"],
                 "thinking_mode": model["thinking_mode"],
                 "cases_total": len(rows),
+                "cases_attempted": len(rows),
                 "cases_scored": len(scored),
                 "cases_failed": len(rows) - len(scored),
                 "cases_required": required_cases,
@@ -324,6 +347,7 @@ def summarize(results: list[dict], pool: dict, required_cases: int | None = None
                     "input": _sum([row["input_tokens"] for row in rows]),
                     "output": _sum([row["output_tokens"] for row in rows]),
                     "reasoning": _sum([row["reasoning_tokens"] for row in rows]),
+                    "cached_input": _sum([row["cached_input_tokens"] for row in rows]),
                     "total": _sum([row["total_tokens"] for row in rows]),
                 },
                 "candidate_cost_native": native_costs or None,
@@ -534,11 +558,38 @@ def build_document(
     dry_run: bool,
     fx_snapshot: dict | None,
 ) -> dict:
+    start_time = dt.datetime.now(dt.timezone.utc)
     case_list = cases_module.all_cases(cases_document)
     snapshot_id = (
         f"{config.BENCHMARK_VERSION}-"
         f"{'synthetic-' if dry_run else ''}"
-        f"{dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+        f"{start_time.strftime('%Y%m%dT%H%M%SZ')}"
+    )
+
+    dataset_manifest_hash = cases_module.semantic_manifest_hash(case_list)
+    try:
+        registry_snapshot = models.build_registry_snapshot(pool)
+        registry_snapshot_id = registry_snapshot["snapshot_id"]
+        registry_snapshot_hash = registry_snapshot["content_sha256"]
+    except Exception:  # pragma: no cover - defensive; registry contract is validated
+        registry_snapshot_id = None
+        registry_snapshot_hash = None
+    try:
+        pricing_snapshot_doc = pricing.build_pricing_snapshot(pool["models"])
+        pricing_snapshot_id = pricing_snapshot_doc["snapshot_id"]
+        pricing_snapshot_hash = pricing_snapshot_doc["content_sha256"]
+    except Exception:  # pragma: no cover - defensive
+        pricing_snapshot_id = None
+        pricing_snapshot_hash = None
+    judge_config_snapshot_id = cases_module.canonical_hash(
+        {
+            "priority": models.judge_priority(pool),
+            "judges": [
+                {"key": m["key"], "model_id": m.get("model_id"), "family": m["model_family"]}
+                for m in models.judges(pool)
+            ],
+            "judge_prompt_version": config.JUDGE_PROMPT_VERSION,
+        }
     )
 
     return {
@@ -559,6 +610,7 @@ def build_document(
             "version": cases_document.get("dataset_version"),
             "synthetic": bool(cases_document.get("synthetic")),
             "case_count": len(case_list),
+            "semantic_manifest_sha256": dataset_manifest_hash,
             "domain_distribution": cases_module.domain_distribution(case_list),
             "difficulty_distribution": cases_module.distribution(case_list, "difficulty"),
             "language_distribution": cases_module.distribution(case_list, "language"),
@@ -570,15 +622,22 @@ def build_document(
             "candidates": [
                 {
                     "key": model["key"],
+                    "logical_model_id": model["key"],
                     "display_name": model["display_name"],
                     "model_id": model.get("model_id"),
+                    "provider_model_id": model.get("model_id"),
                     "model_id_status": model["model_id_status"],
+                    "model_id_verified_as_of": model.get("model_id_verified_as_of"),
                     "model_family": model["model_family"],
                     "provider": model["provider"],
                     "provider_key": model["provider_key"],
+                    "region": model.get("region"),
                     "product_tier": model["product_tier"],
                     "inference_channel": model["inference_channel"],
                     "thinking_mode": model["thinking_mode"],
+                    "thinking_config": model.get("thinking_config"),
+                    "request_config": providers.effective_request_config(model),
+                    "pricing_record": model.get("pricing"),
                 }
                 for model in models.candidates(pool)
             ],
@@ -598,6 +657,25 @@ def build_document(
             ],
             "judge_priority": models.judge_priority(pool),
             "registry_note": pool.get("registry_note"),
+        },
+        "run_manifest": {
+            "run_id": snapshot_id,
+            "benchmark_version": config.BENCHMARK_VERSION,
+            "dataset_version": cases_document.get("dataset_version"),
+            "dataset_manifest_hash": dataset_manifest_hash,
+            "git_commit": _git_commit(),
+            "model_registry_snapshot_id": registry_snapshot_id,
+            "model_registry_snapshot_hash": registry_snapshot_hash,
+            "pricing_snapshot_id": pricing_snapshot_id,
+            "pricing_snapshot_hash": pricing_snapshot_hash,
+            "fx_snapshot_id": (fx_snapshot or {}).get("snapshot_id"),
+            "judge_config_snapshot_id": judge_config_snapshot_id,
+            "start_time": start_time.isoformat(timespec="seconds"),
+            "runtime": {
+                "python_version": platform.python_version(),
+                "platform": platform.platform(),
+                "benchmark_version": config.BENCHMARK_VERSION,
+            },
         },
         "rubric": {
             "dimensions": list(config.RUBRIC_DIMENSIONS),

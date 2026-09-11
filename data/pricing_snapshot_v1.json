@@ -1,0 +1,290 @@
+{
+  "snapshot_id": "v1-pricing-2026-09-11",
+  "as_of": "2026-09-11",
+  "records": [
+    {
+      "model_key": "qwen_flagship",
+      "provider": "Alibaba Model Studio",
+      "provider_key": "alibaba_model_studio",
+      "model_id": "qwen3.8-max",
+      "region": "cn-beijing",
+      "native_currency": "USD",
+      "unit": "per_1m_tokens",
+      "source": "Alibaba Cloud Model Studio official model/pricing documentation (China Beijing region)",
+      "source_url": null,
+      "input": 1.65,
+      "output": 4.951,
+      "cached_input": 0.206,
+      "reasoning": null,
+      "input_tiers": null,
+      "time_of_day": null,
+      "cache_storage": null,
+      "notes": [
+        "implicit-cache price"
+      ]
+    },
+    {
+      "model_key": "qwen_value",
+      "provider": "Alibaba Model Studio",
+      "provider_key": "alibaba_model_studio",
+      "model_id": "qwen3.8-flash",
+      "region": "cn-beijing",
+      "native_currency": "USD",
+      "unit": "per_1m_tokens",
+      "source": "Alibaba Cloud Model Studio official model/pricing documentation (China Beijing region)",
+      "source_url": null,
+      "input": 0.113,
+      "output": 0.382,
+      "cached_input": 0.014,
+      "reasoning": null,
+      "input_tiers": null,
+      "time_of_day": null,
+      "cache_storage": null,
+      "notes": [
+        "implicit-cache price"
+      ]
+    },
+    {
+      "model_key": "deepseek_flagship",
+      "provider": "DeepSeek",
+      "provider_key": "deepseek",
+      "model_id": "deepseek-v4-pro",
+      "region": "global",
+      "native_currency": "USD",
+      "unit": "per_1m_tokens",
+      "source": "DeepSeek API official Models & Pricing documentation",
+      "source_url": null,
+      "input": null,
+      "output": null,
+      "cached_input": null,
+      "reasoning": null,
+      "input_tiers": null,
+      "time_of_day": {
+        "off_peak": {
+          "cached_input": 0.022,
+          "input": 0.66,
+          "output": 1.98
+        },
+        "peak": {
+          "cached_input": 0.044,
+          "input": 1.32,
+          "output": 3.96
+        },
+        "peak_windows_utc": [
+          [
+            1,
+            4
+          ],
+          [
+            6,
+            10
+          ]
+        ],
+        "peak_weekdays_only": true
+      },
+      "cache_storage": null,
+      "notes": [
+        "Thinking mode: reasoning_effort=high; temperature/top_p are not sent.",
+        "Peak windows are Monday-Friday 01:00-04:00 and 06:00-10:00 UTC; all other periods are off-peak.",
+        "Cost is selected from the request timestamp; peak and off-peak are never averaged."
+      ]
+    },
+    {
+      "model_key": "deepseek_value",
+      "provider": "DeepSeek",
+      "provider_key": "deepseek",
+      "model_id": "deepseek-v4-flash",
+      "region": "global",
+      "native_currency": "USD",
+      "unit": "per_1m_tokens",
+      "source": "DeepSeek API official Models & Pricing documentation",
+      "source_url": null,
+      "input": null,
+      "output": null,
+      "cached_input": null,
+      "reasoning": null,
+      "input_tiers": null,
+      "time_of_day": {
+        "off_peak": {
+          "cached_input": 0.007,
+          "input": 0.22,
+          "output": 0.66
+        },
+        "peak": {
+          "cached_input": 0.014,
+          "input": 0.44,
+          "output": 1.32
+        },
+        "peak_windows_utc": [
+          [
+            1,
+            4
+          ],
+          [
+            6,
+            10
+          ]
+        ],
+        "peak_weekdays_only": true
+      },
+      "cache_storage": null,
+      "notes": [
+        "Thinking mode: reasoning_effort=high; temperature/top_p are not sent.",
+        "Peak windows are Monday-Friday 01:00-04:00 and 06:00-10:00 UTC; all other periods are off-peak.",
+        "Cost is selected from the request timestamp; peak and off-peak are never averaged."
+      ]
+    },
+    {
+      "model_key": "kimi_flagship",
+      "provider": "Moonshot AI",
+      "provider_key": "moonshot",
+      "model_id": "kimi-k3",
+      "region": "international",
+      "native_currency": "USD",
+      "unit": "per_1m_tokens",
+      "source": "Kimi API (Moonshot) official pricing/model documentation",
+      "source_url": null,
+      "input": 3.0,
+      "output": 15.0,
+      "cached_input": 0.3,
+      "reasoning": null,
+      "input_tiers": null,
+      "time_of_day": null,
+      "cache_storage": null,
+      "notes": [
+        "Always-thinking model; reasoning_effort=max. No temperature override is sent."
+      ]
+    },
+    {
+      "model_key": "kimi_value",
+      "provider": "Moonshot AI",
+      "provider_key": "moonshot",
+      "model_id": "kimi-k2.6",
+      "region": "international",
+      "native_currency": "USD",
+      "unit": "per_1m_tokens",
+      "source": "Kimi API (Moonshot) official pricing/model documentation",
+      "source_url": null,
+      "input": 0.95,
+      "output": 4.0,
+      "cached_input": 0.16,
+      "reasoning": null,
+      "input_tiers": null,
+      "time_of_day": null,
+      "cache_storage": null,
+      "notes": [
+        "Thinking enabled; provider default temperature 1.0 and top_p 0.95 are preserved (not overridden)."
+      ]
+    },
+    {
+      "model_key": "minimax_flagship",
+      "provider": "MiniMax",
+      "provider_key": "minimax",
+      "model_id": "MiniMax-M3",
+      "region": "global",
+      "native_currency": "USD",
+      "unit": "per_1m_tokens",
+      "source": "MiniMax official API Pricing + OpenAI SDK documentation",
+      "source_url": null,
+      "input": null,
+      "output": null,
+      "cached_input": null,
+      "reasoning": null,
+      "input_tiers": [
+        {
+          "label": "context <= 512K",
+          "max_input_tokens": 512000,
+          "input": 0.3,
+          "output": 1.2,
+          "cached_input": 0.06
+        },
+        {
+          "label": "context >512K and <=1M",
+          "max_input_tokens": 1000000,
+          "input": 0.6,
+          "output": 2.4,
+          "cached_input": 0.12
+        }
+      ],
+      "time_of_day": null,
+      "cache_storage": null,
+      "notes": [
+        "Context-tiered pricing selected from the request input length.",
+        "Official page displays these as the current 'Permanent 50% off' payable rate; list prices are 0.60/2.40/0.12 and 1.20/4.80/0.24.",
+        "The payable current rate is used for V1 cost accounting."
+      ]
+    },
+    {
+      "model_key": "glm_flagship",
+      "provider": "Zhipu BigModel",
+      "provider_key": "zhipu_bigmodel",
+      "model_id": "glm-5.3",
+      "region": "global",
+      "native_currency": "USD",
+      "unit": "per_1m_tokens",
+      "source": "Z.AI official Pricing documentation",
+      "source_url": null,
+      "input": 1.4,
+      "output": 4.4,
+      "cached_input": 0.26,
+      "reasoning": null,
+      "input_tiers": null,
+      "time_of_day": null,
+      "cache_storage": null,
+      "notes": [
+        "Thinking enabled; provider default sampling preserved (no temperature override).",
+        "Cache storage: limited-time free where supported; no numeric storage rate is recorded."
+      ]
+    },
+    {
+      "model_key": "glm_value",
+      "provider": "Zhipu BigModel",
+      "provider_key": "zhipu_bigmodel",
+      "model_id": "glm-5.3-flash",
+      "region": "global",
+      "native_currency": "USD",
+      "unit": "per_1m_tokens",
+      "source": "Z.AI official Pricing documentation",
+      "source_url": null,
+      "input": 0.15,
+      "output": 0.5,
+      "cached_input": 0.03,
+      "reasoning": null,
+      "input_tiers": null,
+      "time_of_day": null,
+      "cache_storage": null,
+      "notes": [
+        "Thinking enabled; provider default sampling preserved (no temperature override).",
+        "Cache storage: limited-time free where supported; no numeric storage rate is recorded."
+      ]
+    },
+    {
+      "model_key": "doubao_flagship",
+      "provider": "Volcano Ark",
+      "provider_key": "volcano_ark",
+      "model_id": "doubao-seed-2-1-pro-260628",
+      "region": "cn-beijing",
+      "native_currency": "CNY",
+      "unit": "per_1m_tokens",
+      "source": "Volcano Engine / Ark official product/model documentation",
+      "source_url": null,
+      "input": 6.0,
+      "output": 30.0,
+      "cached_input": 1.2,
+      "reasoning": null,
+      "input_tiers": null,
+      "time_of_day": null,
+      "cache_storage": {
+        "rate": 0.017,
+        "unit": "CNY per 1M tokens per hour",
+        "counted": false,
+        "note": "count only if a billable stored cache is actually created"
+      },
+      "notes": [
+        "Provider-default reasoning/sampling preserved; no undocumented reasoning_effort value is sent.",
+        "Cache storage: 0.017 CNY / 1M tokens / hour, counted only if actual execution creates a billable stored cache."
+      ]
+    }
+  ],
+  "content_sha256": "3d03267601e2978f664408543dd97094f0c2bb3c1284958951915662af3ce1b6"
+}

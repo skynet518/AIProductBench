@@ -113,26 +113,43 @@ artifact produced so far is synthetic dry-run output.
 - Deterministic / judge-boundary audit and global Matrix coverage audit
   complete (14 Strong / 25 Partial / 11 None; 40 zh / 6 en / 4 mixed;
   10 easy / 25 medium / 15 hard).
+- Phase 4A offline readiness audit (`docs/PHASE4A_READINESS_AUDIT.md`): model
+  registry, provider adapter, pricing/FX architecture, judge mapping,
+  incomplete-model handling, and run-manifest shape reviewed; no network calls.
+- Model-registry contract extended (backward-compatible) with `enabled`,
+  `thinking_config`, `model_id_verified_as_of`, and pricing `reasoning` /
+  `cached_input`; FX snapshots gained a `snapshot_id`; snapshot schema
+  validators and Phase 4A readiness tests added.
+- Phase 4B/C: ten logical slots locked to verified literal model IDs; official
+  pricing snapshot (`v1-pricing-2026-09-11`) and fixed ECB FX snapshot
+  (`ecb-2026-09-10-usd-cny`) created; provider-default thinking/request configs
+  implemented and the global temperature=0 override removed; run-manifest gaps
+  closed; registry snapshot (`v1-registry-2026-09-11`) added.
 
 ## CURRENT PHASE
 
-**Case authoring phase COMPLETE.** Phases 3A (design) and 3B (authoring) are
-finished: all 50 production cases across the five domains are frozen and
-externally approved.
+**Phase 4B/C — Official Registry + Execution Readiness: COMPLETE.** Case
+authoring (Phases 3A/3B) is COMPLETE, the 50 production cases are frozen, and
+the official model registry, pricing, FX, and execution configuration are locked
+offline.
 
 ## CURRENT STATE
 
-**50 / 50 cases frozen.** Domains 1–5 are all FROZEN / EXTERNALLY APPROVED. The
-immutable case baseline is the 50-case semantic freeze manifest
-(`docs/DATASET_FREEZE_V1.md`, aggregate SHA-256
-`6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`).
+**Execution configuration frozen for controlled live smoke.** All five domains
+are FROZEN / EXTERNALLY APPROVED and the 50-case migration manifest is the
+immutable case baseline (`docs/DATASET_FREEZE_V1.md`, aggregate SHA-256
+`6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`). The ten
+logical slots carry verified literal model IDs (`as_of` 2026-09-11), an immutable
+pricing snapshot, a fixed ECB FX snapshot, provider-default thinking configs, and
+a complete run manifest. `--validate-only` reports "model IDs verified
+(credentials still required)".
 
 ## NEXT
 
-**Phase 4 — Native APIs & Live Benchmark.** Verify literal model IDs against
-provider-native documentation, capture a provider-native pricing snapshot and an
-FX snapshot, integrate the judge models, plan the human calibration sample, and
-reach benchmark execution readiness.
+**Controlled live provider/model/judge smoke test** once provider credentials are
+configured and an explicit paid-run authorization is given. **No full benchmark
+run yet.** Confirm source URLs and provider thinking/usage field names during the
+smoke test.
 
 ## THEN
 
@@ -193,15 +210,17 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
   (`docs/DATASET_FREEZE_V1.md`), and the dataset-freeze regression tests.
 - Historical commit `e859a6d` (the earlier, superseded PR freeze) remains intact
   and auditable; it was not reset, reverted, amended, squashed, or rewritten.
+- The Phase 4A/4B/C work (registry contract + official model IDs, pricing/FX
+  snapshots, provider thinking/request configs, run-manifest gaps, audit doc,
+  and readiness tests) is **uncommitted** pending review.
 
 ## STILL OPEN (requires human decision)
 
 | # | Open item |
 | --- | --- |
-| 1 | Literal model IDs for the 10 candidates and 3 judges must be verified against provider-native documentation before any paid run |
-| 2 | All active V1 pricing is unresolved; every model is unpriced until each literal model ID's price is verified |
-| 3 | Provider credentials for Moonshot, MiniMax, Zhipu, and Volcano Ark are not configured |
-| 4 | No FX snapshot (USD/CNY) is configured, so USD-priced models would have no CNY-normalized cost |
-| 5 | Human calibration protocol and reviewer assignment are undefined |
-| 6 | All 50 production cases and all five domains are frozen / externally approved; the case authoring phase is complete |
-| 7 | Any future semantic case modification requires an explicit versioned reopening plus Matrix, semantic, and deterministic/judge-boundary review and a new freeze hash |
+| 1 | Provider credentials for Moonshot, MiniMax, Zhipu, and Volcano Ark (and Qwen/DeepSeek) are not configured |
+| 2 | No paid-run authorization has been given; the next step is a controlled live smoke test, not the full run |
+| 3 | Official documentation URLs for model IDs/prices, and provider thinking/usage field names, still need confirmation against provider-native docs |
+| 4 | Human calibration protocol and reviewer assignment are undefined |
+| 5 | The full candidate+judge benchmark run is not authorized until the smoke test passes |
+| 6 | Any future semantic case modification requires an explicit versioned reopening plus Matrix, semantic, and deterministic/judge-boundary review and a new freeze hash |

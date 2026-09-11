@@ -1,10 +1,10 @@
 {
-  "pool_version": "v1-planning-2",
+  "pool_version": "v1-registry-2026-09-11",
   "target_candidate_models": 10,
   "registry_note": "ONE shared model registry. Every entry is a real model entry; a model may be both an evaluated candidate and a judge. There must be no judge-only duplicate of a model that already exists as a candidate. Candidate execution and judge execution are distinct ROLES over the same registry, and their cost and latency metrics are never mixed.",
-  "verification_note": "Planning metadata only. Every model_id below must be verified against provider-native documentation or a live model catalog before any paid run. Model IDs marked unverified are deliberately null rather than guessed. Base URLs are the documented native provider endpoints and must also be confirmed at run time.",
-  "currency_note": "native_price and native_currency are preserved exactly as published by the provider. CNY normalization happens in src/pricing.py and requires an explicit dated FX snapshot when the native currency is not CNY.",
-  "active_pricing_note": "All active V1 pricing is UNRESOLVED. No V1 rate may be inferred from an earlier model tier or from the V0.1 review. See historical_pricing_archive for retired V0.1-era prices, which must never be used for V1 cost reporting.",
+  "verification_note": "Official model IDs for the ten V1 slots were locked on 2026-09-11 from provider-native documentation. Literal provider model IDs are configured and marked verified. Base URLs must still be confirmed for the chosen region at run time; source URLs for model IDs and prices are recorded as labels with URL confirmation pending.",
+  "currency_note": "Native price and native_currency are preserved exactly as published. CNY normalization uses the fixed, dated ECB FX snapshot and never a live floating rate.",
+  "active_pricing_note": "Active V1 pricing is the immutable snapshot data/pricing_snapshot_v1.json (as_of 2026-09-11, deterministic content hash). Retired V0.1-era prices remain in historical_pricing_archive and are never used for V1 cost reporting.",
   "judge_priority": [
     "qwen_flagship",
     "deepseek_flagship",
@@ -48,7 +48,7 @@
         ]
       },
       {
-        "applies_to_model_id": "deepseek-v4-flash",
+        "applies_to_model_id": "deepseek-v4-flash-v0.1-review",
         "model_family": "DeepSeek",
         "product_tier": "value",
         "native_currency": "USD",
@@ -59,15 +59,31 @@
         "snapshot_date": "2026-09-11",
         "source": "DeepSeek API Docs — Models & Pricing",
         "time_of_day": {
-          "off_peak": {"input": 0.22, "output": 0.66},
-          "peak": {"input": 0.44, "output": 1.32},
-          "peak_windows_utc": [[1, 4], [6, 10]],
+          "off_peak": {
+            "input": 0.22,
+            "output": 0.66
+          },
+          "peak": {
+            "input": 0.44,
+            "output": 1.32
+          },
+          "peak_windows_utc": [
+            [
+              1,
+              4
+            ],
+            [
+              6,
+              10
+            ]
+          ],
           "peak_weekdays_only": true,
           "cache_note": "Cache-hit token accounting is not used, so input cost is calculated conservatively with cache-miss pricing."
         },
         "notes": [
           "V0.1-era price carried forward from the 2026-09-11 review.",
-          "Peak hours are 01:00-04:00 and 06:00-10:00 UTC, Monday to Friday."
+          "Peak hours are 01:00-04:00 and 06:00-10:00 UTC, Monday to Friday.",
+          "V0.1-era label renamed in Phase 4B/C to avoid colliding with the V1 model id 'deepseek-v4-flash'; the original V0.1 model id string was 'deepseek-v4-flash'."
         ]
       }
     ]
@@ -81,28 +97,55 @@
       "provider_key": "alibaba_model_studio",
       "product_tier": "flagship",
       "inference_channel": "native",
-      "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
+      "enabled": true,
+      "region": "cn-beijing",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "adaptive",
+        "source": "provider_default",
+        "enable_thinking": true
+      },
+      "model_id": "qwen3.8-max",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "Alibaba Model Studio official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
       "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "api_key_env": "DASHSCOPE_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "enable_thinking": true
+        }
+      },
       "candidate": true,
       "judge_eligible": true,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "USD",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
-        "input": null,
-        "output": null,
+        "source": "Alibaba Cloud Model Studio official model/pricing documentation (China Beijing region)",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "qwen3.8-max",
+        "region": "cn-beijing",
+        "input": 1.65,
+        "output": 4.951,
+        "cached_input": 0.206,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
+        "input_tiers": null,
         "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "notes": [
+          "implicit-cache price"
+        ]
       }
     },
     {
@@ -113,28 +156,55 @@
       "provider_key": "alibaba_model_studio",
       "product_tier": "value",
       "inference_channel": "native",
-      "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
+      "enabled": true,
+      "region": "cn-beijing",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "adaptive",
+        "source": "provider_default",
+        "enable_thinking": true
+      },
+      "model_id": "qwen3.8-flash",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "Alibaba Model Studio official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
       "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "api_key_env": "DASHSCOPE_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "enable_thinking": true
+        }
+      },
       "candidate": true,
       "judge_eligible": false,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "USD",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
-        "input": null,
-        "output": null,
+        "source": "Alibaba Cloud Model Studio official model/pricing documentation (China Beijing region)",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "qwen3.8-flash",
+        "region": "cn-beijing",
+        "input": 0.113,
+        "output": 0.382,
+        "cached_input": 0.014,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
+        "input_tiers": null,
         "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "notes": [
+          "implicit-cache price"
+        ]
       }
     },
     {
@@ -145,28 +215,79 @@
       "provider_key": "deepseek",
       "product_tier": "flagship",
       "inference_channel": "native",
-      "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
+      "enabled": true,
+      "region": "global",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "reasoning_effort": "high",
+        "omit_sampling": true
+      },
+      "model_id": "deepseek-v4-pro",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "DeepSeek official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
       "base_url": "https://api.deepseek.com",
       "api_key_env": "DEEPSEEK_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "reasoning_effort": "high"
+        }
+      },
       "candidate": true,
       "judge_eligible": true,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "USD",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
+        "source": "DeepSeek API official Models & Pricing documentation",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "deepseek-v4-pro",
+        "region": "global",
         "input": null,
         "output": null,
+        "cached_input": null,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
-        "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "input_tiers": null,
+        "time_of_day": {
+          "off_peak": {
+            "cached_input": 0.022,
+            "input": 0.66,
+            "output": 1.98
+          },
+          "peak": {
+            "cached_input": 0.044,
+            "input": 1.32,
+            "output": 3.96
+          },
+          "peak_windows_utc": [
+            [
+              1,
+              4
+            ],
+            [
+              6,
+              10
+            ]
+          ],
+          "peak_weekdays_only": true
+        },
+        "notes": [
+          "Thinking mode: reasoning_effort=high; temperature/top_p are not sent.",
+          "Peak windows are Monday-Friday 01:00-04:00 and 06:00-10:00 UTC; all other periods are off-peak.",
+          "Cost is selected from the request timestamp; peak and off-peak are never averaged."
+        ]
       }
     },
     {
@@ -177,28 +298,79 @@
       "provider_key": "deepseek",
       "product_tier": "value",
       "inference_channel": "native",
-      "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
+      "enabled": true,
+      "region": "global",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "reasoning_effort": "high",
+        "omit_sampling": true
+      },
+      "model_id": "deepseek-v4-flash",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "DeepSeek official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
       "base_url": "https://api.deepseek.com",
       "api_key_env": "DEEPSEEK_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "reasoning_effort": "high"
+        }
+      },
       "candidate": true,
       "judge_eligible": false,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "USD",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
+        "source": "DeepSeek API official Models & Pricing documentation",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "deepseek-v4-flash",
+        "region": "global",
         "input": null,
         "output": null,
+        "cached_input": null,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
-        "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "input_tiers": null,
+        "time_of_day": {
+          "off_peak": {
+            "cached_input": 0.007,
+            "input": 0.22,
+            "output": 0.66
+          },
+          "peak": {
+            "cached_input": 0.014,
+            "input": 0.44,
+            "output": 1.32
+          },
+          "peak_windows_utc": [
+            [
+              1,
+              4
+            ],
+            [
+              6,
+              10
+            ]
+          ],
+          "peak_weekdays_only": true
+        },
+        "notes": [
+          "Thinking mode: reasoning_effort=high; temperature/top_p are not sent.",
+          "Peak windows are Monday-Friday 01:00-04:00 and 06:00-10:00 UTC; all other periods are off-peak.",
+          "Cost is selected from the request timestamp; peak and off-peak are never averaged."
+        ]
       }
     },
     {
@@ -209,28 +381,54 @@
       "provider_key": "moonshot",
       "product_tier": "flagship",
       "inference_channel": "native",
-      "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
-      "base_url": "https://api.moonshot.cn/v1",
+      "enabled": true,
+      "region": "international",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "always",
+        "reasoning_effort": "max"
+      },
+      "model_id": "kimi-k3",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "Moonshot AI official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
+      "base_url": "https://api.moonshot.ai/v1",
       "api_key_env": "MOONSHOT_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "reasoning_effort": "max"
+        }
+      },
       "candidate": true,
       "judge_eligible": false,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "USD",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
-        "input": null,
-        "output": null,
+        "source": "Kimi API (Moonshot) official pricing/model documentation",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "kimi-k3",
+        "region": "international",
+        "input": 3.0,
+        "output": 15.0,
+        "cached_input": 0.3,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
+        "input_tiers": null,
         "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "notes": [
+          "Always-thinking model; reasoning_effort=max. No temperature override is sent."
+        ]
       }
     },
     {
@@ -239,30 +437,55 @@
       "model_family": "Kimi",
       "provider": "Moonshot AI",
       "provider_key": "moonshot",
-      "product_tier": "balanced",
+      "product_tier": "value",
       "inference_channel": "native",
-      "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
-      "base_url": "https://api.moonshot.cn/v1",
+      "enabled": true,
+      "region": "international",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "provider_default_temperature": 1.0,
+        "provider_default_top_p": 0.95
+      },
+      "model_id": "kimi-k2.6",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "Moonshot AI official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
+      "base_url": "https://api.moonshot.ai/v1",
       "api_key_env": "MOONSHOT_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {}
+      },
       "candidate": true,
       "judge_eligible": false,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "USD",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
-        "input": null,
-        "output": null,
+        "source": "Kimi API (Moonshot) official pricing/model documentation",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "kimi-k2.6",
+        "region": "international",
+        "input": 0.95,
+        "output": 4.0,
+        "cached_input": 0.16,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
+        "input_tiers": null,
         "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "notes": [
+          "Thinking enabled; provider default temperature 1.0 and top_p 0.95 are preserved (not overridden)."
+        ]
       }
     },
     {
@@ -273,28 +496,71 @@
       "provider_key": "minimax",
       "product_tier": "flagship",
       "inference_channel": "native",
-      "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
-      "base_url": "https://api.minimax.chat/v1",
+      "enabled": true,
+      "region": "global",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "adaptive",
+        "reasoning_split": true
+      },
+      "model_id": "MiniMax-M3",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "MiniMax official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
+      "base_url": "https://api.minimax.io/v1",
       "api_key_env": "MINIMAX_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {
+          "reasoning_split": true
+        }
+      },
       "candidate": true,
       "judge_eligible": false,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "USD",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
+        "source": "MiniMax official API Pricing + OpenAI SDK documentation",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "MiniMax-M3",
+        "region": "global",
         "input": null,
         "output": null,
+        "cached_input": null,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
+        "input_tiers": [
+          {
+            "label": "context <= 512K",
+            "max_input_tokens": 512000,
+            "input": 0.3,
+            "output": 1.2,
+            "cached_input": 0.06
+          },
+          {
+            "label": "context >512K and <=1M",
+            "max_input_tokens": 1000000,
+            "input": 0.6,
+            "output": 2.4,
+            "cached_input": 0.12
+          }
+        ],
         "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "notes": [
+          "Context-tiered pricing selected from the request input length.",
+          "Official page displays these as the current 'Permanent 50% off' payable rate; list prices are 0.60/2.40/0.12 and 1.20/4.80/0.24.",
+          "The payable current rate is used for V1 cost accounting."
+        ]
       }
     },
     {
@@ -305,28 +571,54 @@
       "provider_key": "zhipu_bigmodel",
       "product_tier": "flagship",
       "inference_channel": "native",
-      "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
-      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "enabled": true,
+      "region": "global",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "source": "provider_default",
+        "preserve_default_sampling": true
+      },
+      "model_id": "glm-5.3",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "Zhipu BigModel official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
+      "base_url": "https://api.z.ai/api/paas/v4",
       "api_key_env": "ZHIPU_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {}
+      },
       "candidate": true,
       "judge_eligible": true,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "USD",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
-        "input": null,
-        "output": null,
+        "source": "Z.AI official Pricing documentation",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "glm-5.3",
+        "region": "global",
+        "input": 1.4,
+        "output": 4.4,
+        "cached_input": 0.26,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
+        "input_tiers": null,
         "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "notes": [
+          "Thinking enabled; provider default sampling preserved (no temperature override).",
+          "Cache storage: limited-time free where supported; no numeric storage rate is recorded."
+        ]
       }
     },
     {
@@ -337,28 +629,54 @@
       "provider_key": "zhipu_bigmodel",
       "product_tier": "value",
       "inference_channel": "native",
-      "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
-      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "enabled": true,
+      "region": "global",
+      "thinking_mode": "enabled",
+      "thinking_config": {
+        "mode": "enabled",
+        "source": "provider_default",
+        "preserve_default_sampling": true
+      },
+      "model_id": "glm-5.3-flash",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "Zhipu BigModel official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
+      "base_url": "https://api.z.ai/api/paas/v4",
       "api_key_env": "ZHIPU_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {}
+      },
       "candidate": true,
       "judge_eligible": false,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "USD",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
-        "input": null,
-        "output": null,
+        "source": "Z.AI official Pricing documentation",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "glm-5.3-flash",
+        "region": "global",
+        "input": 0.15,
+        "output": 0.5,
+        "cached_input": 0.03,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
+        "input_tiers": null,
         "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "notes": [
+          "Thinking enabled; provider default sampling preserved (no temperature override).",
+          "Cache storage: limited-time free where supported; no numeric storage rate is recorded."
+        ]
       }
     },
     {
@@ -369,28 +687,59 @@
       "provider_key": "volcano_ark",
       "product_tier": "flagship",
       "inference_channel": "native",
+      "enabled": true,
+      "region": "cn-beijing",
       "thinking_mode": "provider_default",
-      "model_id": null,
-      "model_id_status": "unverified",
+      "thinking_config": {
+        "mode": "provider_default",
+        "source": "provider_default"
+      },
+      "model_id": "doubao-seed-2-1-pro-260628",
+      "model_id_status": "verified",
+      "model_id_verified_as_of": "2026-09-11",
+      "model_id_source": {
+        "label": "Volcano Ark official model catalog",
+        "url": null,
+        "url_status": "requires_official_verification"
+      },
       "base_url": "https://ark.cn-beijing.volces.com/api/v3",
       "api_key_env": "ARK_API_KEY",
       "wire_api": "chat_completions",
-      "temperature": 0.0,
       "max_output_tokens": 2048,
+      "request_config": {
+        "temperature": null,
+        "top_p": null,
+        "extra_body": {}
+      },
       "candidate": true,
       "judge_eligible": false,
       "pricing": {
-        "status": "unverified",
-        "snapshot_date": null,
-        "native_currency": null,
+        "status": "verified",
+        "snapshot_date": "2026-09-11",
+        "native_currency": "CNY",
         "unit": "per_1m_tokens",
-        "source": null,
-        "applies_to_model_id": null,
-        "input": null,
-        "output": null,
+        "source": "Volcano Engine / Ark official product/model documentation",
+        "source_url": null,
+        "source_url_status": "requires_official_verification",
+        "applies_to_model_id": "doubao-seed-2-1-pro-260628",
+        "region": "cn-beijing",
+        "input": 6.0,
+        "output": 30.0,
+        "cached_input": 1.2,
+        "reasoning": null,
         "input_tier_limit_tokens": null,
+        "input_tiers": null,
         "time_of_day": null,
-        "notes": ["V1 pricing not yet verified for this model."]
+        "notes": [
+          "Provider-default reasoning/sampling preserved; no undocumented reasoning_effort value is sent.",
+          "Cache storage: 0.017 CNY / 1M tokens / hour, counted only if actual execution creates a billable stored cache."
+        ],
+        "cache_storage": {
+          "rate": 0.017,
+          "unit": "CNY per 1M tokens per hour",
+          "counted": false,
+          "note": "count only if a billable stored cache is actually created"
+        }
       }
     }
   ]

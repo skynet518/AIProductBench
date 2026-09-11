@@ -77,17 +77,24 @@ SCORE_MAX = 5
 
 DISPLAY_CURRENCY = "CNY"
 
-# Production FX snapshot. Currency conversion requires an explicit, dated
-# snapshot with a named source. This project never hard-codes a permanent
-# conversion rate and never converts silently: while the rate is null, USD
-# prices simply have no CNY-normalized value.
+# Production FX snapshot — fixed, dated ECB reference-rate snapshot. Currency
+# conversion requires an explicit, dated snapshot with a named source and never
+# uses a live floating rate. The USD/CNY value is derived from the ECB EUR
+# reference rates (USD/CNY = EUR/CNY / EUR/USD). See data/fx_snapshot_v1.json.
 FX_SNAPSHOT = {
-    "status": "unverified",
+    "status": "verified",
+    "snapshot_id": "ecb-2026-09-10-usd-cny",
     "fx_pair": "USD/CNY",
-    "fx_rate": None,
-    "fx_snapshot_date": None,
-    "source": None,
+    "base_currency": "USD",
+    "target_currency": "CNY",
+    "fx_rate": 6.706267217630854,
+    "fx_snapshot_date": "2026-09-10",
+    "as_of": "2026-09-10",
+    "source": "European Central Bank — Euro foreign exchange reference rates",
 }
+
+# Convenience path for the fixed FX snapshot artifact.
+FX_SNAPSHOT_FILE = DATA_DIR / "fx_snapshot_v1.json"
 
 # Synthetic FX snapshot used only by --dry-run so the CNY normalization path is
 # exercised offline. Every dry-run artifact is flagged synthetic and this rate
@@ -95,6 +102,7 @@ FX_SNAPSHOT = {
 SYNTHETIC_FX_SNAPSHOT = {
     "status": "synthetic",
     "synthetic": True,
+    "snapshot_id": "synthetic-dry-run-fx-2026-09-11",
     "fx_pair": "USD/CNY",
     "fx_rate": 7.20,
     "fx_snapshot_date": "2026-09-11",

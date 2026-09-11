@@ -185,16 +185,19 @@ class TestPipelineShape(unittest.TestCase):
 
 
 class TestPaidRunGate(unittest.TestCase):
-    def test_unverified_ids_block_a_paid_run(self):
+    def test_verified_ids_and_pricing_clear_the_model_gate(self):
         pool = runner.load_model_pool()
         blockers = runner.check_ready_for_paid_run(pool)
-        self.assertTrue(blockers)
-        self.assertIn("Unverified model IDs", blockers[0])
+        # No model-ID or pricing blockers remain; credentials are still required.
+        self.assertEqual(blockers, [])
 
     def test_real_call_refuses_an_unverified_model(self):
-        pool = runner.load_model_pool()
-        entry = pool["models"][0]
-        self.assertIsNone(entry["model_id"])
+        entry = {
+            "key": "unverified",
+            "display_name": "Unverified",
+            "model_id": None,
+            "model_id_status": "unverified",
+        }
         with self.assertRaises(providers.ProviderError):
             providers.resolve_model_id(entry)
 

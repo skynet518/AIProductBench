@@ -118,7 +118,7 @@ class TestCnyNormalization(unittest.TestCase):
         self.assertEqual(result["normalized_cost_cny"], 10.0)
 
     def test_usd_without_fx_snapshot_stays_null(self):
-        result = pricing.normalize_to_cny(1.0, "USD", config.FX_SNAPSHOT)
+        result = pricing.normalize_to_cny(1.0, "USD", None)
         self.assertEqual(result["normalization_method"], "unavailable")
         self.assertIsNone(result["normalized_cost_cny"])
         self.assertIn("no FX snapshot configured", result["normalization_note"])
@@ -145,9 +145,10 @@ class TestCnyNormalization(unittest.TestCase):
         result = pricing.normalize_to_cny(None, "USD", self.FX)
         self.assertIsNone(result["normalized_cost_cny"])
 
-    def test_production_fx_snapshot_is_not_configured(self):
-        self.assertIsNone(config.FX_SNAPSHOT["fx_rate"])
-        self.assertEqual(config.FX_SNAPSHOT["status"], "unverified")
+    def test_production_fx_snapshot_is_fixed_and_verified(self):
+        self.assertEqual(config.FX_SNAPSHOT["status"], "verified")
+        self.assertEqual(config.FX_SNAPSHOT["snapshot_id"], "ecb-2026-09-10-usd-cny")
+        self.assertAlmostEqual(config.FX_SNAPSHOT["fx_rate"], 7.7900 / 1.1616, places=12)
 
     def test_synthetic_fx_fixture_is_labelled(self):
         self.assertTrue(config.SYNTHETIC_FX_SNAPSHOT["synthetic"])

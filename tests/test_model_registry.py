@@ -3,7 +3,7 @@
 import copy
 import unittest
 
-from src import models, pricing, runner
+from src import config, models, pricing, runner
 
 
 def minimal_pool() -> dict:
@@ -119,15 +119,13 @@ class TestPricingReset(unittest.TestCase):
     def setUp(self):
         self.pool = runner.load_model_pool()
 
-    def test_no_active_v1_pricing_is_verified(self):
+    def test_all_active_v1_pricing_is_verified(self):
         for entry in self.pool["models"]:
-            self.assertEqual(entry["pricing"]["status"], "unverified", msg=entry["key"])
-
-    def test_no_active_v1_model_carries_numeric_rates(self):
-        for entry in self.pool["models"]:
-            self.assertIsNone(entry["pricing"]["input"], msg=entry["key"])
-            self.assertIsNone(entry["pricing"]["output"], msg=entry["key"])
-            self.assertIsNone(entry["pricing"]["native_currency"], msg=entry["key"])
+            with self.subTest(model=entry["key"]):
+                self.assertEqual(entry["pricing"]["status"], "verified")
+                self.assertEqual(entry["pricing"]["snapshot_date"], "2026-09-11")
+                self.assertIsNotNone(entry["pricing"]["native_currency"])
+                self.assertTrue(models.pricing_has_rates(entry["pricing"]))
 
     def test_historical_archive_exists_and_is_inactive(self):
         archive = models.historical_pricing(self.pool)
@@ -139,7 +137,11 @@ class TestPricingReset(unittest.TestCase):
         archived_ids = models.archived_pricing_model_ids(self.pool)
         self.assertEqual(
             archived_ids,
-            {"qwen3.7-flash-2026-07-15", "qwen3.7-max-2026-05-20", "deepseek-v4-flash"},
+            {
+                "qwen3.7-flash-2026-07-15",
+                "qwen3.7-max-2026-05-20",
+                "deepseek-v4-flash-v0.1-review",
+            },
         )
         active_ids = {entry.get("model_id") for entry in self.pool["models"]}
         self.assertEqual(archived_ids & active_ids, set())
@@ -198,18 +200,19 @@ class TestPricingReset(unittest.TestCase):
         errors = models.validate_model_pool(pool)["errors"]
         self.assertTrue(any("unverified model ID" in error for error in errors), msg=errors)
 
-    def test_unresolved_pricing_blocks_a_paid_run(self):
-        blockers = runner.check_ready_for_paid_run(self.pool)
-        self.assertTrue(any("Unresolved active V1 pricing" in item for item in blockers))
+    def test_no_pricing_or_model_id_blockers_remain(self):
+        self.assertEqual(runner.check_ready_for_paid_run(self.pool), [])
 
-    def test_no_model_is_priced_in_the_configured_pool(self):
-        self.assertEqual(models.priced_models(self.pool), [])
+    def test_every_model_is_priced(self):
+        self.assertEqual(len(models.priced_models(self.pool)), 10)
 
-    def test_cost_estimation_reports_unpriced_not_zero(self):
-        result = pricing.price_call(self.pool["models"][0], 1000, 500, fx_snapshot=None)
-        self.assertIsNone(result["native_cost"])
-        self.assertIsNone(result["normalized_cost_cny"])
-        self.assertIsNotNone(result["cost_error"])
+    def test_cost_estimation_is_numeric(self):
+        result = pricing.price_call(
+            self.pool["models"][0], 1000, 500, fx_snapshot=config.FX_SNAPSHOT
+        )
+        self.assertIsNotNone(result["native_cost"])
+        self.assertIsNotNone(result["normalized_cost_cny"])
+        self.assertIsNone(result["cost_error"])
 
     def test_documentation_snapshot_records_archived_pricing_as_unused(self):
         document = runner.run_benchmark(

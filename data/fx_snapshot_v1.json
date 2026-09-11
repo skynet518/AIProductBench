@@ -1,0 +1,22 @@
+{
+  "status": "verified",
+  "snapshot_id": "ecb-2026-09-10-usd-cny",
+  "fx_pair": "USD/CNY",
+  "base_currency": "USD",
+  "target_currency": "CNY",
+  "fx_rate": 6.706267217630854,
+  "fx_snapshot_date": "2026-09-10",
+  "as_of": "2026-09-10",
+  "source": "European Central Bank — Euro foreign exchange reference rates",
+  "source_url": null,
+  "source_url_status": "requires_official_verification",
+  "derivation": {
+    "eur_usd": 1.1616,
+    "eur_cny": 7.79,
+    "formula": "USD/CNY = EUR/CNY / EUR/USD",
+    "as_of": "2026-09-10"
+  },
+  "native_cny_rate": 1.0,
+  "note": "Fixed V1 FX snapshot. No live floating FX rate is used during the V1 benchmark.",
+  "content_sha256": "509def0d5c36934d0556a3af16261bca0fc5436cb366821b830c3472841477a0"
+}

@@ -320,6 +320,7 @@ def _evaluate_one(
             "output_tokens": call["output_tokens"],
             "total_tokens": call["total_tokens"],
             "reasoning_tokens": call.get("reasoning_tokens"),
+            "cached_input_tokens": call.get("cached_input_tokens"),
             "latency_ms": call["latency_ms"],
             "native_cost": call["native_cost"],
             "native_currency": call["native_currency"],

@@ -58,23 +58,47 @@ def _endpoint(model: dict) -> str:
     return f"{base_url}/chat/completions"
 
 
+def effective_request_config(model: dict) -> dict:
+    """The effective request configuration recorded in run artifacts.
+
+    There is no universal temperature override: sampling parameters are sent
+    only when a model's `request_config` explicitly specifies them, so every
+    model keeps its provider-default/recommended reasoning behavior.
+    """
+    config_block = model.get("request_config") or {}
+    return {
+        "temperature": config_block.get("temperature"),
+        "top_p": config_block.get("top_p"),
+        "max_output_tokens": config_block.get("max_output_tokens")
+        or model.get("max_output_tokens", 2048),
+        "extra_body": dict(config_block.get("extra_body") or {}),
+    }
+
+
 def _build_payload(model: dict, messages: list[dict]) -> dict:
+    config_block = effective_request_config(model)
     if model["wire_api"] == "responses":
-        return {
+        payload = {
             "model": resolve_model_id(model),
             "input": [
                 {"role": message["role"], "content": message["content"]}
                 for message in messages
             ],
-            "max_output_tokens": model["max_output_tokens"],
-            "temperature": model["temperature"],
+            "max_output_tokens": config_block["max_output_tokens"],
         }
-    return {
-        "model": resolve_model_id(model),
-        "messages": messages,
-        "max_tokens": model["max_output_tokens"],
-        "temperature": model["temperature"],
-    }
+    else:
+        payload = {
+            "model": resolve_model_id(model),
+            "messages": messages,
+            "max_tokens": config_block["max_output_tokens"],
+        }
+    if config_block["temperature"] is not None:
+        payload["temperature"] = config_block["temperature"]
+    if config_block["top_p"] is not None:
+        payload["top_p"] = config_block["top_p"]
+    for key, value in config_block["extra_body"].items():
+        payload[key] = value
+    return payload
 
 
 def _extract_text_and_usage(data: dict, wire_api: str) -> tuple[str, dict]:
@@ -88,11 +112,13 @@ def _extract_text_and_usage(data: dict, wire_api: str) -> tuple[str, dict]:
                     parts.append(chunk.get("text") or "")
         usage = data.get("usage") or {}
         details = usage.get("output_tokens_details") or {}
+        input_details = usage.get("input_tokens_details") or {}
         return "".join(parts).strip(), {
             "input_tokens": usage.get("input_tokens"),
             "output_tokens": usage.get("output_tokens"),
             "total_tokens": usage.get("total_tokens"),
             "reasoning_tokens": details.get("reasoning_tokens"),
+            "cached_input_tokens": input_details.get("cached_tokens"),
         }
 
     text = ""
@@ -102,11 +128,13 @@ def _extract_text_and_usage(data: dict, wire_api: str) -> tuple[str, dict]:
         text = (message.get("content") or "").strip()
     usage = data.get("usage") or {}
     details = usage.get("completion_tokens_details") or {}
+    prompt_details = usage.get("prompt_tokens_details") or {}
     return text, {
         "input_tokens": usage.get("prompt_tokens"),
         "output_tokens": usage.get("completion_tokens"),
         "total_tokens": usage.get("total_tokens"),
         "reasoning_tokens": details.get("reasoning_tokens"),
+        "cached_input_tokens": prompt_details.get("cached_tokens"),
     }
 
 
@@ -170,6 +198,7 @@ def chat(
                             model,
                             usage["input_tokens"],
                             usage["output_tokens"],
+                            cached_input_tokens=usage.get("cached_input_tokens"),
                             at=called_at,
                             fx_snapshot=fx_snapshot,
                         )
@@ -240,6 +269,7 @@ def synthetic_call(
         "output_tokens": output_tokens,
         "total_tokens": input_tokens + output_tokens,
         "reasoning_tokens": reasoning_tokens,
+        "cached_input_tokens": None,
         "attempts": 1,
         "synthetic": True,
         "error": None,

@@ -1393,3 +1393,103 @@ verify model IDs, pricing, an FX snapshot, or credentials, and it does not
 authorize a paid run. No live paid benchmark has been authorized. Model,
 provider, pricing, and judge work may proceed without changing the frozen case
 set; frozen production cases must not be modified by provider/runtime work.
+
+---
+
+## D-050 — Phase 4A readiness: extend the registry contract and audit live-readiness offline
+**Date:** 2026-09-11
+
+**Decision.** Phase 4A (Live Benchmark Readiness) began with a read-only audit of
+the model registry, provider adapter, pricing/FX architecture, judge mapping,
+incomplete-model handling, and run-manifest shape (`docs/PHASE4A_READINESS_AUDIT.md`).
+No network/provider/model call was made, and the frozen 50-case dataset was not
+touched (semantic manifest SHA-256 unchanged:
+`6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`).
+
+**Registry contract extension (backward-compatible).** The registry could not yet
+represent the full Phase 4A contract, so four optional/additive fields were added:
+`enabled`, `thinking_config`, and `model_id_verified_as_of` per model, plus
+`reasoning` and `cached_input` per pricing block. All default to `true`/`null`
+and no existing consumer changes. `src/models.py` validates them when present
+(and requires `model_id_verified_as_of` once a model is marked verified).
+`config.FX_SNAPSHOT` / `SYNTHETIC_FX_SNAPSHOT` gained a `snapshot_id`. New offline
+validators `pricing.validate_fx_snapshot` and `pricing.validate_pricing_snapshot`
+pin the snapshot contracts. **No literal model ID and no price was filled in.**
+
+**Verified compliant (no change needed).** Judge selection reproduces the frozen
+cross-family mapping exactly (Qwen→DeepSeek+GLM; DeepSeek→Qwen+GLM;
+Kimi/MiniMax/GLM/Doubao→Qwen+DeepSeek), with no same-family judge, exactly two
+judges, and judge-unavailable when fewer than two eligible judges remain.
+Incomplete-model accounting already suppresses normalized/comparative metrics and
+official ranking while retaining raw spend, calls, cases, tokens, and latency
+diagnostics.
+
+**Identified gaps (not implemented in this phase).** The run document lacks
+`dataset_manifest_hash`, `git_commit`, a registry-snapshot ID, `pricing_snapshot_id`,
+`fx_snapshot_id`, an explicit `start_time`, and an environment/runtime-version
+block; `thinking_config` is in the registry but not yet echoed into per-candidate
+run records. These are documented design items for the next Phase 4 step, not a
+broad redesign.
+
+**Scope.** Still no verified model ID, no verified price, no FX snapshot, and no
+provider credentials; no paid/live call is authorized. Model, provider, pricing,
+and judge work may proceed without changing the frozen case set.
+
+---
+
+## D-051 — Phase 4B/C: lock official model IDs, pricing, FX, and execution config offline
+**Date:** 2026-09-11
+
+**Decision.** The ten logical V1 slots are locked to verified literal provider
+model IDs (`as_of` 2026-09-11): `qwen3.8-max` / `qwen3.8-flash` (Qwen, China
+Beijing), `deepseek-v4-pro` / `deepseek-v4-flash` (DeepSeek), `kimi-k3` /
+`kimi-k2.6` (Kimi/Moonshot), `MiniMax-M3`, `glm-5.3` / `glm-5.3-flash` (Z.AI),
+`doubao-seed-2-1-pro-260628` (Volcano Ark). **Kimi flagship is `kimi-k3`; Kimi
+value is `kimi-k2.6`.** Endpoints: Qwen
+`https://dashscope.aliyuncs.com/compatible-mode/v1` (Beijing — must stay paired
+with Beijing pricing), DeepSeek `https://api.deepseek.com`, Kimi
+`https://api.moonshot.ai/v1`, MiniMax `https://api.minimax.io/v1`, GLM
+`https://api.z.ai/api/paas/v4`, Doubao
+`https://ark.cn-beijing.volces.com/api/v3`. No eleventh model was added.
+
+**No universal temperature override.** The global `temperature = 0.0` requirement
+was removed from the registry schema, validator, and provider adapter. Sampling
+is sent only when a model's `request_config` explicitly specifies it, so every
+model keeps provider-default/recommended reasoning behavior: Qwen thinking via
+`enable_thinking`; DeepSeek `reasoning_effort=high` with no temperature/top_p;
+Kimi K3 `reasoning_effort=max`, Kimi K2.6 preserves provider defaults (temp 1.0 /
+top_p 0.95); MiniMax adaptive with `reasoning_split=true`; GLM provider-default
+sampling; Doubao provider defaults (no invented `reasoning_effort`). Effective
+request config is inspectable and recorded per candidate in the run manifest.
+
+**Immutable snapshots.** Pricing snapshot `v1-pricing-2026-09-11` (`as_of`
+2026-09-11, content SHA-256
+`3d03267601e2978f664408543dd97094f0c2bb3c1284958951915662af3ce1b6`), with native
+prices (USD except Doubao CNY), DeepSeek peak/off-peak tiers selected from the
+request timestamp (never averaged), MiniMax context tiers using the current
+payable rate, GLM cached-input as limited-time free, and Doubao cache storage
+recorded but uncounted unless a stored cache is created. Fixed FX snapshot
+`ecb-2026-09-10-usd-cny` (ECB EUR/USD 1.1616, EUR/CNY 7.7900 → USD/CNY
+`6.706267217630854`). Registry snapshot `v1-registry-2026-09-11` (content SHA-256
+`5a0175a3e1879ec5f7cdfcd0fbc46a1ab7b838602ad536f7a552dd67f8c01970`, no
+credentials).
+
+**Run manifest gaps closed.** The run document now records
+`dataset_manifest_hash`, `git_commit`, registry/pricing/FX snapshot ids + hashes,
+`judge_config_snapshot_id`, `start_time`, and a runtime/environment block, plus
+per-candidate logical/provider ids, thinking/request config, pricing record,
+case counts, judge availability, input/output/reasoning/cached tokens, native
+and CNY spend, and latency diagnostics. Usage normalization reads cached-input
+tokens only when the provider exposes them and returns null otherwise.
+
+**Historical archive.** The retired V0.1 entry previously labelled
+`deepseek-v4-flash` was relabelled `deepseek-v4-flash-v0.1-review` (original id
+preserved in its notes) so it cannot collide with the V1 model id
+`deepseek-v4-flash`; its retired prices are unchanged and remain excluded from V1
+cost.
+
+**Scope.** No live/provider/model/network call was made. Model IDs are verified
+and pricing is resolved, but provider credentials are still absent, official
+source URLs still need confirmation, and no paid-run authorization has been
+given. The next step is a controlled live smoke test; the full candidate+judge
+benchmark run is **not** authorized. The frozen 50-case dataset is unchanged.
