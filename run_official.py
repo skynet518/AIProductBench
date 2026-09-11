@@ -1549,7 +1549,6 @@ def write_official_artifacts(
         "started_at": started_at.isoformat(timespec="seconds"),
         "finished_at": finished_at.isoformat(timespec="seconds"),
         "elapsed_seconds": round((finished_at - started_at).total_seconds(), 1),
-        "git_commit": document["run_manifest"].get("git_commit"),
         "dataset_name": document["dataset"].get("name"),
         "dataset_version": document["dataset"].get("version"),
         "dataset_manifest_sha256": document["dataset"]["semantic_manifest_sha256"],
