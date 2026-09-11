@@ -91,6 +91,10 @@ class TestCanonicalIfAnswers(unittest.TestCase):
         for case_id, answer in CANONICAL_ANSWERS.items():
             with self.subTest(case=case_id):
                 result = deterministic.evaluate(self.cases[case_id], answer)
+                if result["checks_total"] == 0:
+                    # Matrix-approved judge-only None case (IF-06): no checks to pass.
+                    self.assertIsNone(result["all_passed"])
+                    continue
                 self.assertTrue(
                     result["all_passed"],
                     msg=f"{case_id} failed: "
@@ -104,7 +108,6 @@ class TestCanonicalIfAnswers(unittest.TestCase):
     def test_revised_cases_declare_the_new_operators(self):
         expected = {
             "IF-03": "section_max_chars",
-            "IF-06": "section_max_chars",
             "IF-07": "exact_keys",
             "IF-09": "section_bullet_count",
         }
@@ -115,6 +118,13 @@ class TestCanonicalIfAnswers(unittest.TestCase):
                     for check in self.cases[case_id].get("deterministic_checks", [])
                 }
                 self.assertIn(operator, types)
+
+    def test_if06_is_the_matrix_approved_none_case(self):
+        # Phase 3B-5R: IF-06 is a Matrix-approved judge-only None case.
+        self.assertEqual(self.cases["IF-06"]["deterministic_checks"], [])
+        self.assertEqual(self.cases["IF-06"]["difficulty"], "medium")
+        self.assertEqual(self.cases["IF-06"]["language"], "zh")
+        self.assertEqual(self.cases["IF-06"]["title"], "冲突指令的优先级判定")
 
 
 @unittest.skipUnless(PRODUCTION_CASES.exists(), "production dataset not present")

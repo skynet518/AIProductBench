@@ -46,7 +46,7 @@ IF_HASHES = {
     "IF-03": "4ffdb8a5d38c69bd3ffe0084e4aecce8b341a8e6c3f9d590c4874d23cff0cda6",
     "IF-04": "7e0b437784f4b860af27305165127b7f68f1f17095dcbe7d35983c5b11d86093",
     "IF-05": "af25073bc306f2290823734358ec14d66adaa84775099bf4c2a9cf3ed967d8e1",
-    "IF-06": "2af24750bc1e56ed1b620ba6f43ae6d906cc1e3dc37fd9c3115b5c3ceee60831",
+    "IF-06": "8f352b868579b7fb07b7ec0224c11d6bbfa72a967312d00a80eb3cbb9c528a03",
     "IF-07": "a2c1a628aa486fdbd2462127fff2a320e3aebdbf28169163c5f2488cc0fae37f",
     "IF-08": "d71bcad2e3957e0512cf54b421fe64f7763a1c44cc0d3a3a74d9cc6275f0c784",
     "IF-09": "dcd60f3b9db0a45fba661573874bbb71167c17e7f2eeb305143f67e99d241764",
@@ -159,9 +159,13 @@ class TestSaDomainShape(unittest.TestCase):
         self.assertEqual(ids[10:20], SA_IDS)
         self.assertEqual(len(ids), len(set(ids)))
 
-    def test_no_aw_production_cases(self):
+    def test_all_five_domains_are_authored(self):
         ids = [c["id"] for c in self.doc["test_cases"]]
-        self.assertFalse([i for i in ids if i.startswith("AW-")], msg=ids)
+        for prefix in ("IF", "SA", "PR", "BC", "AW"):
+            with self.subTest(prefix=prefix):
+                self.assertEqual(
+                    len([i for i in ids if i.startswith(prefix + "-")]), 10
+                )
 
     def test_sa_cases_are_all_structured_information_analysis(self):
         for cid in SA_IDS:
@@ -182,8 +186,8 @@ class TestSaDomainShape(unittest.TestCase):
         self.assertEqual(got.count("en"), 3)
         self.assertEqual(got.count("mixed"), 0)
 
-    def test_production_status_is_still_authoring(self):
-        self.assertEqual(self.doc["production_status"], "authoring")
+    def test_production_status_is_complete(self):
+        self.assertEqual(self.doc["production_status"], "complete")
 
     def test_sa_cases_introduce_no_extra_case_metadata(self):
         for cid in SA_IDS:

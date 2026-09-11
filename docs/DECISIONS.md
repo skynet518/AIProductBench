@@ -1250,3 +1250,146 @@ anti-stereotype regression test.
 authored, the 50-case dataset is not approved, and no live paid benchmark is
 authorized. Production case semantics remain externally authored; execution
 agents integrate canonical definitions and do not author or redesign them.
+
+---
+
+## D-047 — Integrate Domain 5 (Agent Workflow Planning) from approved Matrix slots
+**Date:** 2026-09-11
+
+**Decision.** Phase 3B-5 integrated the externally authored canonical
+AW-01 … AW-10 into `data/cases_v1.json`, completing **all 50 of 50 authored
+production slots**. Domain 5 was authored from the APPROVED
+`CASE_MATRIX_V1.md` Domain-5 slots (2 easy / 5 medium / 3 hard; 7 zh / 1 en /
+2 mixed; 2 Strong / 3 Partial / 5 None). AW is **AUTHORED — MATRIX + SEMANTIC
+EXTERNAL REVIEW PENDING**; it is not approved or frozen.
+
+**Planning only.** The AW domain is a planning benchmark: it evaluates
+decomposition, tool selection, dependency ordering, retry safety, permission
+boundaries, approval gates, parallelism, data contracts, stopping/budgets, and
+missing-input escalation. It performs **no real tool execution, no code task, no
+multi-agent implementation, and no network/model/API call**.
+
+**Key semantic invariants.**
+
+- **AW-04** retry handling is **side-effect-aware** (safe read vs. write with
+  uncertain completion vs. customer-visible send) and does **not** assume a
+  universal retry count; retry-count appropriateness remains judge-evaluated.
+- **AW-05** separates technical tool availability from business **authority**;
+  the boundary is judged by consequence and permission, not by a keyword
+  classifier.
+- **AW-08** tests explicit inter-tool **data contracts** (8 fields plus
+  validation and mismatch handling).
+- **AW-09** tests **termination and budget** discipline (call/time/cost budgets,
+  information gain, conflict escalation).
+- **AW-10** tests **stop-and-escalate** behaviour when a required input is
+  missing, rather than guessing defaults.
+- **AW-02, AW-05, AW-07, AW-09, AW-10** intentionally remain judge-only.
+
+**Recorded divergence (not fixed here).** `CASE_MATRIX_V1.md` lists IF-06 as a
+deterministic "None" slot, but the frozen IF-06 approved in Phase 3B-1.2 carries
+four structural checks, so it realizes as a Partial. The dataset therefore has
+**10** `[]` cases rather than the Matrix's planned 11. This is a pre-existing
+IF-domain artifact; frozen IF semantics were not edited in this phase. The
+discrepancy is recorded in `docs/DATASET_QA_V1.md`.
+
+**Scope.** No domain is approved by this decision beyond what was already
+approved (Domains 1–4). AW awaits external Matrix + Semantic review; the 50-case
+dataset is not production-frozen and no live paid benchmark is authorized.
+Production case semantics remain externally authored; execution agents
+integrate canonical definitions and do not author or redesign them.
+
+---
+
+## D-048 — Correct D-047's detected defect: restore IF-06 to the approved None contract
+**Date:** 2026-09-11
+
+**Decision.** The Phase 3B-5 audit's **14 Strong / 26 Partial / 10 None** realized
+distribution was a **detected defect, not a new approved benchmark design.**
+`CASE_MATRIX_V1.md` remains **upstream-authoritative** for deterministic-plan
+identity. IF-06 must be **None**, exactly as approved by the Phase 3A.1
+deterministic-quality audit (which changed IF-06 Partial → None because correct
+conflict resolution is judged from which instruction wins, whether the output
+follows the winner, and whether the stated precedence basis is correct, rather
+than from mechanical proxy evidence).
+
+**Repair.** Phase 3B-5R replaced IF-06 with the externally authored canonical
+object whose `deterministic_checks == []` (Matrix-approved judge-only None
+case). IF-06's prompt, evaluation criteria, reference facts, difficulty,
+language, and title are unchanged; the other 49 production cases were not
+modified. This restores the approved **14 Strong / 25 Partial / 11 None**
+distribution (IF 4/5/1, SA 5/5/0, PR 0/8/2, BC 3/4/3, AW 2/3/5). **No Matrix
+amendment was made** — the data was repaired to match the Matrix.
+
+**Frozen status is not absolute.** This repair establishes that a **frozen
+status does not prevent reopening a case when a higher-level specification
+violation is discovered.** Domain 1 was reopened solely for this IF-06
+deterministic-plan repair and remains
+**REOPENED — IF-06 MATRIX COMPLIANCE EXTERNAL RE-REVIEW PENDING**; IF-06 is
+**REVISED — MATRIX COMPLIANCE EXTERNAL RE-REVIEW PENDING**. Domain 5 (AW) remains
+**AUTHORED — MATRIX + SEMANTIC EXTERNAL REVIEW PENDING**.
+
+**Forward requirement.** **All future final dataset gates must compare the
+realized deterministic level of each case against `CASE_MATRIX_V1.md`, not only
+validate that checker declarations are well-formed.** Declaration validation
+alone cannot catch a case whose realized deterministic strength drifted from its
+approved slot. `tests/test_aw_cases.py` now covers per-domain and global
+deterministic distributions against the Matrix.
+
+**Scope.** No benchmark design change, no Matrix change, and no live paid
+benchmark authorization. Production case semantics remain externally authored;
+execution agents integrate canonical definitions and do not author or redesign
+them.
+
+---
+
+## D-049 — Final V1 production dataset freeze (50 cases)
+**Date:** 2026-09-11
+
+**Decision.** AIProductBench CN V1 production case authoring is **complete**.
+All 50 Matrix slots are authored across the five domains (10 each); all five
+domains passed Matrix + Semantic review, with the deterministic/judge boundary
+audited separately. The full 50-case dataset passed the Matrix, Semantic,
+Deterministic-contract, and global coverage/invariant Gates with
+**50 PASS / 0 PATCH / 0 REJECT**, and is **FROZEN / EXTERNALLY APPROVED** for
+production. `data/cases_v1.json` `production_status` is set to the
+already-supported production-ready value `"complete"` (no schema change).
+
+**Final distributions.** Deterministic level **14 Strong / 25 Partial / 11
+None**; language **40 zh / 6 en / 4 mixed**; difficulty **10 easy / 25 medium /
+15 hard**; 50 cases, 10 per domain; 21 deterministic operators (unchanged, no
+runtime change). The eleven None cases are IF-06, BC-03, BC-06, BC-09, PR-06,
+PR-08, AW-02, AW-05, AW-07, AW-09, AW-10 (each `deterministic_checks == []`).
+
+**Repairs folded into the freeze.** The IF-06 historical deterministic-plan
+drift was repaired to the upstream Matrix None contract (Phase 3B-5R), and the
+AW-03 (unique-label execution plan; A/B/C one parallel batch; letters-only
+critical path) and AW-04 (digits-only retry-budget cell; no universal retry
+count) deterministic contracts were repaired before freeze (Phase 3B-5.1).
+
+**Immutable baseline.** The 50-case semantic freeze manifest
+(`docs/DATASET_FREEZE_V1.md`) is now the **immutable V1 case baseline**;
+aggregate SHA-256 `6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`.
+`tests/test_dataset_freeze.py` permanently pins the manifest, per-case hashes,
+Matrix slot identity, global distributions, and the deterministic/judge
+boundary.
+
+**Any future semantic case modification requires**, in order:
+
+1. an **explicit versioned reopening** (a new dataset version);
+2. **Matrix compliance review** against the upstream `CASE_MATRIX_V1.md`;
+3. **semantic review**;
+4. **deterministic / judge-boundary review**;
+5. a **new freeze hash**.
+
+**Known documentation-level divergence (recorded, not a blocker).** 43 of the 50
+frozen case titles equal the `CASE_MATRIX_V1.md` working titles; seven frozen
+IF/SA cases (IF-01, IF-02, IF-04, IF-09, IF-10, SA-01, SA-08) carry their own
+externally approved display titles. Identifiers, domains, difficulty, language,
+and deterministic level match the Matrix for all 50 cases. Frozen case titles
+were **not** edited in this checkpoint.
+
+**Scope.** This decision freezes the **production case set only**. It does not
+verify model IDs, pricing, an FX snapshot, or credentials, and it does not
+authorize a paid run. No live paid benchmark has been authorized. Model,
+provider, pricing, and judge work may proceed without changing the frozen case
+set; frozen production cases must not be modified by provider/runtime work.

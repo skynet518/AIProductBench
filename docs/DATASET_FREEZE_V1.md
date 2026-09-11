@@ -1,0 +1,89 @@
+# AIProductBench CN V1 — Semantic Freeze Manifest
+
+**Status: FROZEN / EXTERNALLY APPROVED.** All 50 production cases across the five
+frozen domains are externally approved and frozen. This manifest is
+integrity metadata only; it does not modify production semantics.
+
+## Hash convention
+
+1. Serialize each individual case object as canonical JSON: UTF-8, keys sorted,
+   no insignificant whitespace (`separators=(",", ":")`), Unicode preserved
+   (`ensure_ascii=False`).
+2. SHA-256 the canonical case object (lowercase hex digest).
+3. Sort entries by case ID.
+4. Line format: `<case_id> <case_sha256>`.
+5. Concatenate all 50 lines with newline terminators (the fenced block below).
+6. SHA-256 the resulting manifest text.
+
+## Aggregate manifest SHA-256
+
+`6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`
+
+## Manifest
+
+```text
+AW-01 5128c47010d81f8b4191902b42aaac304bd038ad1aeda3b15698c8001d1e5006
+AW-02 c746b7a138a237e30f6ca3627a7d17634d182e4ee434d46008c7f17f0e46fd76
+AW-03 9c0df84b15713fe387d98b3440dd3a5497c3bf038f47afb13d0bb23301fb2ae8
+AW-04 a2e3fc02dff2ce90a04878b07ff386fa78da6c512ccbb4042bf0ffa367d236cc
+AW-05 b14a86cf076289132b091df293b07e1cbf002d9c4dee3a030071195b343a8dee
+AW-06 3394661e220e07c1fc4af70147657117d863206b51682f0707dfdcd4c366284e
+AW-07 138f0a2190bacb8fff7c4cadbd03380591d6be23d3a9b9a2526600c822269385
+AW-08 d4c3b9120f6db94d54cf571d439ccea5bf56510868c88d254fcc5da2f83f675e
+AW-09 8be9f6785ae6ba5fec0d23606b97c4f71f63d0d32ac2efe5c95728501223630d
+AW-10 449ca27424abe8b8b825f538b67de20928b1d5e80b77b5b6a31df75dce1c73a7
+BC-01 2843e5026057fe3bb45276c1a5a91748526e63c58298c56fa0943b271c193bb8
+BC-02 3f53489613f9d3f07120bdd42393eea28a371b3bb8021a40b7668e61056f51a4
+BC-03 559e63032587702dc708573a8adf9e0907079f3b575451ebe44d00fb78e795d0
+BC-04 b67342f3629e268d2e19d0c176e6e06933f48989c6cbe2ba3c5449878e7aeb70
+BC-05 af3cc685811f2cc29775e89bf099f07953f617ec588764ee7bb2f56050fdbf83
+BC-06 be7f12b37c5138668341fd3d14af18e737034e2287d9f01439a49f2569004e42
+BC-07 a1c0aac7c2faca651b0d76ebcef999e80c75804865f5952433129cb6278b6ff6
+BC-08 3ab2abc60d9a88285f209d4e6bd61d8cf2159ea85946cc8dfecb24cb0db4c588
+BC-09 6445c219fc6235b54149437e1df1caaf9ff04c4973a172d4f13bad936c485fbc
+BC-10 07a1c7d287a311e41bf5448af8dac238e30af13a81ccafef8db1e011b6d5fc38
+IF-01 397de71403b07772180656167846d1cd32df02d8f6b7c0d887c3e2f65619ce01
+IF-02 8e87960276d118cd4222d7094b19eccaf343efd5f051dd4142b2b0901167e547
+IF-03 4ffdb8a5d38c69bd3ffe0084e4aecce8b341a8e6c3f9d590c4874d23cff0cda6
+IF-04 7e0b437784f4b860af27305165127b7f68f1f17095dcbe7d35983c5b11d86093
+IF-05 af25073bc306f2290823734358ec14d66adaa84775099bf4c2a9cf3ed967d8e1
+IF-06 8f352b868579b7fb07b7ec0224c11d6bbfa72a967312d00a80eb3cbb9c528a03
+IF-07 a2c1a628aa486fdbd2462127fff2a320e3aebdbf28169163c5f2488cc0fae37f
+IF-08 d71bcad2e3957e0512cf54b421fe64f7763a1c44cc0d3a3a74d9cc6275f0c784
+IF-09 dcd60f3b9db0a45fba661573874bbb71167c17e7f2eeb305143f67e99d241764
+IF-10 eca2fb4aef1e42c827f367fe98aa2294f35003c09e369860306bfad222f36e3c
+PR-01 326c756e1997c22ec2a5c4fa8ddba58e90748c5204e34527f1fa37dfb526fc28
+PR-02 50f6ffa58c3b985e6d38bb7e7524b0031c6c2a908cd524de4fe8670ab2648b52
+PR-03 d13cbde921ecf69f982fb11247c2db2da35db14f3f7699b57a9d61f0f4ace8a7
+PR-04 76a9a3eb460f3677e53e3ec5f100a74165985ef80bef3e7517a1fdaaa73fcc1d
+PR-05 baa75c94343a96e75a46ec3a57e07f4bbbcf900b97bbb123b88739c52453d87d
+PR-06 a345e0443c806d3038bc0e87c208126eebb7b09408e53ad4c3410853341a05dc
+PR-07 2efac9943de42077c203e6fe1e6b083d84bf04df2e40dc728ab5ac7c24dd8e8f
+PR-08 3585f357fdbec171e0a3af0d06a585415dd7825704b027b1ae5f3775feef1d9c
+PR-09 008889e3a090c538221b32740bac61c52b2080e08b27804331fff30b4fd29f8b
+PR-10 24a56be7f26bbd3ccbf07031e8f5deb05297846c03f339e86bcc28e5f9a1c3d4
+SA-01 4bb16b8508964d9df9467eccf928c699ca493cd966dfdc90d4cb503d0738219b
+SA-02 f6ed058cbae1b156d88566050fe01a512200aeb5845ebd6a6ba2784bc1122001
+SA-03 d300a4f94574b0da311eb4ae8314b05e9c7db1b9621806d65fbb74444f7a65c5
+SA-04 8e1e5492e22817603887a02eb60e5ce1163bd35595e19cb47ae0e36eb7db8a4e
+SA-05 8c58d5d0035582e6b9413468ec88a2a6cd3bee548129327a301cada51d0ad206
+SA-06 2071cbcdc5c456d0fcd64a21671657af4e9aea544dbaaf6634170d6742deede4
+SA-07 aa2ef061e0dc06cf5d9315b5a1fc64c99a4c11eb28ed2e5e7db79e5247a5ba8d
+SA-08 1095a804dda62c1c2c8f758c0832adad2fc2f10b280938f262925b6e53606d59
+SA-09 2aa230ce084ba2ff597903b376888b4f34f5de1ea2964191799143aeda86a5fd
+SA-10 91a33fea8b0d1c678c4a41a518758c3781887b435ea6af8f8161aa4910d50e91
+```
+
+## Notes
+
+- The frozen case set is the immutable V1 case baseline. Any future semantic
+  case modification requires an explicit versioned reopening plus Matrix,
+  semantic, and deterministic/judge-boundary review, producing a new freeze
+  hash.
+- Model/provider/pricing/judge work may proceed without changing these cases.
+- `docs/CASE_MATRIX_V1.md` remains the upstream authority for slot identity and
+  deterministic-opportunity level. Per-case matrix titles are the *working*
+  titles; seven frozen IF/SA cases carry their own approved display titles that
+  differ in wording from the Matrix working titles (IF-01, IF-02, IF-04, IF-09,
+  IF-10, SA-01, SA-08). Identifiers, domains, difficulty, language, and
+  deterministic level all match the Matrix for all 50 cases.

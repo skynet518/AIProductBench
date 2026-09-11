@@ -1,10 +1,12 @@
 # AIProductBench CN V1 — Dataset QA Ledger
 
-**Status: Domains 1–4 (`instruction_constraint_following`,
+**Status: all five domains (`instruction_constraint_following`,
 `structured_information_analysis`, `product_reasoning_decision`,
-`chinese_business_communication`) are FROZEN / EXTERNALLY APPROVED. Domain 5 is
-not authored. The full 50-case production dataset (40/50 cases) is NOT approved.
-No live paid benchmark is authorized.**
+`chinese_business_communication`, `agent_workflow_planning`) are FROZEN /
+EXTERNALLY APPROVED. The 50-case V1 production dataset is approved for final
+freeze; `production_status` is `"complete"` and the freeze manifest
+(`docs/DATASET_FREEZE_V1.md`) is the immutable case baseline. No live paid
+benchmark is authorized.**
 
 This is the persistent QA ledger for production benchmark case authoring. It
 tracks each of the five frozen domains through the authoring lifecycle. It is
@@ -40,7 +42,7 @@ not be marked `externally-approved` or `frozen` by the authoring agent.
 | 2 | `structured_information_analysis` | SA | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
 | 3 | `product_reasoning_decision` | PR | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
 | 4 | `chinese_business_communication` | BC | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
-| 5 | `agent_workflow_planning` | AW | 10 | not started | 2026-09-11 |
+| 5 | `agent_workflow_planning` | AW | 10 | FROZEN / EXTERNALLY APPROVED | 2026-09-11 |
 
 ---
 
@@ -54,8 +56,46 @@ not be marked `externally-approved` or `frozen` by the authoring agent.
 | Authoring agent | Codex (Phase 3B-1; six cases revised in Phase 3B-1.1; IF-03/IF-06 patched in Phase 3B-1.2) |
 | Dataset file | `data/cases_v1.json` |
 | Validation result | PASS — `python3 run_benchmark.py --validate-only --production-cases` exits 0; schema errors 0; warnings flag the partial dataset (10/50 cases, 4 domains not yet authored). All deterministic-check declarations pass declaration validation. |
-| External review status | Final external review PASSED on all 10 cases, after the Phase 3B-1.2 patches to IF-03 and IF-06. No case requires further semantic revision. |
+| External review status | Final semantic review PASSED on all 10 cases. Domain 1 was reopened in Phase 3B-5R solely to repair IF-06's deterministic plan and has now **re-passed** Matrix-compliance review (IF-06 PASS — MATRIX COMPLIANT). |
 | Final approval status | **APPROVED — Domain 1 frozen (10/10 cases PASS)** |
+
+### Phase 3B-5R — IF-06 Matrix Compliance Repair (2026-09-11)
+
+The Phase 3B-5 global 50-case Matrix audit exposed a **historical
+deterministic-plan drift** in IF-06. Historical facts:
+
+- IF-06 had previously been semantically approved and frozen; its **prompt
+  semantics were not the problem**.
+- Its deterministic plan incorrectly remained **Partial** after integration: it
+  carried four structural checks (`required_phrases`, `ordering`,
+  `section_max_chars`, `required_regex`).
+- The APPROVED `CASE_MATRIX_V1.md` (and its Phase 3A.1 deterministic-quality
+  audit, which changed IF-06 Partial → None) requires **None** for IF-06,
+  because correct conflict resolution must be judged from which instruction
+  wins, whether the output follows the winner, and whether the stated
+  precedence basis is correct.
+- Domain 1 was reopened **only** for this deterministic-plan repair. IF-06 was
+  restored to the approved judge-only contract (`deterministic_checks == []`);
+  all other IF cases were untouched. `CASE_MATRIX_V1.md` was **not** edited.
+
+Current status:
+
+| ID | Status |
+| --- | --- |
+| IF-01 | PASS |
+| IF-02 | PASS |
+| IF-03 | PASS |
+| IF-04 | PASS |
+| IF-05 | PASS |
+| IF-06 | PASS — MATRIX COMPLIANT (approved None contract; `deterministic_checks == []`) |
+| IF-07 | PASS |
+| IF-08 | PASS |
+| IF-09 | PASS |
+| IF-10 | PASS |
+
+The IF-06 Matrix-compliance re-review **PASSED**; Domain 1 is
+**FROZEN / EXTERNALLY APPROVED** again. The Phase 3B-5R repair provenance above
+is preserved.
 
 ### First external review result (2026-09-11)
 
@@ -611,14 +651,107 @@ semantic revision.
 
 | Field | Value |
 | --- | --- |
-| Domain status | not started |
-| Case IDs | AW-01 … AW-10 (planned) |
-| Authoring date | — |
-| Validation result | — |
-| External review status | not submitted |
-| Final approval status | **not approved** |
+| Domain status | FROZEN / EXTERNALLY APPROVED |
+| Case IDs | AW-01 … AW-10 |
+| Authoring date | 2026-09-11 |
+| Authoring agent | External canonical authorship; Codex/DeepSeek performed integration only (Phase 3B-5) |
+| Dataset file | `data/cases_v1.json` |
+| Validation result | PASS — `python3 run_benchmark.py --validate-only --production-cases` exits 0; schema errors 0; all 10 AW cases' deterministic declarations validate; no new operator was required (operator count remains 21) |
+| External review status | Final Matrix Gate: PASS. Final Semantic Gate: PASS. Final Deterministic-contract Gate: PASS. Approved after the Phase 3B-5.1 AW-03/AW-04 repair. |
+| Final approval status | **APPROVED — Domain 5 frozen (10/10 cases PASS)** |
 
-No known issues. Not started.
+### Case status
+
+| ID | Status |
+| --- | --- |
+| AW-01 | PASS |
+| AW-02 | PASS |
+| AW-03 | PASS |
+| AW-04 | PASS |
+| AW-05 | PASS |
+| AW-06 | PASS |
+| AW-07 | PASS |
+| AW-08 | PASS |
+| AW-09 | PASS |
+| AW-10 | PASS |
+
+### External Phase 3B-5 result (2026-09-11)
+
+| ID | Gate result | Action | Current status |
+| --- | --- | --- | --- |
+| AW-01 | PASS | none | PASS |
+| AW-02 | PASS | none | PASS |
+| AW-03 | PATCH | replaced in Phase 3B-5.1 (unique-label execution-plan contract; letters-only critical path) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| AW-04 | PATCH | replaced in Phase 3B-5.1 (digits-only retry-budget cell contract) | REVISED — EXTERNAL RE-REVIEW PENDING |
+| AW-05 | PASS | none | PASS |
+| AW-06 | PASS | none | PASS |
+| AW-07 | PASS | none | PASS |
+| AW-08 | PASS | none | PASS |
+| AW-09 | PASS | none | PASS |
+| AW-10 | PASS | none | PASS |
+
+The two PATCH cases were replaced with externally authored canonical objects
+and were **not** rewritten by the executing agent. The eight PASS cases are
+unchanged. The deterministic plan is unchanged: 2 Strong / 3 Partial / 5 None.
+
+### Final external approval (after Phase 3B-5.1)
+
+| ID | Final status |
+| --- | --- |
+| AW-01 | PASS |
+| AW-02 | PASS |
+| AW-03 | PASS |
+| AW-04 | PASS |
+| AW-05 | PASS |
+| AW-06 | PASS |
+| AW-07 | PASS |
+| AW-08 | PASS |
+| AW-09 | PASS |
+| AW-10 | PASS |
+
+The final Matrix Gate, Semantic Gate, Deterministic-contract Gate, and global
+coverage/invariant Gate all passed. Domain 5 (`agent_workflow_planning`,
+AW-01 … AW-10) is **FROZEN / EXTERNALLY APPROVED**. No further AW production-case
+semantic change is authorized.
+
+**Scope.** With this approval all five domains are frozen and the full 50-case
+V1 production dataset is approved for final freeze.
+
+### Integration provenance (Phase 3B-5)
+
+- **Semantic authorship is external.** The canonical AW definitions (prompts,
+  evaluation criteria, deterministic checks, reference facts, tags, titles,
+  test intents, and notes) were authored externally and treated as
+  authoritative. Codex/DeepSeek performed **integration only**; no semantic
+  rewriting, paraphrasing, or case redesign was permitted.
+- **Matrix compliance was checked before integration.** The AW cases match the
+  APPROVED `CASE_MATRIX_V1.md` Domain-5 slots (working title, difficulty,
+  language, output shape, deterministic plan).
+- **Planning only.** These cases plan agent workflows; the benchmark does not
+  execute real tools, code tasks, multi-agent implementations, or network calls.
+- Difficulty = 2 easy / 5 medium / 3 hard; language = 7 `zh` / 1 `en` /
+  2 `mixed`; deterministic plan = 2 Strong (AW-01, AW-08) / 3 Partial (AW-03,
+  AW-04, AW-06) / 5 None (AW-02, AW-05, AW-07, AW-09, AW-10). The five None
+  cases are intentionally `deterministic_checks == []`.
+- **AW-04** retry semantics are side-effect-aware and do **not** assume a
+  universal retry count; retry-count appropriateness remains judge-evaluated.
+- **AW-05** separates technical tool availability from business **authority**;
+  the boundary is judged by consequence/permission, not by a keyword classifier.
+- **AW-08** tests explicit inter-tool data contracts (8 fields; validation and
+  mismatch handling).
+- **AW-09** and **AW-10** intentionally remain judge-only: stop/budget discipline
+  and stop-and-escalate-on-missing-input behaviour are judged, not proxy-checked.
+- The 40 frozen IF/SA/PR/BC objects were verified unchanged by hash before and
+  after integration. Operator count remains 21; no runtime change.
+
+### Known issues
+
+No AW integration issues. **Matrix/data divergence (resolved in Phase 3B-5R):**
+the Phase 3B-5 audit found IF-06 realized as a Partial although
+`CASE_MATRIX_V1.md` requires None. Phase 3B-5R restored IF-06 to the approved
+judge-only contract, so the realized dataset now has exactly **11** `[]` cases
+and the approved **14 Strong / 25 Partial / 11 None** distribution. See Domain 1.
+Domain 5 remains **not approved**.
 
 ---
 
@@ -649,3 +782,9 @@ No known issues. Not started.
 | 2026-09-11 | External Phase 3B-4 Gate completed: BC-02/03/05/06/07/08/09 PASS; BC-01/04/10 PATCH; 0 REJECT. Domain 4 moved to MATRIX + SEMANTIC EXTERNAL RE-REVIEW PENDING. |
 | 2026-09-11 | Phase 3B-4.1 executed: BC-01, BC-04, and BC-10 replaced with externally authored canonical objects (integration only; no semantic rewriting, no new operator). BC-01 numeric checks are now order-independent with the missing 7-day check added; BC-04's no-jargon instruction now matches the response-wide forbidden_phrases checker; BC-10 uses independent key-figure presence checks instead of order-sensitive paired regexes. BC-01/04/10 = REVISED — EXTERNAL RE-REVIEW PENDING; the seven PASS cases retained. Domain 4 remains EXTERNAL RE-REVIEW PENDING; not approved or frozen. |
 | 2026-09-11 | Final Matrix Gate PASS, Semantic Gate PASS, and Deterministic-contract Gate PASS on the BC domain after the Phase 3B-4.1 repair. Domain 4 (`chinese_business_communication`, BC-01…BC-10) set to FROZEN / EXTERNALLY APPROVED. Domains 1–3 remain frozen; Domain 5 (AW) unauthored; dataset 40/50; the full dataset is not approved. |
+| 2026-09-11 | Phase 3B-5 integrated the externally authored canonical AW-01…AW-10 from approved Domain-5 Matrix slots (integration only; no semantic rewriting, no new operator, no proxy checks). All 50 of 50 slots are now authored. Domain 5 (`agent_workflow_planning`) set to AUTHORED — MATRIX + SEMANTIC EXTERNAL REVIEW PENDING; each AW case AUTHORED — EXTERNAL REVIEW PENDING. AW-04 has no universal retry-count assumption; AW-05 separates access from authority; AW-09/AW-10 remain judge-only. Domains 1–4 remain frozen; the dataset is not yet production-frozen. Also recorded a pre-existing Matrix/data divergence: IF-06 is a Matrix None slot but the frozen IF-06 carries four structural checks, so the realized dataset has 10 `[]` cases, not 11. |
+| 2026-09-11 | Phase 3B-5R — IF-06 Matrix Compliance Repair. The Phase 3B-5 audit's IF-06 divergence (Matrix None vs. realized Partial) was repaired by replacing IF-06 with the externally authored canonical object whose `deterministic_checks == []`; prompt semantics unchanged and the other 49 cases untouched. Domain 1 reopened to REOPENED — IF-06 MATRIX COMPLIANCE EXTERNAL RE-REVIEW PENDING; IF-06 = REVISED — MATRIX COMPLIANCE EXTERNAL RE-REVIEW PENDING. Realized deterministic distribution restored to the approved 14 Strong / 25 Partial / 11 None. Domain 5 (AW) still awaits external review. No Matrix amendment. |
+| 2026-09-11 | External IF-06 Matrix re-review PASSED; Domain 1 returned to FROZEN / EXTERNALLY APPROVED (IF-06 = PASS — MATRIX COMPLIANT). Full 50-case Matrix invariants PASS. External Phase 3B-5 AW review: AW Matrix Gate PASS; Semantic + Deterministic-contract Gate 8 PASS / 2 PATCH; 0 REJECT. |
+| 2026-09-11 | Phase 3B-5.1 executed: AW-03 and AW-04 replaced with externally authored canonical deterministic-contract objects (integration only; no semantic rewriting, no new operator, no hidden canonical values). AW-03 now requires each complete task label exactly once with A/B/C as one parallel batch and a letters-only critical path; AW-04's retry-budget cell contract is now digits-only and consistent with the wildcard checker. AW-03/AW-04 = REVISED — EXTERNAL RE-REVIEW PENDING; the eight AW PASS cases retained. Domain 5 remains MATRIX + SEMANTIC + DETERMINISTIC-CONTRACT EXTERNAL RE-REVIEW PENDING; not approved or frozen. Distribution unchanged at 14 / 25 / 11. |
+| 2026-09-11 | **FINAL V1 DATASET FREEZE.** External gates: IF-06 Matrix re-review PASS; full 50-case Matrix Gate PASS; Semantic Gate PASS; Deterministic-contract Gate PASS; global coverage/invariant Gate PASS; AW-03/AW-04 final re-review PASS. Result: 50 PASS / 0 PATCH / 0 REJECT. Domain 5 (`agent_workflow_planning`) set to FROZEN / EXTERNALLY APPROVED; AW-01…AW-10 all PASS. All five domains frozen; `production_status` set to `"complete"` (the already-supported production-ready value). Semantic freeze manifest created at `docs/DATASET_FREEZE_V1.md`; aggregate SHA-256 `6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`. |
+| 2026-09-11 | Recorded a documentation-level title-text divergence (not a slot/identity drift): 43 of 50 frozen case titles equal the `CASE_MATRIX_V1.md` working titles; IF-01, IF-02, IF-04, IF-09, IF-10, SA-01, and SA-08 carry their own externally approved display titles. Identifiers, domains, difficulty, language, and deterministic level match the Matrix for all 50 cases. Frozen case titles were not edited. |

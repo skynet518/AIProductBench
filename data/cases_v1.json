@@ -2,8 +2,8 @@
   "dataset_name": "AIProductBench CN V1 production cases",
   "dataset_version": "v1-authoring-2026-09-11",
   "synthetic": false,
-  "production_status": "authoring",
-  "authoring_note": "Phase 3B production dataset, authored domain by domain. Domain 1 (instruction_constraint_following, IF-01 through IF-10) is frozen and externally approved. Domain 2 (structured_information_analysis, SA-01 through SA-10) is frozen and externally approved. Domain 3 (product_reasoning_decision, PR-01 through PR-10) is Matrix-compliant and frozen / externally approved. Domain 4 (chinese_business_communication, BC-01 through BC-10) is Matrix-compliant and frozen / externally approved. Domain 5 (agent_workflow_planning) is not yet authored, so this file contains 40 of 50 cases and is NOT a complete V1 production benchmark dataset. Production case semantics are externally authored; integration agents do not author or redesign cases.",
+  "production_status": "complete",
+  "authoring_note": "AIProductBench CN V1 production dataset. All 50 of 50 cases are authored across the five frozen domains (instruction_constraint_following, structured_information_analysis, product_reasoning_decision, chinese_business_communication, agent_workflow_planning); every domain is Matrix-compliant and externally approved/frozen. V1 production dataset semantics are frozen: the 50-case semantic freeze manifest (docs/DATASET_FREEZE_V1.md) is the immutable case baseline, and any future case change requires an explicit versioned reopening plus Matrix, semantic, and deterministic/judge-boundary review with a new freeze hash. Model/provider/pricing/judge work may proceed without changing the frozen case set. Production case semantics are externally authored; integration agents do not author or redesign cases.",
   "domains": [
     "instruction_constraint_following",
     "structured_information_analysis",
@@ -319,36 +319,7 @@
         "客户可见通知正文没有出现规则 A、规则 B、优先级等内部规则说明。",
         "规则判断与通知正文清楚分离，没有出现口头选择 B、实际却执行 A 的情况。"
       ],
-      "deterministic_checks": [
-        {
-          "name": "包含两个指定部分",
-          "type": "required_phrases",
-          "phrases": [
-            "规则判断：",
-            "通知正文："
-          ]
-        },
-        {
-          "name": "两个部分顺序正确",
-          "type": "ordering",
-          "phrases": [
-            "规则判断：",
-            "通知正文："
-          ]
-        },
-        {
-          "name": "客户通知正文不超过120字符",
-          "type": "section_max_chars",
-          "start_marker": "通知正文：",
-          "end_marker": null,
-          "count": 120
-        },
-        {
-          "name": "维护时间存在",
-          "type": "required_regex",
-          "pattern": "2026-10-20\\s*01:00\\s*至\\s*05:00"
-        }
-      ],
+      "deterministic_checks": [],
       "reference_facts": [
         "规则 A：使用称谓、添加签名、正文不少于150字",
         "规则 B：不使用称谓或签名、通知正文不超过120字",
@@ -359,7 +330,7 @@
       ],
       "expected_structure": "先输出一行「规则判断：…」，随后输出「通知正文：…」。120字符限制只作用于通知正文。",
       "ambiguity_notes": "规则 B 明确与规则 A 在称谓、签名和长度要求上冲突，因此不存在需要模型自行猜测的优先级。",
-      "author_notes": "Correct precedence remains judge-evaluated. Deterministic checks validate observable downstream constraints, not keyword-based proof of reasoning."
+      "author_notes": "Matrix-compliant IF-06 None case. The entire conflict-resolution outcome, including whether the winning instruction is actually applied and whether the stated basis is correct, is judge-evaluated; deterministic_checks intentionally remain empty."
     },
     {
       "id": "IF-07",
@@ -2588,6 +2559,540 @@
       "expected_structure": "不超过420字符的四段式管理层one-pager。",
       "ambiguity_notes": "压缩允许删除背景解释、调整数字出现顺序和合并重复描述，但不能删除规定的关键事实、改变趋势方向或把计划估计升级成承诺。",
       "author_notes": "Matrix-compliant BC-10 Strong case. Deterministic checks verify key-figure presence without imposing surface-order wording; trend direction and executive prioritization remain judge-evaluated."
+    },
+    {
+      "id": "AW-01",
+      "title": "客服工单自动分类工作流",
+      "domain": "agent_workflow_planning",
+      "difficulty": "easy",
+      "language": "zh",
+      "tags": [
+        "agent_workflow",
+        "decomposition",
+        "ordering",
+        "approval_gate",
+        "zh"
+      ],
+      "test_intent": "检验模型能否把一个简单客服分类自动化拆成有明确输入输出的有序工作流，并把唯一人工审批门放在分类结果产生之后、产生外部业务影响之前。",
+      "prompt": "请为客服工单自动分类设计一个仅用于规划的工作流，不要真的调用任何工具。\n\n业务规则：\n- 新工单进入系统后可以读取工单ID、标题和正文。\n- 分类器会输出一个分类标签和confidence。\n- confidence >= 0.85 时可以自动通过；confidence < 0.85 时必须由客服值班人员确认或修改标签。\n- 只有获得最终标签后，工单才能写入对应处理队列。\n- 最后必须记录最终标签、是否经过人工确认、目标队列和处理时间，供审计使用。\n\n必须使用以下5个阶段标签，每个恰好一次，但你需要安排正确顺序：\n- 读取工单\n- 生成分类候选\n- 人工审批门\n- 写入目标队列\n- 记录处理结果\n\n严格输出恰好5行，格式：\n1. <阶段标签>｜输入：<输入>｜输出：<输出>\n...\n5. <阶段标签>｜输入：<输入>｜输出：<输出>\n\n在「人工审批门」这一行中说明0.85的条件以及低置信度时由谁审批。",
+      "evaluation_criteria": [
+        "五个阶段按依赖关系排列：先读取工单，再生成分类候选，再通过条件审批门确定最终标签，之后写入目标队列，最后记录结果。",
+        "每一步都明确说明来自前一步或原始请求的输入，以及为后续步骤产生的输出。",
+        "人工审批门正确体现confidence >= 0.85可自动通过、低于0.85由客服值班人员确认或修改。",
+        "任何可能影响工单路由的写入动作都发生在最终标签确定之后。",
+        "没有扩展成真实工具执行、代码或多agent实现。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "步骤1为读取工单",
+          "type": "required_regex",
+          "pattern": "(?m)^1\\.\\s*读取工单\\s*｜\\s*输入：.+｜\\s*输出：.+$"
+        },
+        {
+          "name": "步骤2为生成分类候选",
+          "type": "required_regex",
+          "pattern": "(?m)^2\\.\\s*生成分类候选\\s*｜\\s*输入：.+｜\\s*输出：.+$"
+        },
+        {
+          "name": "步骤3为人工审批门",
+          "type": "required_regex",
+          "pattern": "(?m)^3\\.\\s*人工审批门\\s*｜\\s*输入：.+｜\\s*输出：.+$"
+        },
+        {
+          "name": "步骤4为写入目标队列",
+          "type": "required_regex",
+          "pattern": "(?m)^4\\.\\s*写入目标队列\\s*｜\\s*输入：.+｜\\s*输出：.+$"
+        },
+        {
+          "name": "步骤5为记录处理结果",
+          "type": "required_regex",
+          "pattern": "(?m)^5\\.\\s*记录处理结果\\s*｜\\s*输入：.+｜\\s*输出：.+$"
+        },
+        {
+          "name": "不存在第6步",
+          "type": "forbidden_regex",
+          "pattern": "(?m)^6\\."
+        },
+        {
+          "name": "审批门保留0.85阈值",
+          "type": "required_regex",
+          "pattern": "0\\.85"
+        }
+      ],
+      "reference_facts": [
+        "输入工单包含ID、标题和正文",
+        "分类器产生标签和confidence",
+        "confidence >= 0.85可以自动通过",
+        "confidence < 0.85必须由客服值班人员确认或修改",
+        "最终标签确定后才能写入目标队列",
+        "最后记录最终标签、人工确认状态、目标队列和处理时间"
+      ],
+      "expected_structure": "恰好5行编号工作流，每行包含阶段标签、输入和输出。",
+      "ambiguity_notes": "低置信度审批是条件门而不是所有工单都需要人工处理；确定性检查验证可观察的步骤顺序和门存在性，输入输出质量仍由Judge评价。",
+      "author_notes": "Matrix-compliant AW-01 Strong baseline. Planning only; no real tool execution."
+    },
+    {
+      "id": "AW-02",
+      "title": "Tool selection for a simple goal",
+      "domain": "agent_workflow_planning",
+      "difficulty": "easy",
+      "language": "en",
+      "tags": [
+        "agent_workflow",
+        "tool_selection",
+        "minimalism",
+        "english"
+      ],
+      "test_intent": "Test whether the model selects only the tools needed for a simple offline analysis goal and explicitly excludes attractive but unnecessary tools.",
+      "prompt": "You are planning an agent workflow. Do not execute any tool.\n\nGoal: A local CSV contains 500 NPS responses with columns response_id, score, and comment. Produce an internal draft that reports the average NPS score and summarizes the three most common comment themes. The result will be reviewed by a human before anyone posts it; the workflow itself must not send or publish anything.\n\nAvailable tools:\n- csv_reader: read rows and columns from the supplied CSV.\n- calculator: perform deterministic arithmetic over supplied values.\n- text_clusterer: group supplied comments into semantic themes and return representative examples.\n- web_search: search the public web.\n- slack_sender: send a message to a Slack channel.\n- image_generator: create images.\n- crm_writer: update customer records in the CRM.\n\nChoose the smallest defensible tool set. Explain what each selected tool contributes, explicitly name tools that are not needed, and identify any part of the goal that should remain a model/human judgment rather than being delegated to an unnecessary tool.",
+      "evaluation_criteria": [
+        "The selected tools are directly justified by reading the CSV, calculating the score, and extracting themes.",
+        "The plan avoids tools that add no value to the stated offline goal, especially external search, publishing, image generation, and CRM mutation.",
+        "The answer explicitly discusses tools that are not needed rather than merely listing selected tools.",
+        "The workflow respects the instruction that nothing is sent or published automatically.",
+        "The rationale distinguishes deterministic arithmetic from semantic theme summarization and human review."
+      ],
+      "deterministic_checks": [],
+      "reference_facts": [
+        "The only source data is the supplied local CSV",
+        "The deliverable is an internal draft of average score plus three comment themes",
+        "No public-web information is required",
+        "The workflow must not send or publish the result",
+        "The available tool list includes several intentionally unnecessary tools"
+      ],
+      "expected_structure": "A concise selection and rationale that includes selected and excluded tools.",
+      "ambiguity_notes": "There is no mechanically enforced canonical tool list; judges assess minimality, goal coverage, and whether the workflow introduces unnecessary external or side-effecting tools.",
+      "author_notes": "Matrix-required AW-02 None case. Tool choice is intentionally judge-only."
+    },
+    {
+      "id": "AW-03",
+      "title": "依赖排序（含数据依赖）",
+      "domain": "agent_workflow_planning",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "agent_workflow",
+        "dependency",
+        "critical_path",
+        "ordering",
+        "zh"
+      ],
+      "test_intent": "检验模型能否根据数据依赖安排工作流，识别可以并行的上游步骤，并避免在所需数据尚未产生时启动下游步骤。",
+      "prompt": "你需要规划一个「续约优先级清单」生成工作流，只做规划，不执行工具。\n\n任务及预计耗时：\nA. CRM账户导出（2分钟）：输出 account_id、segment。\nB. Billing账单导出（5分钟）：输出 account_id、ARR。\nC. Support事件导出（4分钟）：输出 account_id、近90天P1数量。\nD. 合并客户主表（3分钟）：必须拿到A、B、C三个输出后才能开始，按account_id合并。\nE. 计算续约风险（4分钟）：必须使用D的合并结果。\nF. 生成优先跟进清单（2分钟）：必须使用E的风险结果。\n\nA、B、C彼此没有依赖，可以同时开始；其他依赖如上。\n\n严格输出两部分：\n\n【执行计划】\n恰好写6行，每个任务的完整标签只能出现一次。每行格式：\n- <完整任务标签>｜批次：<编号>｜直接依赖：<任务字母或无>\n\nA、B、C属于同一个并行批次，三行的相对顺序任意；D必须排在A、B、C三行之后，E排在D之后，F排在E之后。批次表示执行拓扑，因此同一批次的行是并行关系，不代表按书写顺序串行执行。\n\n【关键路径】\n只使用任务字母表示关键路径，例如「B→D→E→F」，并说明总时长以及为什么它限制整体完成时间。这里不要再次写任务的完整名称。",
+      "evaluation_criteria": [
+        "A、B、C被识别为无相互依赖且属于同一个可并行执行的上游批次。",
+        "D只在A、B、C全部产生输出后执行，E在D之后，F在E之后。",
+        "任何下游步骤都没有在其必要输入尚未存在时被调度。",
+        "能够利用给出的时长识别真正限制总完成时间的关键路径，而不是只把所有任务串行排列。",
+        "执行计划、批次和直接依赖说明一致；A、B、C的行显示顺序不被误解成实际串行关系。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "A先于D再到E和F",
+          "type": "ordering",
+          "phrases": [
+            "A. CRM账户导出",
+            "D. 合并客户主表",
+            "E. 计算续约风险",
+            "F. 生成优先跟进清单"
+          ]
+        },
+        {
+          "name": "B先于D再到E和F",
+          "type": "ordering",
+          "phrases": [
+            "B. Billing账单导出",
+            "D. 合并客户主表",
+            "E. 计算续约风险",
+            "F. 生成优先跟进清单"
+          ]
+        },
+        {
+          "name": "C先于D再到E和F",
+          "type": "ordering",
+          "phrases": [
+            "C. Support事件导出",
+            "D. 合并客户主表",
+            "E. 计算续约风险",
+            "F. 生成优先跟进清单"
+          ]
+        }
+      ],
+      "reference_facts": [
+        "A耗时2分钟，B耗时5分钟，C耗时4分钟，三者可并行",
+        "D依赖A、B、C并耗时3分钟",
+        "E依赖D并耗时4分钟",
+        "F依赖E并耗时2分钟",
+        "从最慢的上游B开始计，关键链路为B→D→E→F，共14分钟"
+      ],
+      "expected_structure": "六行一次性任务标签的执行计划，加一段只用任务字母表示的关键路径说明。",
+      "ambiguity_notes": "A、B、C处于同一并行批次，因此三行之间的显示顺序没有执行语义；完整任务标签只出现一次，使ordering checker只观察真正的计划顺序，而不会受到依赖说明或关键路径重复文本干扰。",
+      "author_notes": "Matrix-compliant AW-03 Partial case. Candidate-visible output structure makes the mechanical ordering signal correspond to actual schedule ordering rather than first-occurrence artefacts."
+    },
+    {
+      "id": "AW-04",
+      "title": "错误与重试处理",
+      "domain": "agent_workflow_planning",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "agent_workflow",
+        "retry",
+        "side_effects",
+        "idempotency",
+        "fallback",
+        "zh"
+      ],
+      "test_intent": "检验模型能否针对不同side-effect风险设计有界重试、结果确认、去重与升级策略，而不是给所有失败统一套用固定重试次数。",
+      "prompt": "请为下面三个工作流步骤设计失败与重试策略。只做规划，不执行任何操作。\n\n步骤A — 读取客户档案：\n- 只读GET请求，没有外部副作用。\n- 偶尔会遇到临时网络超时。\n\n步骤B — 创建CRM跟进任务：\n- POST请求支持 idempotency_key。\n- 如果提交后连接超时，调用方可能不知道任务到底创建成功没有。\n- 可以通过 external_ref 查询是否已经存在对应任务。\n\n步骤C — 发送客户邮件：\n- 一旦成功发送就产生客户可见副作用。\n- 邮件服务不提供通用幂等键。\n- 如果发送请求后超时，可以用 message_id 查询发送状态；如果状态仍未知，重复发送可能造成客户收到两封邮件。\n\n请只输出一张Markdown表格，列严格为：\n步骤｜失败示例｜副作用风险｜最大自动重试次数｜重试前验证/去重｜最终fallback或升级\n\n恰好写A、B、C三行。每一行的「最大自动重试次数」必须给出有限的非负整数，但题目没有统一的正确次数；你需要根据每一步的side-effect风险分别决定。\n\n「最大自动重试次数」这一列只写阿拉伯数字的非负整数，例如「0」或「2」，不要加「次」、范围、无穷符号或其他说明；相关解释写在其他列。",
+      "evaluation_criteria": [
+        "能够区分只读安全操作、支持幂等键但完成状态可能未知的写操作，以及可能产生重复客户副作用的发送操作。",
+        "每个步骤都有有界的自动重试策略；最大自动重试次数使用有限非负整数，没有无限重试或一个不加解释的统一重试次数。",
+        "步骤B在重试前利用idempotency_key或external_ref确认/避免重复创建。",
+        "步骤C在发送结果不确定时优先查询message_id状态，不能盲目重复发送造成重复邮件。",
+        "当自动处理无法安全确定结果时提供停止、人工确认或其他合理fallback。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "失败策略表头正确",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*步骤\\s*\\|\\s*失败示例\\s*\\|\\s*副作用风险\\s*\\|\\s*最大自动重试次数\\s*\\|\\s*重试前验证/去重\\s*\\|\\s*最终fallback或升级\\s*\\|"
+        },
+        {
+          "name": "A行给出有限数字重试预算",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*A\\s*\\|[^|]*\\|[^|]*\\|\\s*\\d+\\s*\\|"
+        },
+        {
+          "name": "B行给出有限数字重试预算",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*B\\s*\\|[^|]*\\|[^|]*\\|\\s*\\d+\\s*\\|"
+        },
+        {
+          "name": "C行给出有限数字重试预算",
+          "type": "required_regex",
+          "pattern": "(?m)^\\|\\s*C\\s*\\|[^|]*\\|[^|]*\\|\\s*\\d+\\s*\\|"
+        }
+      ],
+      "reference_facts": [
+        "A是无副作用只读GET",
+        "B支持idempotency_key，且可通过external_ref检查是否已创建",
+        "B超时后完成状态可能未知",
+        "C是客户可见发送副作用且无通用幂等键",
+        "C超时后可以用message_id查询发送状态",
+        "题目没有为任何步骤规定唯一正确的重试次数"
+      ],
+      "expected_structure": "一张恰好三行的失败策略表；最大自动重试次数单元格只包含非负整数。",
+      "ambiguity_notes": "不同有限重试次数都可能合理。纯数字格式只是为了让candidate-visible contract与机械checker一致，不代表存在隐藏的正确次数；side-effect分类、具体次数适当性、去重与fallback由Judge评价。",
+      "author_notes": "Matrix-compliant AW-04 Partial case. Numeric-cell syntax is explicit; retry-count suitability remains judge-evaluated and no universal retry count is inferred."
+    },
+    {
+      "id": "AW-05",
+      "title": "权限与安全边界",
+      "domain": "agent_workflow_planning",
+      "difficulty": "medium",
+      "language": "mixed",
+      "tags": [
+        "agent_workflow",
+        "permissions",
+        "safety_boundary",
+        "authority",
+        "mixed_language"
+      ],
+      "test_intent": "检验模型能否根据行为后果划分可无人值守执行、需要授权以及不应由该agent执行的动作，并解释权限边界，而不是把技术可调用等同于有权执行。",
+      "prompt": "你正在设计一个 Customer Success agent。只做权限规划，不执行任何工具。\n\nAgent technically has access to these actions:\n- read_account_health：读取客户健康分和最近工单。\n- draft_email：生成邮件草稿但不发送。\n- send_email：向客户发送邮件。\n- add_internal_note：向CRM添加内部备注。\n- apply_service_credit：向客户账户直接发放服务抵扣金，最高5000元。\n- change_contract_end_date：修改合同到期日。\n- delete_customer_data：永久删除客户数据。\n\n业务背景：这个agent主要帮助CSM整理风险客户、准备跟进内容和减少重复录入工作。题目没有给它财务审批权、合同变更授权或数据删除授权。\n\n请设计一个boundary plan，把动作分成：\n1. 可以无人值守执行；\n2. 需要明确人工授权后才能执行；\n3. 该agent不应执行，应转交其他正式流程。\n\n对每个动作说明你的分类依据，以及授权/升级应该发生在什么时点。不要因为某个tool technically available就默认agent有业务权限。",
+      "evaluation_criteria": [
+        "权限边界根据动作的外部后果、可逆性和组织授权进行判断，而不是根据API是否可调用。",
+        "读取、起草、内部低风险记录等动作与发送、财务、合同或永久数据操作之间形成合理区分。",
+        "没有让缺乏财务、合同或数据删除授权的agent无人值守执行高影响动作。",
+        "对于需要人工授权的动作说明授权应发生在副作用之前。",
+        "对超出agent职责的动作给出合理转交流程，而不是简单报错或偷偷执行。"
+      ],
+      "deterministic_checks": [],
+      "reference_facts": [
+        "agent技术上可访问七种动作",
+        "业务目标是辅助CSM整理风险、准备内容和减少录入",
+        "题目没有赋予财务审批权",
+        "题目没有赋予合同变更授权",
+        "题目没有赋予数据删除授权",
+        "技术可调用不等于有业务授权"
+      ],
+      "expected_structure": "按权限边界组织的规划说明，覆盖全部动作及升级/授权时点。",
+      "ambiguity_notes": "部分中等风险动作可能存在多种可辩护权限设计，因此本题不使用机械分类器；Judge依据后果、授权和安全边界评价。",
+      "author_notes": "Matrix-required AW-05 mixed-language None case."
+    },
+    {
+      "id": "AW-06",
+      "title": "人工审批门设计",
+      "domain": "agent_workflow_planning",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "agent_workflow",
+        "human_approval",
+        "gates",
+        "criteria",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在一个跨数据变更、生产发布和客户通知的工作流中设计有限数量的人工审批门，并为每个门明确审批对象、审批人和可执行的放行标准。",
+      "prompt": "请为下面的上线流程设计恰好3个人工审批门。只做规划，不执行。\n\n工作流包含：\n- 生成数据库迁移脚本并在staging验证。\n- 在production执行数据库迁移。\n- 发布新版API服务。\n- 对10%流量做smoke test。\n- 扩大到100%流量。\n- 向受影响客户发送完成通知。\n\n已知角色：\n- 数据库负责人：负责确认迁移脚本和回滚方案。\n- 发布负责人：负责production发布和扩量决策。\n- 客户成功负责人：负责客户可见沟通的准确性与时机。\n\n你需要自己决定三道门放在哪里。\n\n只输出恰好3条「- 」列表，格式：\n- Gate <编号>｜批准对象：<什么动作或产物>｜审批人：<角色>｜放行条件：<可验证条件>｜未通过：<处理方式>",
+      "evaluation_criteria": [
+        "恰好设计3道人审门，没有把每个普通步骤都机械升级成人工审批。",
+        "每道门明确说明具体批准对象、审批角色和可以实际核验的放行条件。",
+        "数据库高风险变更、生产扩量或客户可见沟通等关键风险转换点得到合理的人审覆盖。",
+        "审批发生在相应高影响动作之前，而不是动作完成后补签。",
+        "未通过时说明暂停、修复、重新验证或其他合理处理，不默认绕过审批。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "恰好三个审批门",
+          "type": "exact_bullet_count",
+          "count": 3
+        },
+        {
+          "name": "Gate1字段完整",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*Gate\\s*1\\s*｜\\s*批准对象：.+｜\\s*审批人：.+｜\\s*放行条件：.+｜\\s*未通过：.+$"
+        },
+        {
+          "name": "Gate2字段完整",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*Gate\\s*2\\s*｜\\s*批准对象：.+｜\\s*审批人：.+｜\\s*放行条件：.+｜\\s*未通过：.+$"
+        },
+        {
+          "name": "Gate3字段完整",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*Gate\\s*3\\s*｜\\s*批准对象：.+｜\\s*审批人：.+｜\\s*放行条件：.+｜\\s*未通过：.+$"
+        }
+      ],
+      "reference_facts": [
+        "流程包含数据库迁移、production发布、10%测试、100%扩量和客户通知",
+        "数据库负责人负责迁移脚本和回滚方案",
+        "发布负责人负责production发布和扩量",
+        "客户成功负责人负责客户可见沟通",
+        "题目要求恰好3道人审门"
+      ],
+      "expected_structure": "恰好三条审批门列表，每条包含批准对象、审批人、放行条件和失败处理。",
+      "ambiguity_notes": "审批门具体放置点存在多个可辩护方案；确定性检查只验证数量和字段，门的位置与条件质量由Judge评价。",
+      "author_notes": "Matrix-compliant AW-06 Partial case."
+    },
+    {
+      "id": "AW-07",
+      "title": "串行 vs 并行判断",
+      "domain": "agent_workflow_planning",
+      "difficulty": "medium",
+      "language": "zh",
+      "tags": [
+        "agent_workflow",
+        "parallelism",
+        "resource_constraint",
+        "topology",
+        "zh"
+      ],
+      "test_intent": "检验模型能否在依赖关系和共享资源约束下决定哪些步骤可以并行、哪些必须串行，并说明执行拓扑而不是把并行等同于越多越好。",
+      "prompt": "你要规划一个版本上线前的验证工作流，只做计划，不真正执行。\n\n任务：\nA. 校验数据库schema变更，20分钟，不占用staging环境。\nB. 审核客户通知文案，30分钟，不占用staging环境。\nC. 在staging执行迁移演练，45分钟；依赖A；整个过程中独占唯一staging环境。\nD. 在staging执行API负载测试，40分钟；代码包已经准备好；整个过程中独占同一个staging环境。\nE. 在staging执行回滚演练，30分钟；必须在C完成后；整个过程中独占同一个staging环境。\nF. 汇总上线检查清单，15分钟；必须等B、D、E都完成。\n\n约束：团队只有一个staging环境，所以C、D、E任意两个都不能同时运行；A和B可以与不依赖它们的工作并行。\n\n请给出你的执行计划，并明确哪些步骤并行、哪些必须串行以及原因。目标是在不违反依赖和共享资源约束的情况下尽量缩短完成时间。",
+      "evaluation_criteria": [
+        "正确处理A→C、C→E、B/D/E→F的依赖关系。",
+        "明确遵守只有一个staging环境，因此C、D、E不能彼此并行。",
+        "识别A、B以及不冲突的工作可以适当并行，而不是把所有任务无意义串行。",
+        "执行拓扑与文字解释一致，没有一边声称资源冲突、一边安排同一staging并行使用。",
+        "优化目标是缩短完成时间但不突破依赖与资源边界。"
+      ],
+      "deterministic_checks": [],
+      "reference_facts": [
+        "A耗时20分钟且不占staging，C依赖A",
+        "B耗时30分钟且不占staging",
+        "C、D、E都独占唯一staging环境",
+        "E必须在C之后",
+        "F必须等待B、D、E完成",
+        "A和B可以与不依赖它们的任务并行"
+      ],
+      "expected_structure": "一个执行计划，并解释并行组、串行链路和共享资源约束。",
+      "ambiguity_notes": "C和D谁先使用staging可能存在多个总时长相同或接近的可辩护方案，因此不设置机械唯一顺序。",
+      "author_notes": "Matrix-required AW-07 None case; topology quality is judged."
+    },
+    {
+      "id": "AW-08",
+      "title": "工具间数据交接契约",
+      "domain": "agent_workflow_planning",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "agent_workflow",
+        "data_contract",
+        "handoff",
+        "validation",
+        "schema",
+        "zh"
+      ],
+      "test_intent": "检验模型能否为两个工作流步骤之间定义明确的数据交接契约，包括字段、类型、必填性、格式校验、版本和不匹配处理，并把契约嵌入执行计划。",
+      "prompt": "你在设计一个两阶段agent工作流，只做规划，不执行。\n\n阶段1「变更事件归一化器」读取内部CRM变更日志，输出一条normalized event。\n阶段2「变更风险评估器」只接受满足契约的normalized event，然后判断是否需要人工复核。\n\n下游风险评估器业务上必须获得以下字段：\n- event_id：字符串，唯一且非空。\n- customer_id：字符串，非空。\n- event_time：ISO 8601 UTC时间，例如2026-09-11T08:30:00Z。\n- change_type：只能是 plan_change、owner_change、billing_change 之一。\n- before_value：字符串或null。\n- after_value：字符串或null。\n- source_record_id：原CRM日志记录ID，字符串，非空。\n- schema_version：本题固定使用字符串 \"1.0\"。\n\n基础校验要求：event_id、customer_id、event_time、change_type、source_record_id、schema_version缺失时不得进入风险评估；非法时间格式、非法change_type或错误schema_version也不得进入。before_value和after_value允许null，但不能因为null就猜测内容。\n\n请定义交接契约并规划handoff。\n\n严格输出三部分：\n【Contract fields】\n恰好8条「- 」列表，每条格式：\n- <field>｜类型：<type>｜必填/可空：<rule>｜校验：<rule>\n\n【Mismatch handling】\n说明契约不匹配时如何隔离、记录和升级，且不得把坏数据继续送进风险评估器。\n\n【Handoff plan】\n恰好4条「- 」列表，说明从归一化、契约校验、交接到风险评估的顺序。",
+      "evaluation_criteria": [
+        "Contract完整覆盖8个候选可见字段，没有遗漏下游明确需要的信息。",
+        "字段类型、必填/可空规则和校验与题目要求一致，特别是ISO 8601 UTC、change_type枚举和schema_version 1.0。",
+        "before_value和after_value允许null，但没有用猜测值代替null。",
+        "契约失败的数据被隔离并记录/升级，不会继续进入风险评估器。",
+        "handoff计划明确先归一化，再验证契约，只有通过后才交接给风险评估器。"
+      ],
+      "deterministic_checks": [
+        {
+          "name": "三个部分齐全",
+          "type": "required_phrases",
+          "phrases": [
+            "【Contract fields】",
+            "【Mismatch handling】",
+            "【Handoff plan】"
+          ]
+        },
+        {
+          "name": "三个部分顺序正确",
+          "type": "ordering",
+          "phrases": [
+            "【Contract fields】",
+            "【Mismatch handling】",
+            "【Handoff plan】"
+          ]
+        },
+        {
+          "name": "Contract恰好8条",
+          "type": "section_bullet_count",
+          "start_marker": "【Contract fields】",
+          "end_marker": "【Mismatch handling】",
+          "count": 8
+        },
+        {
+          "name": "Handoff plan恰好4条",
+          "type": "section_bullet_count",
+          "start_marker": "【Handoff plan】",
+          "end_marker": null,
+          "count": 4
+        },
+        {
+          "name": "event_id字段存在",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*event_id\\s*｜"
+        },
+        {
+          "name": "customer_id字段存在",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*customer_id\\s*｜"
+        },
+        {
+          "name": "event_time字段存在",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*event_time\\s*｜"
+        },
+        {
+          "name": "change_type字段存在",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*change_type\\s*｜"
+        },
+        {
+          "name": "before_value字段存在",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*before_value\\s*｜"
+        },
+        {
+          "name": "after_value字段存在",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*after_value\\s*｜"
+        },
+        {
+          "name": "source_record_id字段存在",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*source_record_id\\s*｜"
+        },
+        {
+          "name": "schema_version字段存在",
+          "type": "required_regex",
+          "pattern": "(?m)^-\\s*schema_version\\s*｜"
+        }
+      ],
+      "reference_facts": [
+        "契约有8个字段：event_id、customer_id、event_time、change_type、before_value、after_value、source_record_id、schema_version",
+        "event_time要求ISO 8601 UTC",
+        "change_type仅允许plan_change、owner_change、billing_change",
+        "schema_version固定为1.0",
+        "before_value和after_value允许null",
+        "必填缺失、非法时间、非法枚举或错误版本时不得进入风险评估器",
+        "流程顺序应为归一化、契约验证、交接、风险评估"
+      ],
+      "expected_structure": "8字段数据契约、不匹配处理说明和4步handoff计划。",
+      "ambiguity_notes": "字段集合和基础验证要求是客观契约；具体隔离队列名称、日志实现和升级渠道可以不同，只要坏数据不会继续流入下游。",
+      "author_notes": "Matrix-compliant AW-08 Strong case. Interface fields are mechanical; operational quality of mismatch handling is judged."
+    },
+    {
+      "id": "AW-09",
+      "title": "停止条件与预算约束",
+      "domain": "agent_workflow_planning",
+      "difficulty": "hard",
+      "language": "zh",
+      "tags": [
+        "agent_workflow",
+        "stopping",
+        "budget",
+        "latency",
+        "escalation",
+        "zh"
+      ],
+      "test_intent": "检验模型能否为可能持续循环的工作流设计停止、继续与升级政策，在证据充分性和调用/时间/成本预算之间做约束，而不是无休止搜索。",
+      "prompt": "你要规划一个内部知识库事实核验workflow，只做计划，不真正检索。\n\n目标：针对5条待核验的产品事实，为每条找到足够证据后形成内部草稿。\n\n可用检索工具特点：\n- 每次query最多返回3份内部文档候选。\n- 每次调用平均4秒，成本0.05元。\n- 同一个query反复调用通常不会产生新信息，需要改变检索词或证据来源。\n\n质量要求：\n- 一条事实只有在至少2份相互独立的内部文档明确支持时才能标记为「已验证」。\n- 如果证据相互矛盾，不能靠多数票猜结论，必须保留冲突并升级。\n\n整次workflow硬预算：\n- 最多40次检索调用；\n- 总检索耗时不得超过180秒；\n- 总检索成本不得超过2元。\n\n请设计停止/继续/升级政策，并说明：什么时候继续换query寻找证据，什么时候认为某条事实已经足够，什么时候对单条事实停止搜索并升级，以及如何确保整批任务不会突破调用、时间和成本预算。不要只写「达到预算就停止」，还要考虑信息增益和无进展循环。",
+      "evaluation_criteria": [
+        "明确区分证据充分、证据冲突、持续无新信息和全局预算耗尽等不同停止原因。",
+        "继续搜索的条件体现信息增益，例如改变查询、换来源，而不是原样无限重复调用。",
+        "至少2份独立文档的质量要求被正确用于已验证状态，冲突证据不会被强行多数票消解。",
+        "政策同时约束40次调用、180秒和2元三个硬预算，并保留余量/优先级意识。",
+        "无法在预算内解决的事实有明确升级路径和可报告状态，而不是猜一个答案。"
+      ],
+      "deterministic_checks": [],
+      "reference_facts": [
+        "需要核验5条产品事实",
+        "每次查询最多返回3份候选文档",
+        "每次调用平均4秒、0.05元",
+        "至少2份独立文档明确支持才可标记已验证",
+        "证据冲突必须保留并升级，不能多数票猜测",
+        "硬预算为最多40次调用、180秒、2元",
+        "重复同一query通常无新增信息"
+      ],
+      "expected_structure": "一套包含继续、停止、升级和全局预算控制的workflow policy与执行计划。",
+      "ambiguity_notes": "题目没有规定统一的单条事实最大查询次数；高质量答案应在硬预算内根据信息增益设计停止策略，因此不使用机械重试/次数检查。",
+      "author_notes": "Matrix-required AW-09 hard None case."
+    },
+    {
+      "id": "AW-10",
+      "title": "信息缺失时的升级路径",
+      "domain": "agent_workflow_planning",
+      "difficulty": "hard",
+      "language": "mixed",
+      "tags": [
+        "agent_workflow",
+        "missing_input",
+        "escalation",
+        "refusal_to_guess",
+        "mixed_language"
+      ],
+      "test_intent": "检验模型能否在高影响workflow缺少必要输入时停止相关执行，准确指出缺什么、向谁升级、等待期间哪些安全准备可以继续，以及何时再次升级，而不是自行猜测。",
+      "prompt": "你正在规划一个 enterprise refund workflow。只做规划，不执行退款或调用任何真实工具。\n\nRequest中已经提供：\n- refund_batch.csv，包含 customer_id、invoice_id、requested_amount。\n- requester = Customer Success Ops。\n- reason = duplicate billing incident。\n- desired execution window = tomorrow 10:00–12:00。\n\n执行退款前，系统要求必须同时具备：\n- currency for every requested_amount；\n- current Refund Policy version；\n- approval_ticket_id from Finance；\n- 对于单笔超过5000元的退款，必须额外有 Finance Director approval。\n\n当前缺失/不确定信息：\n- CSV没有currency列。\n- Request里只写了「按最新版退款政策」，但没有policy version；系统里同时存在v3.2和v3.3两份文档，无法从题目判断哪一份生效。\n- 没有approval_ticket_id。\n- CSV里有3笔requested_amount超过5000，但没有Finance Director approval记录。\n\n在等待信息期间，允许做不会产生退款副作用的准备工作，例如检查CSV是否有重复invoice_id、统计行数、准备待审批摘要；但不得猜currency、猜policy version或执行任何退款。\n\n请设计 escalation plan。需要说明：\n- exactly what is missing or ambiguous；\n- 应向哪个角色/系统请求每项信息；\n- 哪些准备工作可以继续，哪些动作必须暂停；\n- 如果到 tomorrow 09:00 仍未补齐，如何升级并处理10:00–12:00执行窗口。\n\n不要为了赶时间自行补默认值。",
+      "evaluation_criteria": [
+        "准确识别currency、有效Refund Policy版本、Finance approval_ticket_id以及三笔大额退款的Finance Director approval缺口。",
+        "没有把v3.2或v3.3中的任一版本自行猜成当前政策，也没有猜currency。",
+        "能够把不同缺口升级给合理责任方，例如Finance/政策owner/requester，而不是把所有问题笼统退回一个人。",
+        "等待期间只继续无副作用的准备工作，所有真正退款动作保持暂停。",
+        "对tomorrow 09:00仍未补齐时有明确二次升级和执行窗口处理方式，不因10:00–12:00 deadline而绕过必要批准。"
+      ],
+      "deterministic_checks": [],
+      "reference_facts": [
+        "CSV包含customer_id、invoice_id、requested_amount但缺少currency",
+        "当前政策版本在v3.2和v3.3之间不明确",
+        "缺少Finance approval_ticket_id",
+        "有3笔requested_amount超过5000且缺Finance Director approval",
+        "等待期间可做重复invoice检查、行数统计和审批摘要等无副作用准备",
+        "不得猜currency或policy version，也不得执行退款",
+        "tomorrow 09:00是再次升级节点，原执行窗口是10:00–12:00"
+      ],
+      "expected_structure": "一个明确区分缺失信息、责任方、安全准备、暂停动作和二次升级时点的escalation plan。",
+      "ambiguity_notes": "具体沟通渠道和升级措辞可以不同；核心是缺失输入被精确识别、相关高影响动作暂停，并且在等待期间不把无副作用准备也全部停掉。",
+      "author_notes": "Matrix-required AW-10 mixed-language hard None case. Correct behaviour is stop-and-escalate, not guess-and-proceed."
     }
   ]
 }

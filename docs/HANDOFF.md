@@ -11,23 +11,15 @@ constraints. RMB/CNY presentation, Pareto-based selection analysis.
 ## STATUS
 
 **In development. Not released. No live paid benchmark has been authorized.**
-Domain 1 (`instruction_constraint_following`, IF-01 … IF-10) is frozen and
-externally approved. Domain 2 (`structured_information_analysis`, SA-01 …
-SA-10) is frozen and externally approved after the Phase 3B-2.1 patch round.
-Domain 3 (`product_reasoning_decision`, PR-01 … PR-10) is authored from
-externally authored canonical definitions. It was **reopened** in Phase 3B-3R
-after an external audit found the earlier frozen set drifted from APPROVED
-`CASE_MATRIX_V1.md` slots; the full domain was replaced with Matrix-compliant
-definitions and, after the Phase 3B-3R.1 PR-10 patch, passed both the Matrix
-Gate and the Semantic Gate and is **re-frozen / externally approved**.
-Domain 4 (`chinese_business_communication`, BC-01 … BC-10) is authored from
-externally authored Matrix-compliant definitions; after the Phase 3B-4.1
-deterministic-contract repair it passed the Matrix, Semantic, and
-Deterministic-contract Gates and is **frozen / externally approved**. Domain 5
-(AW) is not authored. There
-is no complete V1 production dataset (40 of 50 cases), no verified V1 model ID,
-no verified V1 price, and no benchmark
-result. Every run artifact produced so far is synthetic dry-run output.
+**The 50-case V1 production dataset is FROZEN / EXTERNALLY APPROVED.** All five
+domains (`instruction_constraint_following`, `structured_information_analysis`,
+`product_reasoning_decision`, `chinese_business_communication`,
+`agent_workflow_planning`), 10 cases each, passed the Matrix, Semantic,
+Deterministic-contract, and global coverage/invariant Gates
+(50 PASS / 0 PATCH / 0 REJECT). `production_status` is `"complete"` and the
+semantic freeze manifest is `docs/DATASET_FREEZE_V1.md`. There is still no
+verified V1 model ID, no verified V1 price, and no benchmark result; every run
+artifact produced so far is synthetic dry-run output.
 
 ## COMPLETED
 
@@ -38,7 +30,7 @@ result. Every run artifact produced so far is synthetic dry-run output.
 - V1 framework implemented: one shared model registry, deterministic evaluator
   (21 check types), fixed-priority cross-family dual-judge selection, pricing /
   CNY normalization framework, Pareto analytics, standalone leaderboard
-- Test suite and network-isolated dry run passing (348 tests)
+- Test suite and network-isolated dry run passing (400 tests)
 - Phase 3A case design standard and 50-slot coverage matrix (awaiting external
   review; no production prompt written)
 - Case Design Standard approved for Phase 3B authoring (Gate 3A.1 passed)
@@ -101,24 +93,52 @@ result. Every run artifact produced so far is synthetic dry-run output.
   4 (BC-01 … BC-10) **frozen / externally approved**
 - Matrix-compliance regression coverage through Domain 4
   (`tests/test_bc_cases.py`)
+- Domain 5 production cases AW-01 … AW-10 integrated from externally authored
+  Matrix-compliant canonical definitions (integration only; planning-only; no
+  new operator, no proxy checks; AW-02/05/07/09/10 remain
+  deterministic-check-free)
+- Phase 3B-5R: IF-06 repaired to the approved Matrix None contract
+  (`deterministic_checks == []`); Domain 1 reopened for IF-06 Matrix-compliance
+  re-review. Realized deterministic distribution restored to 14 / 25 / 11.
+- External IF-06 Matrix re-review PASSED (Domain 1 re-frozen). AW Matrix Gate
+  PASS; AW Semantic + Deterministic-contract Gate 8 PASS / 2 PATCH (AW-03,
+  AW-04). Phase 3B-5.1 revised AW-03/AW-04 (unique-label execution-plan
+  contract; digits-only retry-budget cell).
+- **Final V1 dataset freeze: 50 / 50 production cases, all five domains FROZEN /
+  EXTERNALLY APPROVED (50 PASS / 0 PATCH / 0 REJECT).** Matrix Gate, Semantic
+  Gate, Deterministic-contract Gate, and global coverage/invariant Gate all
+  PASS.
+- Semantic freeze manifest created (`docs/DATASET_FREEZE_V1.md`); aggregate
+  SHA-256 `6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`.
+- Deterministic / judge-boundary audit and global Matrix coverage audit
+  complete (14 Strong / 25 Partial / 11 None; 40 zh / 6 en / 4 mixed;
+  10 easy / 25 medium / 15 hard).
 
 ## CURRENT PHASE
 
-**Phase 3B-5 — Agent Workflow Planning.**
+**Case authoring phase COMPLETE.** Phases 3A (design) and 3B (authoring) are
+finished: all 50 production cases across the five domains are frozen and
+externally approved.
 
 ## CURRENT STATE
 
-**Waiting for externally authored canonical AW-01 through AW-10 definitions.**
-Domains 1–4 are frozen; Domain 5 (AW) is not authored.
+**50 / 50 cases frozen.** Domains 1–5 are all FROZEN / EXTERNALLY APPROVED. The
+immutable case baseline is the 50-case semantic freeze manifest
+(`docs/DATASET_FREEZE_V1.md`, aggregate SHA-256
+`6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`).
 
 ## NEXT
 
-Integrate the externally authored Matrix-compliant AW definitions, then perform
-the Matrix + Semantic external Gate Review.
+**Phase 4 — Native APIs & Live Benchmark.** Verify literal model IDs against
+provider-native documentation, capture a provider-native pricing snapshot and an
+FX snapshot, integrate the judge models, plan the human calibration sample, and
+reach benchmark execution readiness.
 
 ## THEN
 
-If AW is approved, freeze it to complete the 50-case V1 production dataset.
+Run the calibrated benchmark once credentials, verified model IDs, verified
+pricing, and an FX snapshot exist — and only after an explicit paid-run
+authorization.
 
 ## AFTER THAT
 
@@ -129,11 +149,10 @@ credentials, run a cost projection, and only then execute a paid run.
 ## IMPORTANT
 
 - No live paid benchmark has been authorized. Do not run `--confirm`.
-- **Do not independently author production cases** for any remaining domain
-  (BC/AW). Production case semantic authorship is externally controlled;
-  execution agents integrate the externally authored canonical definitions only
-  and must not redesign them.
-- BC and AW have **not** been authored.
+- **The frozen production cases must not be modified by provider/runtime work.**
+  Production case semantic authorship is externally controlled; any future case
+  change requires an explicit versioned reopening plus Matrix, semantic, and
+  deterministic/judge-boundary review and a new freeze hash.
 - Never read API keys from `~/.codex`, `~/.codex-deepseek`, shell history, or
   other agent configuration files. Credentials come from environment variables
   only, and are never committed.
@@ -166,13 +185,12 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 
 - Branch: `main`
 - Remote: none configured
-- Latest committed state: the Chinese-business-communication freeze checkpoint
-  (`feat: freeze chinese-business-communication benchmark cases`). It holds the
-  V1 framework, the Phase 3A/3A.1 design documents, the frozen production cases
-  IF-01 … IF-10, SA-01 … SA-10, PR-01 … PR-10, and BC-01 … BC-10, the 21
-  deterministic operators (`section_max_chars`, `section_bullet_count`,
-  `exact_keys` added in Phase 3B-1.1), deterministic-check declaration
-  validation, and Matrix-compliance regression coverage through Domain 4.
+- Latest committed state: the final V1 dataset freeze
+  (`feat: freeze AIProductBench CN V1 production dataset`). It holds the V1
+  framework, the Phase 3A/3A.1 design documents, all 50 frozen production cases
+  (IF/SA/PR/BC/AW, 10 each), the 21 deterministic operators, deterministic-check
+  declaration validation, the semantic freeze manifest
+  (`docs/DATASET_FREEZE_V1.md`), and the dataset-freeze regression tests.
 - Historical commit `e859a6d` (the earlier, superseded PR freeze) remains intact
   and auditable; it was not reset, reverted, amended, squashed, or rewritten.
 
@@ -185,5 +203,5 @@ Its pricing review is retained only as `historical_pricing_archive` metadata.
 | 3 | Provider credentials for Moonshot, MiniMax, Zhipu, and Volcano Ark are not configured |
 | 4 | No FX snapshot (USD/CNY) is configured, so USD-priced models would have no CNY-normalized cost |
 | 5 | Human calibration protocol and reviewer assignment are undefined |
-| 6 | Domains 1–4 are frozen; Domain 5 (AW) remains to be authored from externally supplied canonical definitions (dataset is 40/50 cases) |
-| 7 | AW requires externally authored canonical definitions before it can be integrated; DeepSeek must not author production cases |
+| 6 | All 50 production cases and all five domains are frozen / externally approved; the case authoring phase is complete |
+| 7 | Any future semantic case modification requires an explicit versioned reopening plus Matrix, semantic, and deterministic/judge-boundary review and a new freeze hash |
