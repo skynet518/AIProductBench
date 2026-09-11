@@ -262,6 +262,20 @@ def _mean(values: list) -> float | None:
     return round(sum(present) / len(present), 3) if present else None
 
 
+def _mean_exact(values: list) -> float | None:
+    """Unrounded mean, used for ordering decisions.
+
+    Ranking must not be decided by a rounded display value: two models whose
+    3-decimal scores coincide can still differ in the underlying data, and
+    ordering them by list position would be an accident of the registry order
+    rather than a benchmark result. The frozen methodology defines no tie-break
+    rule, so ordering uses the full-precision value while the rounded value
+    remains the published display metric.
+    """
+    present = [value for value in values if value is not None]
+    return sum(present) / len(present) if present else None
+
+
 def _sum(values: list) -> float | None:
     present = [value for value in values if value is not None]
     return round(sum(present), 8) if present else None
@@ -319,6 +333,9 @@ def summarize(results: list[dict], pool: dict, required_cases: int | None = None
                 "cases_failed": len(rows) - len(scored),
                 "cases_required": required_cases,
                 "overall_score": _mean([row["aggregate"]["overall_score"] for row in scored]),
+                "overall_score_exact": _mean_exact(
+                    [row["aggregate"]["overall_score"] for row in scored]
+                ),
                 "quality_score": _mean([row["aggregate"]["quality_score"] for row in scored]),
                 "dimension_scores": {
                     dimension: _mean(
@@ -403,7 +420,7 @@ def summarize(results: list[dict], pool: dict, required_cases: int | None = None
                 row["candidate_cost_cny"], row["cases_total"]
             )
             row["quality_per_cny"] = analytics.quality_per_cny(
-                row["overall_score"], row["candidate_cost_cny"]
+                row["overall_score_exact"], row["candidate_cost_cny"]
             )
             row["comparative_metrics_available"] = True
             row["unavailable_metrics"] = []
@@ -426,7 +443,8 @@ def summarize(results: list[dict], pool: dict, required_cases: int | None = None
     eligible_rows = [row for row in model_rows if row["rank_eligible"]]
 
     quality_cost = analytics.pareto_frontier(
-        eligible_rows, [("overall_score", "max"), ("cost_per_100_tasks_cny", "min")]
+        eligible_rows,
+        [("overall_score_exact", "max"), ("cost_per_100_tasks_cny", "min")],
     )
     three_axis_rows = [
         row for row in eligible_rows if row["latency"]["p95_latency_ms"] is not None
@@ -438,7 +456,7 @@ def summarize(results: list[dict], pool: dict, required_cases: int | None = None
                 for row in eligible_rows
             ],
             [
-                ("overall_score", "max"),
+                ("overall_score_exact", "max"),
                 ("cost_per_100_tasks_cny", "min"),
                 ("p95_latency_ms", "min"),
             ],
@@ -460,7 +478,10 @@ def summarize(results: list[dict], pool: dict, required_cases: int | None = None
 
     ranked = sorted(
         model_rows,
-        key=lambda row: (row["overall_score"] is None, -(row["overall_score"] or 0)),
+        key=lambda row: (
+            row["overall_score_exact"] is None,
+            -(row["overall_score_exact"] or 0),
+        ),
     )
 
     rank = 0
@@ -472,18 +493,28 @@ def summarize(results: list[dict], pool: dict, required_cases: int | None = None
             row["rank"] = None
 
     verdict_rows = [verdict for row in results for verdict in row["judgements"]]
+    # A judge verdict can legitimately be a failure record (provider error or
+    # unparseable judge output) and therefore carry no success-only telemetry.
+    # Token and latency fields are read optionally here so aggregation never
+    # crashes on a real failure record; unknown values stay absent rather than
+    # being fabricated as zero. Failure records remain failures.
     judge_overhead = {
         "judge_calls": len(verdict_rows),
         "judge_models_used": sorted({verdict["judge_key"] for verdict in verdict_rows}),
         "judge_total_tokens": {
-            "input": _sum([verdict["input_tokens"] for verdict in verdict_rows]),
-            "output": _sum([verdict["output_tokens"] for verdict in verdict_rows]),
-            "total": _sum([verdict["total_tokens"] for verdict in verdict_rows]),
+            "input": _sum([verdict.get("input_tokens") for verdict in verdict_rows]),
+            "output": _sum([verdict.get("output_tokens") for verdict in verdict_rows]),
+            "total": _sum([verdict.get("total_tokens") for verdict in verdict_rows]),
         },
         "judge_cost_cny": _sum([row["judge_cost_cny"] for row in results]),
-        "judge_avg_latency_ms": _mean([verdict["latency_ms"] for verdict in verdict_rows]),
+        "judge_avg_latency_ms": _mean(
+            [verdict.get("latency_ms") for verdict in verdict_rows]
+        ),
         "judge_p95_latency_ms": analytics.percentile(
-            [verdict["latency_ms"] for verdict in verdict_rows], 0.95
+            [verdict.get("latency_ms") for verdict in verdict_rows], 0.95
+        ),
+        "judge_failure_records": sum(
+            1 for verdict in verdict_rows if verdict.get("error")
         ),
     }
 
@@ -499,6 +530,13 @@ def summarize(results: list[dict], pool: dict, required_cases: int | None = None
                 "A model holds an official rank only when it has a valid scored result "
                 "for every production benchmark case. Partial results are diagnostic "
                 "only and are never ranked from a reduced denominator."
+            ),
+            "ordering_rule": (
+                "Ranked models are ordered by full-precision mean overall quality "
+                "(descending). The published overall_score is rounded to 3 decimals for "
+                "display; where rounded values coincide, full precision still determines "
+                "the order (see overall_score_exact). The frozen methodology defines no "
+                "tie-break rule, so no arbitrary ordering is applied."
             ),
             "required_cases": required_cases,
             "ranked_models": [row["model_key"] for row in ranked if row["rank_eligible"]],

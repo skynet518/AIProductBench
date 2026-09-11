@@ -36,6 +36,7 @@ import datetime as dt
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import threading
@@ -111,8 +112,9 @@ FROZEN_SEMANTIC_PATHS = {
     "data/pricing_snapshot_v1.json",
     "data/fx_snapshot_v1.json",
 }
-# The D-053 runtime-envelope revision plus Phase 5 harness tooling. These may
-# legitimately be modified or added before the D-053 commit lands.
+# The D-053/D-054 runtime-envelope revision, the D-054 aggregation-recovery
+# patch, and Phase 5 harness tooling. These may legitimately be modified or
+# added while the runtime/config work is still uncommitted.
 D053_REVISION_PATHS = {
     "data/models_v1.json",
     "data/model_registry_snapshot_v1.json",
@@ -120,11 +122,13 @@ D053_REVISION_PATHS = {
     "src/models.py",
     "src/providers.py",
     "src/judge.py",
+    "src/runner.py",
     "docs/DECISIONS.md",
     "docs/HANDOFF.md",
     "tests/test_phase4bc_config.py",
     "run_official.py",
     "tests/test_official_harness.py",
+    "tests/test_judge_failure_aggregation.py",
 }
 EXPECTED_REGISTRY_ID = "v1-registry-2026-09-11.3"
 EXPECTED_REGISTRY_HASH = (
@@ -904,6 +908,94 @@ def domain_scores(results: list[dict], model_key: str) -> dict:
     return out
 
 
+DISAGREEMENT_BINS = (
+    ("exactly_zero", "gap == 0", 0.0, 0.0),
+    ("gt0_le0.5", "0 < gap <= 0.5", 0.0, 0.5),
+    ("gt0.5_le1.0", "0.5 < gap <= 1.0", 0.5, 1.0),
+    ("gt1.0_le1.5", "1.0 < gap <= 1.5", 1.0, 1.5),
+    ("gt1.5_le2.0", "1.5 < gap <= 2.0", 1.5, 2.0),
+    ("gt2.0", "gap > 2.0", 2.0, None),
+)
+
+
+def judge_disagreement_analysis(results: list[dict], *, top_n: int = 10) -> dict:
+    """Dual-judge disagreement over the cases that actually have two judges.
+
+    Derived from the persisted judge verdicts (never from a pre-computed
+    summary). The population is every candidate case whose two intended
+    cross-family judges both produced a valid verdict; cases with a missing or
+    invalid verdict are excluded here and reported separately as
+    judge-unavailable. Bins are explicit, mutually exclusive half-open
+    intervals, and their counts sum exactly to the population.
+    """
+    population = []
+    for record in results:
+        if not record:
+            continue
+        verdicts = [
+            verdict
+            for verdict in (record.get("judgements") or [])
+            if verdict.get("scores") and not verdict.get("error")
+        ]
+        if len(verdicts) < 2:
+            continue
+        means = [float(verdict["mean_score"]) for verdict in verdicts]
+        gap = round(max(means) - min(means), 3)
+        population.append(
+            {
+                "model_key": record["model_key"],
+                "case_id": record["case_id"],
+                "domain": record.get("domain"),
+                "judges": [verdict.get("judge_key") for verdict in verdicts],
+                "judge_mean_scores": means,
+                "gap": gap,
+                "dimension_gaps": {
+                    dimension: round(
+                        max(v["scores"][dimension] for v in verdicts)
+                        - min(v["scores"][dimension] for v in verdicts),
+                        3,
+                    )
+                    for dimension in config.RUBRIC_DIMENSIONS
+                },
+            }
+        )
+
+    histogram = []
+    for name, definition, lower, upper in DISAGREEMENT_BINS:
+        if name == "exactly_zero":
+            count = sum(1 for item in population if item["gap"] == 0.0)
+        elif upper is None:
+            count = sum(1 for item in population if item["gap"] > lower)
+        else:
+            count = sum(1 for item in population if lower < item["gap"] <= upper)
+        histogram.append(
+            {"bin": name, "definition": definition, "count": count}
+        )
+
+    gaps = [item["gap"] for item in population]
+    highest = sorted(
+        population, key=lambda item: (-item["gap"], item["model_key"], item["case_id"])
+    )[:top_n]
+    return {
+        "population_definition": (
+            "candidate cases whose two intended cross-family judges both returned a "
+            "valid structured verdict"
+        ),
+        "population": len(population),
+        "excluded_judge_unavailable_cases": sum(
+            1
+            for record in results
+            if record and record.get("judge_unavailable_reason")
+        ),
+        "histogram": histogram,
+        "histogram_counts_sum": sum(item["count"] for item in histogram),
+        "mean_gap": round(sum(gaps) / len(gaps), 4) if gaps else None,
+        "max_gap": max(gaps) if gaps else None,
+        "exact_agreement_cases": sum(1 for gap in gaps if gap == 0.0),
+        "highest_disagreement_cases": highest,
+    }
+
+
 def leaderboard_rows(document: dict, results: list[dict]) -> list[dict]:
     summary = document["summary"]
     rows = []
@@ -923,6 +1015,7 @@ def leaderboard_rows(document: dict, results: list[dict]) -> list[dict]:
                 "official_ranking_eligible": row["rank_eligible"],
                 "incomplete_reason": row["incomplete_reason"],
                 "overall_quality": row["overall_score"],
+                "overall_quality_exact": row.get("overall_score_exact"),
                 "rubric_dimension_scores": row["dimension_scores"],
                 "domain_scores": domain_scores(results, row["model_key"]),
                 "deterministic_constraint_pass_rate": row["constraint_pass_rate"],
@@ -964,6 +1057,7 @@ CSV_COLUMNS = [
     "provider_model_id",
     "completion_status",
     "overall_quality",
+    "overall_quality_exact",
     "deterministic_constraint_pass_rate",
     "candidate_cost_cny",
     "quality_per_cny",
@@ -995,6 +1089,7 @@ def write_leaderboard_csv(rows: list[dict], path: Path) -> Path:
                     "provider_model_id": row["provider_model_id"],
                     "completion_status": row["completion_status"],
                     "overall_quality": row["overall_quality"],
+                    "overall_quality_exact": row["overall_quality_exact"],
                     "deterministic_constraint_pass_rate": row[
                         "deterministic_constraint_pass_rate"
                     ],
@@ -1354,12 +1449,80 @@ def write_official_artifacts(
     calibration = select_calibration(results, case_list)
     history = _phase_history(run_dir)
 
+    # ---- audit/reporting blocks (additive; frozen metrics untouched) -------
+    disagreement = judge_disagreement_analysis(results)
+    summary["judge_disagreement_analysis"] = disagreement
+    candidate_planned = len(models.candidates(pool)) * len(case_list)
+    candidate_attempted = sum(1 for record in results if record)
+    judge_planned = sum(
+        len(record.get("judges_attempted") or [])
+        for record in results
+        if record and not record.get("error") and record.get("response_text")
+    )
+    judge_attempted = len(judge_payloads)
+    all_models_complete = summary["official_ranking"]["complete_run"]
+    execution_complete = (
+        candidate_attempted >= candidate_planned and judge_attempted >= judge_planned
+    )
+    summary["execution_semantics"] = {
+        "execution_complete": execution_complete,
+        "execution_complete_meaning": (
+            "Every planned paid unit was attempted and persisted: candidates "
+            f"{candidate_attempted}/{candidate_planned}, judges "
+            f"{judge_attempted}/{judge_planned}."
+        ),
+        "all_models_complete": all_models_complete,
+        "all_models_complete_meaning": (
+            "A model is complete only when all 50 production cases have a valid "
+            "candidate result and both intended cross-family judges returned a valid "
+            "verdict. Fewer than ten complete models is a benchmark result, not an "
+            "unfinished execution."
+        ),
+        "run_complete_legacy_field": {
+            "value": all_models_complete,
+            "meaning": (
+                "Compatibility alias of all_models_complete. It does NOT describe "
+                "whether the paid execution finished."
+            ),
+        },
+        "candidate_units_planned": candidate_planned,
+        "candidate_units_attempted": candidate_attempted,
+        "judge_units_planned": judge_planned,
+        "judge_units_attempted": judge_attempted,
+    }
+
+    head = runner._git_commit()
+    worktree_clean = _git_status().strip() == ""
+    execution_commit = (document.get("recovery") or {}).get(
+        "execution_provenance", {}
+    ).get("git_execution_commit") or document["run_manifest"].get("git_commit")
+    runtime_baseline = (document.get("recovery") or {}).get(
+        "execution_provenance", {}
+    ).get("configuration_baseline_commit") or "e10ceb0aa89483050ec0b09eb96e7d16c37e4e09"
+    finalization_commit = (
+        head if (worktree_clean and head and head != execution_commit) else None
+    )
+
     manifest = {
         "artifact": "AIProductBench CN V1 — official full-run manifest",
         "phase": PHASE,
         "run_id": document.get("run_id"),
         "run_kind": "official_full_run",
         "canonical_official_run": not synthetic,
+        "canonical_spend": document.get("canonical_spend"),
+        "recovery": document.get("recovery"),
+        "execution_git_commit": execution_commit,
+        "runtime_baseline_commit": runtime_baseline,
+        "finalization_commit": finalization_commit,
+        "git_commit": execution_commit,
+        "git_commit_semantics": (
+            "Compatibility alias of execution_git_commit: the commit the paid execution "
+            "ran from. runtime_baseline_commit is the D-054 configuration baseline (its "
+            "parent) and finalization_commit is null until the recovery/reporting fix is "
+            "committed. Frozen inputs are identical across all three and are verified by "
+            "hash in this manifest."
+        ),
+        "execution_semantics": summary.get("execution_semantics"),
         "final_execution_envelope": {
             "candidate_generation_ceiling_tokens": max(
                 model.get("max_output_tokens") or 0 for model in models.candidates(pool)
@@ -1529,6 +1692,21 @@ def write_official_artifacts(
     _write_json(run_dir / "summary.json", summary)
     paths["summary"] = str(run_dir / "summary.json")
 
+    _write_json(
+        run_dir / "judge_disagreement.json",
+        {
+            "run_id": document.get("run_id"),
+            "note": (
+                "Dual-judge disagreement computed directly from the persisted judge "
+                "verdicts in this run's checkpoint. Bins are explicit, mutually "
+                "exclusive half-open intervals; histogram_counts_sum must equal "
+                "population."
+            ),
+            **disagreement,
+        },
+    )
+    paths["judge_disagreement"] = str(run_dir / "judge_disagreement.json")
+
     _write_json(run_dir / "leaderboard.json", rows)
     paths["leaderboard_json"] = str(run_dir / "leaderboard.json")
     write_leaderboard_csv(rows, run_dir / "leaderboard.csv")
@@ -1626,6 +1804,15 @@ def write_official_artifacts(
     calibration_doc = {
         "artifact": "AIProductBench CN V1 — human calibration sample v1",
         "run_id": document.get("run_id"),
+        "public_status": (
+            "human calibration sample prepared / human review pending"
+        ),
+        "human_calibrated": False,
+        "public_wording_note": (
+            "This artifact selects outputs for external human review. No human labels "
+            "exist yet and none are fabricated; V1 must not be described as "
+            "human-calibrated until real labels are supplied."
+        ),
         "git_commit": document["run_manifest"].get("git_commit"),
         "dataset_manifest_sha256": document["dataset"]["semantic_manifest_sha256"],
         "model_registry_snapshot_id": document["run_manifest"].get(
@@ -1656,7 +1843,10 @@ def write_official_artifacts(
         run_dir / "leaderboard.html",
         banner=(
             "Official AIProductBench CN V1 run — values are observed provider "
-            "usage and real scoring. INCOMPLETE models are not ranked."
+            "usage and real scoring. INCOMPLETE models are not ranked. Ranked models "
+            "are ordered by full-precision mean overall quality; the displayed score "
+            "is rounded to 3 decimals and exact values are in leaderboard.json/csv. "
+            "Human calibration sample prepared — human review pending."
         )
         if not synthetic
         else "SELF-TEST OUTPUT — synthetic, not a real benchmark result.",
@@ -2256,11 +2446,70 @@ def main(argv: list[str] | None = None) -> int:
             case_document, pool, records, failures,
             dry_run=False, fx_snapshot=config.FX_SNAPSHOT,
         )
-        run_id = f"report-only-{started_at.strftime('%Y%m%dT%H%M%SZ')}"
+        # Preserve the canonical run identity when rebuilding in place. The run
+        # directory carries the authoritative run id of the paid execution.
+        directory_name = run_dir.name
+        match = re.match(r"^official_run_v1_final_(\d{8}T\d{6}Z)$", directory_name)
+        run_id = (
+            f"official-v1-{match.group(1)}"
+            if match
+            else f"report-only-{started_at.strftime('%Y%m%dT%H%M%SZ')}"
+        )
         document["run_id"] = run_id
         document["run_directory"] = str(run_dir)
         document["run_manifest"]["run_id"] = run_id
         document["run_manifest"]["run_directory"] = str(run_dir)
+
+        def _phase_spend(*names):
+            total = 0.0
+            printed = 0
+            for name in names:
+                for record in _load_jsonl(checkpoint_dir / name):
+                    cost = (record.get("outcome") or {}).get("cost_cny")
+                    if cost:
+                        total += float(cost)
+                    printed += 1
+            return round(total, 8), printed
+
+        candidate_spend, candidate_records_used = _phase_spend(
+            "candidate_calls.jsonl", "candidate_calls_requeue.jsonl"
+        )
+        judge_spend, judge_records_used = _phase_spend(
+            "judge_calls.jsonl", "judge_calls_requeue.jsonl"
+        )
+        document["canonical_spend"] = {
+            "candidate_spend_cny": candidate_spend,
+            "judge_spend_cny": judge_spend,
+            "total_spend_cny": round(candidate_spend + judge_spend, 8),
+            "candidate_checkpoint_records": candidate_records_used,
+            "judge_checkpoint_records": judge_records_used,
+            "note": (
+                "Spend of the canonical paid execution, recovered from the immutable "
+                "checkpoint. Excludes aborted-run, smoke, probe, D-053 and D-054 "
+                "validation spend."
+            ),
+        }
+        document["recovery"] = {
+            "mode": "offline_rebuild_from_canonical_checkpoint",
+            "no_network": True,
+            "no_new_paid_calls": True,
+            "raw_checkpoint_mutated": False,
+            "rebuilt_at": started_at.isoformat(timespec="seconds"),
+            "aggregation_fix": (
+                "src/runner.py summarize(): judge verdict token/latency telemetry is "
+                "read optionally, because valid judge failure records (provider error "
+                "or unparseable judge output) carry no success-only fields."
+            ),
+            "execution_provenance": {
+                "git_execution_commit": pre.get("git_commit"),
+                "configuration_baseline_commit": "e10ceb0aa89483050ec0b09eb96e7d16c37e4e09",
+                "note": (
+                    "The paid execution ran from a harness-only commit whose parent is the "
+                    "D-054 configuration baseline; dataset, registry, pricing and FX are "
+                    "identical to that baseline and are verified by hash in this manifest."
+                ),
+            },
+        }
         paths = write_official_artifacts(
             run_dir=run_dir, pool=pool, document=document, results=records,
             case_list=case_list, pre=pre,
