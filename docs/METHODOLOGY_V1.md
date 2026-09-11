@@ -1,10 +1,19 @@
 # AIProductBench CN V1 — Methodology
 
-**Status: frozen design. Dataset not yet built. No live runs authorized.**
+**Status: RELEASED — V1.0.0**
 
-This document defines how AIProductBench CN V1 measures models. It is the
-authoritative methodology reference. If code and this document disagree, the
-disagreement is a bug in one of them.
+**Canonical run: `official-v1-20260911T103838Z`**
+
+This document defines the evaluation methodology used by the released
+AIProductBench CN V1 benchmark.
+
+It is the authoritative methodology reference for V1.0.0. If the released
+benchmark implementation, canonical artifacts, and this document disagree, the
+disagreement should be treated as a documentation or implementation defect
+rather than silently reconciled.
+
+The V1 methodology, dataset, registry, pricing, FX snapshot, runtime envelope,
+and execution provenance are frozen for the published release.
 
 ---
 
@@ -12,11 +21,20 @@ disagreement is a bug in one of them.
 
 ### Size
 
-50 total cases.
+V1 contains:
+
+**50 frozen production cases**
+
+These cases are the released benchmark dataset, not synthetic fixtures.
+
+Synthetic fixtures may still exist for testing the evaluation framework, but
+they are explicitly separated from the production benchmark and must never be
+presented as official benchmark evidence.
 
 ### Domains
 
-Five domains, 10 cases each:
+The 50 production cases are divided across five workload domains, with 10 cases
+per domain:
 
 | # | Domain | What it measures |
 | --- | --- | --- |
@@ -28,16 +46,24 @@ Five domains, 10 cases each:
 
 ### Language composition
 
-- Approximately 40 Chinese-first cases
-- Approximately 10 English or cross-lingual cases
+The dataset is Chinese-first:
+
+- approximately 40 Chinese-first cases
+- approximately 10 English or cross-lingual cases
 
 ### Difficulty composition
 
-Within every domain: 2 easy, 5 medium, 3 hard.
+Within every domain:
+
+- 2 easy
+- 5 medium
+- 3 hard
+
+This distribution is frozen for V1.
 
 ### Case schema
 
-Every case must support:
+Every production case supports the following schema:
 
 | Field | Required | Notes |
 | --- | --- | --- |
@@ -49,21 +75,38 @@ Every case must support:
 | `evaluation_criteria` | yes | Case-specific criteria supplied to every judge |
 | `deterministic_checks` | when applicable | Machine-checkable constraints |
 
-**The final 50 cases are a Phase 3 deliverable.** Phase 2 defines and validates
-the schema only. Synthetic fixtures used to exercise the framework are labelled
-synthetic and are not the dataset.
+The production cases were authored, reviewed, validated, and frozen before the
+canonical paid execution.
+
+Dataset governance is documented in:
+
+- `CASE_DESIGN_STANDARD_V1.md`
+- `CASE_MATRIX_V1.md`
+- `DATASET_QA_V1.md`
+- `DATASET_FREEZE_V1.md`
+
+Canonical dataset semantic manifest:
+
+`6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`
 
 ---
 
-## 2. Evaluation design
+## 2. Evaluation Design
 
-V1 uses **hybrid evaluation**: deterministic checks where a constraint is
-objectively testable, LLM evaluation where judgment is required.
+V1 uses **hybrid evaluation**:
 
-### A. Deterministic checks
+- deterministic checks where a constraint is objectively machine-testable
+- LLM evaluation where semantic judgment is required
 
-The evaluator implements **21 check types**, applied when a case declares
-machine-checkable constraints:
+The two systems measure different properties and are reported side by side.
+
+Neither is allowed to silently override the other.
+
+---
+
+### A. Deterministic Checks
+
+The released evaluator supports **21 deterministic check types**.
 
 | Group | Check types |
 | --- | --- |
@@ -74,115 +117,199 @@ machine-checkable constraints:
 | Order and format | `ordering`, `no_markdown_fence` |
 | Numeric | `numeric_range` |
 
-Cases declare checks; cases that need none declare none. The evaluator reports
-`null` for a case with no checks rather than a fabricated pass rate.
+Cases declare deterministic checks only where the requested constraint can be
+objectively evaluated.
 
-**Section-scoped checks.** `section_max_chars` and `section_bullet_count`
-isolate one section of a response using a required `start_marker` and an
-optional `end_marker` (null for the final section), then apply a length ceiling
-or an exact hyphen-bullet count to the isolated body. A missing, duplicate, or
-out-of-order marker fails the check safely. `exact_keys` requires a JSON object
-whose key set equals the declared set exactly: order is irrelevant, and a
-missing key, an extra key, invalid JSON, or a non-object root fails. These three
-operators were added in Phase 3B-1.1 after production-case review; see
-`DECISIONS.md` D-039.
+A case that legitimately requires no deterministic checks reports no fabricated
+pass rate.
 
-**Deterministic-check declaration validation. A production case cannot pass
-dataset validation if any deterministic-check declaration is malformed.** Every
-declaration is checked against a centralized per-operator schema before a run.
-An unknown operator, a missing or unexpected field, a wrong parameter type, a
-non-compiling regex, an invalid or duplicate list member, a non-integer or
-out-of-range count, or an invalid section marker (including identical
-start/end markers) is a dataset-validation error. Declarations are validated by
-`src/deterministic.py` and surfaced by `run_benchmark.py --validate-only`, so a
-broken check fails before any paid execution is possible rather than becoming a
-silent runtime failure. This changes no operator's runtime semantics.
+#### Section-scoped checks
 
-**Check-quality rule.** A deterministic check must test the intended
-constraint, not a superficial proxy. Requiring the word "risk" is not evidence
-of risk analysis; requiring a fixed phrase is not evidence of correct
-prioritisation; and confirming that a number appears is not evidence that a
-computation is correct. Prefer structural, exact, enum, count, invariant, or
-objectively derived checks, and leave genuinely subjective or semantic
-constraints to judges. The rewrite and audit of the planned Strong/Partial
-labels is recorded in `CASE_MATRIX_V1.md` §7 and `DECISIONS.md` D-034.
+`section_max_chars` and `section_bullet_count` isolate a specific section using:
 
-**Language rule for length checks.** `max_words` / `min_words` count
-whitespace-separated tokens, which is meaningless for Chinese. Cases with
-`language: "zh"` must use `max_chars` / `min_chars`; a word-count check on a
-Chinese case is a validation error. English cases may use word counts.
-Mixed-language cases may use word counts only with an explicit
-`word_count_justification` recorded on the case. See `DECISIONS.md` D-024.
+- required `start_marker`
+- optional `end_marker`
 
-Deterministic evaluation produces:
+and then apply their constraint only to that section.
 
-```
+A missing, duplicate, or out-of-order marker fails safely.
+
+`exact_keys` requires a JSON object whose key set exactly matches the declared
+set.
+
+The following all fail:
+
+- missing keys
+- unexpected keys
+- invalid JSON
+- a non-object JSON root
+
+These operators were added after production-case review and are documented in
+`DECISIONS.md`.
+
+#### Declaration validation
+
+A production case cannot pass dataset validation if any deterministic-check
+declaration is malformed.
+
+Validation rejects, among other errors:
+
+- unknown operators
+- missing fields
+- unexpected fields
+- invalid parameter types
+- non-compiling regular expressions
+- invalid or duplicate list members
+- invalid count parameters
+- malformed section markers
+
+Declarations are validated before a paid benchmark run.
+
+This prevents an invalid check definition from silently becoming a runtime
+evaluation failure.
+
+#### Check-quality rule
+
+A deterministic check must test the intended constraint rather than a
+superficial proxy.
+
+For example:
+
+- requiring the word `risk` is not evidence of risk analysis
+- requiring a phrase is not evidence that prioritisation is correct
+- confirming that a number appears is not evidence that a computation is correct
+
+Structural, exact, enum, count, invariant, or objectively derived checks are
+preferred.
+
+Genuinely semantic requirements are left to the LLM judges.
+
+#### Language rule for length checks
+
+`max_words` and `min_words` operate on whitespace-separated tokens and are not
+appropriate for Chinese-first responses.
+
+Therefore:
+
+- `zh` cases use character-based checks such as `max_chars` / `min_chars`
+- English cases may use word-count checks
+- mixed-language cases require an explicit justification if word-count checks
+  are used
+
+This rule is enforced during dataset validation.
+
+#### Deterministic metric
+
+For cases containing deterministic checks:
+
+```text
 constraint_pass_rate = passed_checks / total_checks
 ```
 
-It is reported per case and aggregated per model. It is never used to override
-LLM judgment, and LLM judgment never overrides a failed deterministic check.
-They answer different questions and are reported side by side.
+The metric is reported independently from LLM quality evaluation.
 
-### B. LLM evaluation
+A failed deterministic constraint is not silently repaired by a high judge
+score.
 
-Three shared judge dimensions, each scored as an integer from 1 to 5:
+Likewise, deterministic compliance alone does not imply high semantic quality.
+
+---
+
+### B. LLM Evaluation
+
+Every valid candidate response is evaluated using three shared judge
+dimensions.
+
+Each dimension uses an integer score from 1 to 5:
 
 | Dimension | Question |
 | --- | --- |
 | `task_completion` | Did the response fully do what the case asked, using only the information given? |
-| `reasoning_quality` | Is the *observable* answer correct, specific, and decision-ready, and is its stated justification supported? |
-| `instruction_following` | Did it obey every explicit constraint, including negative ones? |
+| `reasoning_quality` | Is the observable answer correct, specific, decision-ready, and supported by its stated justification? |
+| `instruction_following` | Did it obey every explicit constraint, including negative constraints? |
 
-Judges receive **both** the shared rubric and the case-level
-`evaluation_criteria`. Case-specific criteria are authoritative where they are
-more concrete.
+Judges receive both:
 
-**No private chain-of-thought.** V1 never asks a candidate to expose hidden
-reasoning and never scores one. `reasoning_quality` is judged from what the
-candidate actually delivered: a concise decision rationale, evidence cited from
-the supplied facts, trade-offs, stated assumptions, and the basis of a
-recommendation. A prompt or criterion must not request "show your reasoning",
-"step-by-step reasoning", or "transparent reasoning". A correct answer with no
-stated basis is not automatically high-scoring, and a fluent but unsupported
-rationale is not high-scoring; both are judged on the observable answer. See
-`CASE_DESIGN_STANDARD_V1.md` §6.
+1. the shared benchmark rubric
+2. the case-level `evaluation_criteria`
 
-Judge output must be strict, machine-readable JSON. Invalid judge output is
-rejected, never repaired.
+Case-specific evaluation criteria are authoritative where they are more
+concrete.
 
-### C. Dual-judge design
+#### No private chain-of-thought
 
-V1 has **one shared model registry**, and the judge pool is a set of
-judge-eligible entries in it. A model may be both an evaluated candidate and a
-judge; there are no judge-only duplicate copies of an existing model. The judge
-role and the candidate role produce strictly separate metrics — judge
-evaluation cost is never added to candidate inference cost, and judge latency is
-never mixed with candidate latency.
+V1 never asks candidate models to expose hidden chain-of-thought and never
+scores private reasoning.
 
-Target judge families:
+`reasoning_quality` is evaluated only from observable output, such as:
+
+- decision rationale
+- evidence based on supplied facts
+- explicit trade-offs
+- stated assumptions
+- support for the recommendation
+
+Prompts and evaluation criteria must not require:
+
+- “show your reasoning”
+- “step-by-step reasoning”
+- “transparent reasoning”
+
+A fluent but unsupported explanation is not automatically a high-quality
+answer.
+
+A correct answer without an adequate observable basis is also not automatically
+high-scoring when justification is part of the task.
+
+Judge output must be strict machine-readable JSON.
+
+Invalid judge output is rejected rather than silently repaired.
+
+---
+
+### C. Cross-family Dual-Judge Design
+
+V1 uses one shared model registry.
+
+Judge-eligible models are entries in that registry rather than separate
+judge-only copies.
+
+Candidate and judge roles remain operationally separate:
+
+- candidate inference cost is reported separately from judge evaluation cost
+- candidate latency is reported separately from judge latency
+
+The canonical judge families are:
 
 - Qwen flagship
 - DeepSeek flagship
 - GLM flagship
 
-**Leave-one-provider-out rule:** a candidate response must not be evaluated by a
-judge from the same model family or provider when an alternative is available.
+#### Leave-one-provider-out rule
 
-**Exactly two** valid cross-family judge evaluations are produced per candidate
-response.
+A candidate response is not evaluated by a judge from the same model family or
+provider when valid cross-family alternatives are available.
 
-**Fixed-priority selection.** Judges are ordered by an explicit priority list
-declared in configuration, not by hashing the candidate:
+The intended design uses **two valid cross-family judge verdicts** for every
+valid candidate response.
 
-```
+A same-family judge is never substituted merely to obtain a second score.
+
+If the required verdict cannot be obtained under the frozen retry policy, that
+evaluation remains invalid and may affect model completeness.
+
+#### Fixed-priority judge selection
+
+Judge selection uses the frozen priority:
+
+```text
 qwen_flagship > deepseek_flagship > glm_flagship
 ```
 
-The candidate's own family and provider are excluded, then the first two
-remaining cross-family judges are selected. A same-family judge is never
-substituted to obtain a second score; if fewer than two eligible judges remain,
-the response is recorded as judge-unavailable.
+The candidate's own family/provider is excluded, after which the first two
+eligible cross-family judges are selected.
+
+Canonical family mapping:
 
 | Candidate family | Judges |
 | --- | --- |
@@ -191,118 +318,144 @@ the response is recorded as judge-unavailable.
 | GLM | Qwen + DeepSeek |
 | Kimi, MiniMax, Doubao | Qwen + DeepSeek |
 
-Per-candidate hash rotation was considered and rejected (see `DECISIONS.md`
-D-018): giving unrelated candidates different judge pairs introduces an
-avoidable evaluation confound.
+Per-candidate hash rotation was rejected because assigning unrelated candidates
+different judge pairs would introduce an avoidable evaluation confound.
 
-The reason for two judges rather than one: a single judge from one family
-produces a number nobody can audit. Two independent cross-family judges let the
-project publish judge agreement, which is the honest measure of how much the
-score depends on the judge.
+The purpose of dual judging is not to claim elimination of judge bias.
 
-### D. Human calibration
+It is to reduce dependence on a single judge family and make judge disagreement
+observable.
 
-V1 does **not** cap human review at a fixed 10% of responses. The planned
-calibration is a base stratified sample plus a risk-based extension.
+Published disagreement evidence is available in:
 
-**Base sample: 50 candidate responses.** The base sample covers:
+`release/v1/judge_disagreement.json`
+
+---
+
+### D. Human Calibration
+
+V1 defines a human-calibration sampling policy, but **human calibration review
+was not completed for the V1.0.0 release**.
+
+Therefore:
+
+- V1.0.0 is **not human-calibrated**
+- no Human-vs-Judge agreement metric is claimed
+- no human agreement number is fabricated or inferred
+- official V1 ranking does not depend on unperformed human review
+
+The designed calibration policy remains documented for future execution.
+
+#### Planned base sample
+
+The intended base sample contains approximately 50 candidate responses and is
+designed to cover:
 
 - all candidate models
-- all five domains
+- all five workload domains
 - easy, medium, and hard cases
 
-**Risk-based extension: approximately 10–20 additional responses when
-warranted.** Oversampling prioritises:
+#### Planned risk-based extension
+
+Approximately 10–20 additional responses may be added when warranted.
+
+Priority areas include:
 
 - hard cases
-- cases with no deterministic checks
+- cases without deterministic checks
 - responses with high Judge A / Judge B disagreement
-- Kimi, MiniMax, and Doubao responses, because those three families share the
-  same judge pair (Qwen flagship + DeepSeek flagship)
-- responses near a close ranking boundary
+- Kimi, MiniMax, and Doubao responses because they share the same judge-family pair
+- responses near close ranking boundaries
 - anomalous or surprising failures
 
-Expected practical review size is therefore **approximately 50–70 responses**.
-The base sample guarantees coverage of models, domains, and difficulty; the
-extension spends additional review where judge error is most likely to change a
-conclusion. Kimi, MiniMax, and Doubao coverage is mandatory in the base sample
-so the correlated-judge risk in §7 is checked against human judgment rather than
-merely disclosed.
+The intended practical review size is therefore approximately 50–70 responses.
 
-Future reporting should include:
+This section documents a **sampling design**, not a completed V1 evaluation
+artifact.
 
-- Judge A vs Judge B agreement
-- Human vs Judge agreement
-
-The sampling *policy* is defined here. Executing the sample is a Phase 3/4 task.
-Calibration data must not be fabricated; no agreement figures are invented, and
-if human review has not been performed the report says so and publishes none.
-See `DECISIONS.md` D-037.
+A later version may execute and publish human calibration, but V1.0.0 does not
+claim that this occurred.
 
 ---
 
 ## 3. Aggregation
 
-Per candidate response:
+### Per candidate response
 
-```
+```text
 judge_mean      = mean of the three dimensions, per judge
-quality_score   = mean of judge_mean across the two judges   (1-5)
-overall_score   = (quality_score - 1) / (5 - 1) * 100        (0-100)
+quality_score   = mean of judge_mean across the two valid judges   (1-5)
+overall_score   = (quality_score - 1) / (5 - 1) * 100              (0-100)
 ```
 
-Per model:
+### Per model
 
-```
+```text
 overall_score        = mean of overall_score across scored cases
 constraint_pass_rate = passed deterministic checks / total deterministic checks
 task_success_rate    = scored cases with every deterministic check passed / scored cases
-judge_agreement      = agreement between the two judges (see §4)
+judge_agreement      = disagreement/agreement evidence between the two judges
 ```
 
-### Equal-denominator rule
+---
 
-Official rankings require **equal denominators**. A candidate model holds an
-official rank only when it has a valid scored result for every production
-benchmark case — for a 50-case dataset, exactly 50 case-level scores.
+### Equal-denominator Rule
 
-If any case is judge-unavailable, permanently failed, or otherwise lacks a
-required evaluation result after the allowed retry policy:
+Official rankings require **equal denominators**.
 
-- the model/run is marked **INCOMPLETE**
-- the case is never silently dropped
-- no official overall ranking is computed from a reduced denominator
-- the model is excluded from `ranked_models` and from the Pareto frontier
+A candidate model is rank-eligible only when all 50 production cases have valid
+required evaluation results.
 
-Partial diagnostic results remain visible for debugging, but an incomplete model
-does not appear as a valid ranked model. This is enforced in `src/runner.py` and
-covered by `tests/test_ranking_invariant.py`. See `DECISIONS.md` D-021 and D-022.
+If any required case remains invalid after the frozen retry policy because of
+candidate failure, judge-unavailable state, invalid required verdict, or another
+terminal evaluation failure:
 
-### Incomplete-run comparative metrics
+- the model is marked **INCOMPLETE**
+- the failed case is never silently dropped
+- no official rank is computed using a reduced denominator
+- the model is excluded from `ranked_models`
+- the model is excluded from the official Pareto frontier
 
-An incomplete candidate run keeps its diagnostics and suppresses every metric
-that only means something across equal denominators.
+Partial diagnostic evidence remains visible.
 
-**Kept as diagnostics:** `actual_spend_cny` (real candidate spend), and
-`calls_completed`, `cases_completed`, partial token usage (`tokens`), and
-partial latency (`latency`) for the work that did complete.
+This distinction is critical:
 
-**Suppressed for the incomplete run (reported as `null` / N/A):**
+> A completed benchmark execution does not require every candidate model to be
+> complete.
 
-- `cost_per_100_tasks_cny`
-- `quality_per_cny`
-- official Pareto eligibility (`pareto_quality_cost`,
-  `pareto_quality_cost_latency`)
-- official rank (`rank`, and membership in `ranked_models`)
+The canonical V1 execution attempted every planned paid unit, but only 4 of 10
+candidate models satisfied the strict ranking-completeness contract.
 
-The reason is the same as the equal-denominator rule: these quantities are
-comparisons between models, so a reduced or unequal base makes them
-non-comparable rather than approximately comparable. The report must say the
-metric is unavailable **because the run is incomplete**, not publish a number
-computed over a smaller denominator. The summary carries a
-`metric_availability` block naming the suppressed metrics and the affected
-models. Enforced in `src/runner.py`, rendered by `src/leaderboard.py`, and
-covered by `tests/test_ranking_invariant.py`. See `DECISIONS.md` D-036.
+---
+
+### Incomplete-run Comparative Metrics
+
+An incomplete candidate retains operational diagnostics for work that actually
+completed.
+
+Examples include:
+
+- actual candidate spend
+- calls completed
+- cases completed
+- observed token usage
+- observed latency
+- observed partial-quality diagnostics where applicable
+
+However, comparative metrics requiring equal denominators are suppressed or
+treated as unavailable.
+
+These include:
+
+- official rank
+- membership in `ranked_models`
+- official Pareto eligibility
+- `cost_per_100_tasks_cny` when the required equal-denominator contract is not satisfied
+- `quality_per_cny` when the required comparative basis is unavailable
+
+The benchmark must explain that these values are unavailable because the model
+is incomplete rather than publishing misleading reduced-denominator
+comparisons.
 
 ---
 
@@ -310,109 +463,331 @@ covered by `tests/test_ranking_invariant.py`. See `DECISIONS.md` D-036.
 
 | Metric | Definition |
 | --- | --- |
-| `quality_score` | Mean of the three rubric dimensions, 1-5 |
+| `quality_score` | Mean of the three judge dimensions, 1–5 |
 | `constraint_pass_rate` | Deterministic checks passed / checks run |
-| `task_success_rate` | Share of cases passing all deterministic checks |
-| `overall_score` | Rubric score normalised to 0-100 |
-| `avg_latency` | Mean wall-clock response time |
-| `p50_latency` | Median response time |
-| `p95_latency` | 95th percentile response time |
+| `task_success_rate` | Share of scored cases passing all declared deterministic checks |
+| `overall_score` | Judge quality normalized to 0–100 |
+| `avg_latency` | Mean candidate wall-clock response time |
+| `p50_latency` | Median candidate response time |
+| `p95_latency` | 95th-percentile candidate response time |
 | `input_tokens` | Provider-reported input tokens |
 | `output_tokens` | Provider-reported output tokens |
 | `reasoning_tokens` | Provider-reported reasoning tokens when available |
-| `candidate_inference_cost` | Cost of the candidate calls only |
-| `judge_evaluation_cost` | Cost of the judge calls only, reported separately |
-| `cost_per_100_tasks` | Candidate inference cost scaled to 100 tasks |
-| `quality_per_cny` | Overall score per CNY of candidate inference cost |
-| `judge_agreement` | Agreement between the two judges for the same response |
+| `candidate_inference_cost` | Cost of candidate calls only |
+| `judge_evaluation_cost` | Cost of judge calls only, reported separately |
+| `cost_per_100_tasks` | Candidate inference cost scaled to 100 tasks for eligible complete models |
+| `quality_per_cny` | Overall score relative to candidate inference cost when comparable |
+| `judge_agreement` | Agreement / disagreement evidence between the two judges |
 
-Custom-defined or absent metrics are reported as `null`. They are never
-estimated into the result. Cross-model comparative metrics are additionally
-`null` for any model in an incomplete run (see the incomplete-run rule above):
-availability, not just value, is part of the honest report.
+Custom-defined or unavailable metrics are reported as unavailable rather than
+estimated into the result.
 
----
+Metric availability is part of the benchmark's reporting contract.
 
-## 5. Pareto analysis
+### Candidate vs judge telemetry
 
-V1 presents a Pareto frontier rather than a rank-only table.
+Candidate and judge telemetry must not be merged.
 
-**Primary analysis: quality × cost.** A model is on the frontier when no other
-model is at least as good on both axes and strictly better on one. Practically:
-a model is dominated if another model has an equal or higher `overall_score` at
-an equal or lower `cost_per_100_tasks`, with at least one strict improvement.
+For product model selection:
 
-**Optional secondary analysis: quality × cost × latency.** The same dominance
-rule extended to three axes.
+- candidate inference cost is the relevant model cost
+- candidate latency is the relevant response-latency signal
 
-Models not on the frontier are still reported, with the dominating model named.
-This is what turns a leaderboard into a purchasing decision: a model can lose
-the quality ranking and still be the correct choice under a cost or latency
-constraint.
+Judge cost and judge latency describe benchmark evaluation overhead and are
+reported separately.
 
 ---
 
-## 6. Reproducibility
+## 5. Pareto Analysis
 
-A reproducible quarterly snapshot requires recording:
+AIProductBench CN presents Pareto analysis rather than relying only on a single
+quality ranking.
 
-- literal provider model IDs, with snapshot/version identifiers where the
-  provider publishes them
-- which models are pinned snapshots and which are rolling aliases
-- the dataset version used
-- judge pool, judge prompt version, and judge selection rule
-- pricing snapshot date, native currency, and source
-- FX snapshot pair, rate, date, and source (when conversion was required)
+Only **complete, rank-eligible models** may enter an official Pareto frontier.
 
-Any model that is a rolling alias rather than a dated snapshot must be labelled
-as such. A rolling alias means the run is not reproducible against the same
-weights at a later date.
+Incomplete models are excluded regardless of their observed partial scores.
+
+### Primary frontier: Quality × Cost
+
+Objectives:
+
+```text
+overall_score_exact        → maximize
+cost_per_100_tasks_cny     → minimize
+```
+
+A model is dominated if another eligible model is:
+
+- at least as good in measured quality
+- at least as good in cost
+- strictly better in at least one of those dimensions
+
+### Secondary frontier: Quality × Cost × Latency
+
+The released V1 three-objective Pareto analysis uses:
+
+```text
+overall_score_exact        → maximize
+cost_per_100_tasks_cny     → minimize
+p95_latency_ms             → minimize
+```
+
+**P95 latency is the official latency objective used in the released
+three-dimensional Pareto calculation.**
+
+This is distinct from product-facing comparisons in the README that may use
+P50 / median latency for easier interpretation.
+
+The canonical Pareto artifact is:
+
+`release/v1/pareto.json`
+
+For V1.0.0, the official Pareto frontier contains:
+
+- Kimi K3
+- DeepSeek V4 Flash
+
+The purpose of this analysis is not to create another universal leaderboard.
+
+It is to expose the decision trade-off:
+
+> How much measured quality are we buying, at what cost and latency?
 
 ---
 
-## 7. Known limitations (must be published with results)
+## 6. Reproducibility and Provenance
 
-- Approximately 10 models and 50 cases is a practical benchmark, not a
-  scientific one. Confidence intervals require repeated sampling that V1 does
-  not perform.
-- Judge-family bias cannot be eliminated. Two cross-family judges reduce it and
-  make it measurable; they do not remove it.
+V1.0.0 records a frozen reproducibility snapshot.
+
+A reproducible benchmark record includes:
+
+- literal provider model identifiers
+- model registry snapshot
+- dataset version and semantic manifest
+- judge pool and judge-selection rule
+- pricing snapshot
+- FX snapshot
+- runtime envelope
+- execution commit
+- canonical run identifier
+
+### Canonical V1 provenance
+
+| Field | Canonical value |
+| --- | --- |
+| Canonical run | `official-v1-20260911T103838Z` |
+| Execution commit | `f3225f51824f4e3c047b2df3c15092a803231291` |
+| Runtime baseline | `e10ceb0aa89483050ec0b09eb96e7d16c37e4e09` |
+| Dataset version | `v1-authoring-2026-09-11` |
+| Dataset semantic manifest | `6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c` |
+| Registry | `v1-registry-2026-09-11.3` |
+| Registry SHA | `259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab` |
+| Pricing | `v1-pricing-2026-09-11.1` |
+| Pricing SHA | `9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42` |
+| FX snapshot | `ecb-2026-09-10-usd-cny` |
+| USD / CNY | `6.706267217630854` |
+
+### Canonical runtime envelope
+
+| Setting | V1 value |
+| --- | --- |
+| Candidate generation ceiling | 32,768 tokens |
+| Judge generation ceiling | 16,384 tokens |
+| Client read timeout | 600 seconds |
+| Global concurrent paid calls | 6 |
+| Default per-provider concurrency | 2 |
+| Kimi max in-flight | 1 |
+| Hard cost ceiling | ¥150.00 |
+
+The canonical run is checkpointed and resumable.
+
+Completed paid work is preserved so retries do not intentionally repeat already
+completed paid calls.
+
+### Rolling aliases
+
+If a provider model identifier resolves to a rolling model alias rather than
+immutable weights, later reproduction may not execute against exactly the same
+underlying weights.
+
+Such provider behavior is a reproducibility limitation and must not be hidden.
+
+---
+
+## 7. Canonical V1 Execution Status
+
+The released V1 benchmark is based on a real paid API execution.
+
+Canonical run:
+
+`official-v1-20260911T103838Z`
+
+Execution semantics:
+
+```text
+execution_complete = true
+all_models_complete = false
+```
+
+The canonical execution attempted:
+
+```text
+Candidate units: 500 / 500
+Judge units:     990 / 990
+Total formal evaluation units: 1,490
+```
+
+Canonical API spend:
+
+```text
+Candidate spend: ¥45.05535164
+Judge spend:     ¥64.67647388
+Total spend:     ¥109.73182552
+```
+
+`execution_complete = true` means every planned paid evaluation unit was
+attempted and persisted.
+
+`all_models_complete = false` means not every candidate model satisfied the
+strict 50-case + required-valid-judge-verdict completeness contract.
+
+These statements are not contradictory.
+
+Under the frozen completeness rule:
+
+**4 of 10 models are complete and rank-eligible.**
+
+The remaining six preserve diagnostic evidence but are excluded from official
+ranking and Pareto analysis.
+
+The canonical execution record is:
+
+`release/v1/run_manifest.json`
+
+---
+
+## 8. Known Limitations
+
+V1.0.0 has the following material limitations.
+
+- **Benchmark scope.** Ten models and 50 production tasks form a practical
+  product benchmark, not a scientifically comprehensive evaluation of all LLM
+  capability.
+
+- **No repeated sampling.** V1 does not perform repeated stochastic sampling or
+  statistical significance testing. Small score differences must therefore not
+  be interpreted as statistically significant.
+
+- **Judge-family bias.** Cross-family dual judging reduces dependence on a
+  single judge family but does not eliminate judge bias.
+
 - **Correlated judges for tail families.** Kimi, MiniMax, and Doubao candidates
-  are all scored by the same judge pair (Qwen flagship + DeepSeek flagship). If
-  those two judges share a systematic bias, the three families' scores are
-  correlated with each other rather than independent. This is disclosed rather
-  than corrected, and human calibration sampling targets these families
-  explicitly. See `DECISIONS.md` D-023.
-- Pricing is a dated manual snapshot, not a live billing feed. Real invoices
-  differ.
-- Latency depends on provider load, region, and network path, and is not a
+  use the same judge-family pair under the frozen mapping. Shared systematic
+  bias in those judges can therefore correlate evaluations across those
+  candidate families.
+
+- **Human calibration not completed.** A human-calibration sampling policy was
+  designed, but the review was not completed for V1.0.0. The released benchmark
+  is therefore not human-calibrated.
+
+- **Incomplete candidate models.** Six of ten candidate models did not satisfy
+  the strict completeness contract and are excluded from official ranking and
+  Pareto analysis.
+
+- **Pricing is dated.** Pricing uses a frozen snapshot rather than a live
+  provider billing feed. Provider pricing may change after the benchmark date.
+
+- **Latency is environment-dependent.** Response latency depends on provider
+  load, region, network path, and other runtime conditions. It is not a
   controlled laboratory measurement.
-- Human calibration covers a base sample of 50 responses plus a risk-based
-  extension of roughly 10-20 when warranted (about 50-70 in practice), so it
-  bounds judge error rather than proving judge correctness.
-- Any model that cannot be pinned to a dated snapshot may change between runs.
+
+- **Provider model mutability.** A rolling provider alias may later resolve to
+  different underlying model weights.
+
+- **Scope exclusions.** V1 does not benchmark multimodal input, coding, RAG,
+  live web search, real tool execution, multi-agent execution, fine-tuning, or
+  production routing.
 
 ---
 
-## 8. Frozen vs open
+## 9. Frozen V1.0.0 Contract
 
-**Frozen:** domain set and count, domain case counts, difficulty distribution,
-language composition, three judge dimensions, the 1-5 integer scale, the
-dual-judge cross-family rule, leave-one-provider-out, fixed-priority judge
-selection over one shared registry, the deterministic-then-LLM hybrid, RMB
-presentation, Pareto presentation, the equal-denominator ranking rule, the
-incomplete-run comparative-metric suppression rule, the deterministic
-check-quality rule, the no-private-chain-of-thought rule, the human calibration
-sampling policy (base 50 plus risk-based extension), and the Chinese
-length-check rule.
+The following are frozen for the published V1.0.0 benchmark:
 
-**Open for Phase 3/4:** the literal content of the 50 cases, the literal judge
-model IDs, the literal candidate model IDs, and the pricing and FX values.
+- 50-case production dataset
+- five workload domains
+- case distribution
+- deterministic-check semantics
+- deterministic-check validation rules
+- Chinese length-check rule
+- three LLM judge dimensions
+- 1–5 judge scale
+- no-private-chain-of-thought rule
+- cross-family dual-judge design
+- fixed-priority judge selection
+- candidate / judge telemetry separation
+- equal-denominator ranking rule
+- incomplete-model comparative-metric suppression
+- RMB / CNY presentation
+- quality × cost Pareto analysis
+- quality × cost × P95 latency Pareto analysis
+- model registry snapshot
+- pricing snapshot
+- FX snapshot
+- runtime envelope
+- execution provenance
 
-Case authoring is governed by `CASE_DESIGN_STANDARD_V1.md`; the planned coverage
-of all 50 slots is in `CASE_MATRIX_V1.md`.
+The human-calibration sampling **design** is documented, but human calibration
+execution is not part of the completed V1.0.0 evidence.
 
-**Active V1 pricing is currently unresolved for every model.** V0.1-era prices
-were retired rather than reused, because they were verified for different model
-IDs and different tiers (see `DECISIONS.md` D-019). No V1 rate may be inferred
-from an earlier tier.
+The following are no longer “open Phase 3 / Phase 4” items:
+
+- production case content
+- candidate model registry
+- judge model registry
+- pricing
+- FX values
+- canonical execution configuration
+
+They were frozen for the released benchmark.
+
+Any future change to benchmark-defining inputs or evaluation semantics should be
+published under a new benchmark version rather than silently modifying the
+meaning of V1.0.0.
+
+Published canonical V1 artifacts should be treated as immutable historical
+evidence.
+
+---
+
+## 10. Related Evidence
+
+Product definition:
+
+`PRODUCT_SPEC_V1.md`
+
+Dataset design and governance:
+
+- `CASE_DESIGN_STANDARD_V1.md`
+- `CASE_MATRIX_V1.md`
+- `DATASET_QA_V1.md`
+- `DATASET_FREEZE_V1.md`
+
+Architecture and decisions:
+
+- `ARCHITECTURE.md`
+- `DECISIONS.md`
+- `HANDOFF.md`
+
+Canonical public result artifacts:
+
+- `../release/v1/leaderboard.csv`
+- `../release/v1/leaderboard.json`
+- `../release/v1/pareto.json`
+- `../release/v1/cost_summary.json`
+- `../release/v1/latency_summary.json`
+- `../release/v1/judge_disagreement.json`
+- `../release/v1/run_manifest.json`
+
+The canonical V1 release should be interpreted through these frozen artifacts
+together rather than through any single metric in isolation.
