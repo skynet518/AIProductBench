@@ -302,7 +302,11 @@ def _evaluate_one(
             )
             call["text"] = _synthetic_judge_output(case, candidate, judge_model)
         else:
-            call = providers.chat(judge_model, messages, fx_snapshot=fx_snapshot)
+            # Judge execution is a distinct role (D-054): judges keep their own
+            # bounded generation ceiling, separate from the candidate envelope.
+            call = providers.chat(
+                judge_model, messages, fx_snapshot=fx_snapshot, role="judge"
+            )
     except providers.ProviderError as exc:
         record["error"] = f"provider: {exc}"
         return record

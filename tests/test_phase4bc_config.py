@@ -126,18 +126,56 @@ class TestThinkingAndRequestConfig(unittest.TestCase):
                 self.assertNotIn("temperature", payload)
                 self.assertNotIn("top_p", payload)
 
-    def test_deepseek_output_budget_allows_reasoning_plus_answer(self):
-        # Phase 4D.1: AW-04 showed reasoning consuming the whole 2048-token
-        # budget and finishing with finish_reason=length and empty content.
-        # The DeepSeek runtime output budget is raised to a bounded 8192 so
-        # reasoning plus a final answer fit.
-        for key in ("deepseek_flagship", "deepseek_value"):
+    def test_runtime_envelope_is_uniform_across_all_slots(self):
+        # D-054: the first official attempt showed reasoning-consuming models
+        # returning finish_reason=length with empty final content at 2048,
+        # DeepSeek exhausting 8192, and (D-053) DeepSeek/GLM still exhausting
+        # 16384. The FINAL candidate ceiling is 32768; judges keep a separate
+        # 16384 ceiling because the live judge routes already return verdicts.
+        self.assertEqual(len(self.by_key), 10)
+        for key, model in self.by_key.items():
+            with self.subTest(model=key):
+                self.assertEqual(model["max_output_tokens"], 32768)
+                self.assertEqual(model["request_config"]["max_output_tokens"], 32768)
+                payload = providers._build_payload(
+                    model, [{"role": "user", "content": "hi"}]
+                )
+                self.assertEqual(payload["max_tokens"], 32768)
+                if model.get("judge_eligible"):
+                    self.assertEqual(model["judge_max_output_tokens"], 16384)
+
+    def test_candidate_and_judge_envelopes_are_separate_roles(self):
+        for key in ("qwen_flagship", "deepseek_flagship", "glm_flagship"):
             with self.subTest(model=key):
                 model = self.by_key[key]
-                self.assertEqual(model["max_output_tokens"], 8192)
-                self.assertEqual(model["request_config"]["max_output_tokens"], 8192)
-                payload = providers._build_payload(model, [{"role": "user", "content": "hi"}])
-                self.assertEqual(payload["max_tokens"], 8192)
+                candidate = providers._build_payload(
+                    model, [{"role": "user", "content": "hi"}], role="candidate"
+                )
+                judge = providers._build_payload(
+                    model, [{"role": "user", "content": "hi"}], role="judge"
+                )
+                self.assertEqual(candidate["max_tokens"], 32768)
+                self.assertEqual(judge["max_tokens"], 16384)
+
+    def test_registry_snapshot_records_the_runtime_envelope(self):
+        snapshot = models.build_registry_snapshot(_pool())
+        self.assertEqual(snapshot["snapshot_id"], "v1-registry-2026-09-11.3")
+        self.assertEqual(
+            {record["max_output_tokens"] for record in snapshot["models"]}, {32768}
+        )
+        self.assertEqual(
+            {
+                record["judge_max_output_tokens"]
+                for record in snapshot["models"]
+                if record["judge_max_output_tokens"]
+            },
+            {16384},
+        )
+
+    def test_client_read_timeout_is_d053_envelope(self):
+        # The timeout is a maximum network/runtime allowance, never a latency
+        # measurement: a legitimate response already required 297.6 seconds.
+        self.assertEqual(config.REQUEST_TIMEOUT_SECONDS, 600)
 
     def test_kimi_contracts(self):
         k3 = providers._build_payload(self.by_key["kimi_flagship"], [])

@@ -113,7 +113,11 @@ SYNTHETIC_FX_SNAPSHOT = {
 # Request policy
 # --------------------------------------------------------------------------
 
-REQUEST_TIMEOUT_SECONDS = 120
+# D-053: the client read timeout is the maximum network/runtime allowance, not a
+# benchmark latency measurement. A legitimate successful production response
+# already required 297.6 seconds during the aborted first official attempt, so
+# the allowance is set well clear of observed valid latency.
+REQUEST_TIMEOUT_SECONDS = 600
 MAX_RETRIES = 2
 RETRY_BACKOFF_SECONDS = 2.0
 

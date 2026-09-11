@@ -16,7 +16,7 @@ from pathlib import Path
 
 from src import config
 
-REGISTRY_SNAPSHOT_ID = "v1-registry-2026-09-11.1"
+REGISTRY_SNAPSHOT_ID = "v1-registry-2026-09-11.3"
 REGISTRY_SNAPSHOT_AS_OF = "2026-09-11"
 REGISTRY_SNAPSHOT_FILE = config.DATA_DIR / "model_registry_snapshot_v1.json"
 
@@ -388,6 +388,11 @@ def build_registry_snapshot(pool: dict) -> dict:
                 "thinking_mode": model.get("thinking_mode"),
                 "thinking_config": model.get("thinking_config"),
                 "request_config": model.get("request_config"),
+                # D-053/D-054: both generation envelopes are part of the frozen
+                # registry so a runtime-envelope revision is visible in the
+                # snapshot hash rather than hidden in provider defaults.
+                "max_output_tokens": model.get("max_output_tokens"),
+                "judge_max_output_tokens": model.get("judge_max_output_tokens"),
                 "model_id_status": model.get("model_id_status"),
                 "model_id_verified_as_of": model.get("model_id_verified_as_of"),
             }

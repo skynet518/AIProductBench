@@ -1,5 +1,5 @@
 {
-  "snapshot_id": "v1-registry-2026-09-11.1",
+  "snapshot_id": "v1-registry-2026-09-11.3",
   "as_of": "2026-09-11",
   "models": [
     {
@@ -24,8 +24,11 @@
         "top_p": null,
         "extra_body": {
           "enable_thinking": true
-        }
+        },
+        "max_output_tokens": 32768
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": 16384,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     },
@@ -51,8 +54,11 @@
         "top_p": null,
         "extra_body": {
           "enable_thinking": true
-        }
+        },
+        "max_output_tokens": 32768
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": null,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     },
@@ -76,11 +82,13 @@
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "max_output_tokens": 8192,
+        "max_output_tokens": 32768,
         "extra_body": {
           "reasoning_effort": "high"
         }
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": 16384,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     },
@@ -104,11 +112,13 @@
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "max_output_tokens": 8192,
+        "max_output_tokens": 32768,
         "extra_body": {
           "reasoning_effort": "high"
         }
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": null,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     },
@@ -133,8 +143,11 @@
         "top_p": null,
         "extra_body": {
           "reasoning_effort": "max"
-        }
+        },
+        "max_output_tokens": 32768
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": null,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     },
@@ -158,8 +171,11 @@
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": null,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     },
@@ -182,8 +198,11 @@
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": null,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     },
@@ -207,8 +226,11 @@
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": 16384,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     },
@@ -232,8 +254,11 @@
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": null,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     },
@@ -256,11 +281,14 @@
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
+      "max_output_tokens": 32768,
+      "judge_max_output_tokens": null,
       "model_id_status": "verified",
       "model_id_verified_as_of": "2026-09-11"
     }
   ],
-  "content_sha256": "c339688f35c653c079a50c0a5477287168e12e82bee710387d1b67ad4fb63899"
+  "content_sha256": "259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab"
 }

@@ -157,13 +157,40 @@ targeted subset. **A full 50-case paid benchmark run has not been executed.**
 
 ## CURRENT STATE
 
-**Live runtime validated; full run READY but not executed.** All five domains
+**Runtime envelope revised (D-053); full run NOT yet cleared.** The first
+official attempt was aborted and retained as diagnostic evidence
+(`results/official_run_v1_20260911T075351Z`, status
+**ABORTED_RUNTIME_ENVELOPE**: 150 candidate attempts, 134 completed responses,
+0 judge calls, 7.20081125 CNY). It proved the previous 2048 / 8192 generation
+envelope caused systemic empty-final-answer truncation for reasoning models.
+
+All five domains
 are FROZEN / EXTERNALLY APPROVED and the 50-case manifest is the immutable case
 baseline (`docs/DATASET_FREEZE_V1.md`, aggregate SHA-256
 `6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`). The ten
 logical slots carry verified literal model IDs (`as_of` 2026-09-11), an immutable
 pricing snapshot, a fixed ECB FX snapshot, provider thinking/request configs, and
 a complete run manifest.
+
+**D-054 final execution envelope (applied).** Candidate generation ceiling 32768
+tokens for all ten slots; a separate judge generation ceiling of 16384 tokens;
+client read timeout 600 s; Moonshot/Kimi max in-flight 1; global concurrency 6
+and default per-provider 2 unchanged. Registry revision
+`v1-registry-2026-09-11.3`
+(`259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab`); pricing
+snapshot unchanged (`v1-pricing-2026-09-11.1`). **32768 is the final V1 ceiling:
+no adaptive per-case budget and no further automatic escalation.**
+
+**D-054 targeted validation PASSED the envelope gate.** All sixteen previously
+failed candidate units were attempted under the final homogeneous configuration
+(two bounded passes, no completed unit re-run): **13 PASS, 2
+REAL_MODEL_FAILURE, 1 TRANSIENT_RUNTIME_FAILURE**, cumulative spend
+5.15086572 CNY. The two real model failures are isolated single-unit IF-03
+truncations (`minimax_flagship`, `glm_flagship`) at the full 32768 envelope; the
+remaining `qwen_flagship` IF-03 unit times out at the fixed 600 s client
+allowance across repeated attempts and is flagged for the result Gate. D-053
+remains recorded as an attempted revision whose live validation showed 16384 was
+still insufficient.
 
 Verified live (Phase 4D / 4D.1 targeted probes, not the 50-case run):
 
@@ -179,19 +206,21 @@ Verified live (Phase 4D / 4D.1 targeted probes, not the 50-case run):
 - Judge route Qwen + DeepSeek: PASS (2/2 valid verdicts)
 - Judge route DeepSeek + GLM: PASS (2/2 valid verdicts)
 
-Active snapshots: registry `v1-registry-2026-09-11.1`
-(`c339688f35c653c079a50c0a5477287168e12e82bee710387d1b67ad4fb63899`) and
+Active snapshots: registry `v1-registry-2026-09-11.2`
+(`992baf5717f8e947448cb4eeb6df53088a88a8516d82c897ad57ea6d3138fcee`) and
 pricing `v1-pricing-2026-09-11.1`
 (`9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42`). No full
 benchmark result exists yet; all full-run artifacts remain synthetic.
 
 ## NEXT
 
-**Full 50-case paid benchmark run — READY but NOT authorized.** The live
-execution layer is cleared; the next step is an explicit paid-run authorization,
-a cost projection, and then a single calibrated full run. **No full benchmark
-run yet.** Remaining offline hygiene: official source URLs for model IDs and
-prices still carry `requires_official_verification`.
+**Full 50-case paid benchmark run — BLOCKED pending D-053 external review.**
+The candidate and judge paths are live-verified, but the revised 16384-token
+envelope still leaves at least two production cases with
+`finish_reason = length` and empty final content, and 13 previously failed units
+remain unvalidated. The next step is an external decision on the runtime
+envelope, not a leaderboard run. Remaining offline hygiene: official source URLs
+for model IDs and prices still carry `requires_official_verification`.
 
 ## THEN
 

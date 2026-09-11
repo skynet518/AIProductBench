@@ -1,5 +1,5 @@
 {
-  "pool_version": "v1-registry-2026-09-11.1",
+  "pool_version": "v1-registry-2026-09-11.3",
   "target_candidate_models": 10,
   "registry_note": "ONE shared model registry. Every entry is a real model entry; a model may be both an evaluated candidate and a judge. There must be no judge-only duplicate of a model that already exists as a candidate. Candidate execution and judge execution are distinct ROLES over the same registry, and their cost and latency metrics are never mixed.",
   "verification_note": "Official model IDs for the ten V1 slots were locked on 2026-09-11 from provider-native documentation. Literal provider model IDs are configured and marked verified. Base URLs must still be confirmed for the chosen region at run time; source URLs for model IDs and prices are recorded as labels with URL confirmation pending.",
@@ -116,13 +116,14 @@
       "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "api_key_env": "DASHSCOPE_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
         "extra_body": {
           "enable_thinking": true
-        }
+        },
+        "max_output_tokens": 32768
       },
       "candidate": true,
       "judge_eligible": true,
@@ -146,7 +147,8 @@
         "notes": [
           "implicit-cache price"
         ]
-      }
+      },
+      "judge_max_output_tokens": 16384
     },
     {
       "key": "qwen_value",
@@ -175,13 +177,14 @@
       "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "api_key_env": "DASHSCOPE_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
         "extra_body": {
           "enable_thinking": true
-        }
+        },
+        "max_output_tokens": 32768
       },
       "candidate": true,
       "judge_eligible": false,
@@ -234,11 +237,11 @@
       "base_url": "https://api.deepseek.com",
       "api_key_env": "DEEPSEEK_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 8192,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "max_output_tokens": 8192,
+        "max_output_tokens": 32768,
         "extra_body": {
           "reasoning_effort": "high"
         }
@@ -289,7 +292,8 @@
           "Peak windows are Monday-Friday 01:00-04:00 and 06:00-10:00 UTC; all other periods are off-peak.",
           "Cost is selected from the request timestamp; peak and off-peak are never averaged."
         ]
-      }
+      },
+      "judge_max_output_tokens": 16384
     },
     {
       "key": "deepseek_value",
@@ -318,11 +322,11 @@
       "base_url": "https://api.deepseek.com",
       "api_key_env": "DEEPSEEK_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 8192,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "max_output_tokens": 8192,
+        "max_output_tokens": 32768,
         "extra_body": {
           "reasoning_effort": "high"
         }
@@ -401,13 +405,14 @@
       "base_url": "https://api.moonshot.ai/v1",
       "api_key_env": "MOONSHOT_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
         "extra_body": {
           "reasoning_effort": "max"
-        }
+        },
+        "max_output_tokens": 32768
       },
       "candidate": true,
       "judge_eligible": false,
@@ -460,11 +465,12 @@
       "base_url": "https://api.moonshot.ai/v1",
       "api_key_env": "MOONSHOT_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
       "candidate": true,
       "judge_eligible": false,
@@ -517,11 +523,12 @@
       "chat_completions_path": "/v1/text/chatcompletion_v2",
       "api_key_env": "MINIMAX_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
       "candidate": true,
       "judge_eligible": false,
@@ -620,11 +627,12 @@
       "base_url": "https://api.z.ai/api/paas/v4",
       "api_key_env": "ZHIPU_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
       "candidate": true,
       "judge_eligible": true,
@@ -649,7 +657,8 @@
           "Thinking enabled; provider default sampling preserved (no temperature override).",
           "Cache storage: limited-time free where supported; no numeric storage rate is recorded."
         ]
-      }
+      },
+      "judge_max_output_tokens": 16384
     },
     {
       "key": "glm_value",
@@ -678,11 +687,12 @@
       "base_url": "https://api.z.ai/api/paas/v4",
       "api_key_env": "ZHIPU_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
       "candidate": true,
       "judge_eligible": false,
@@ -735,11 +745,12 @@
       "base_url": "https://ark.cn-beijing.volces.com/api/v3",
       "api_key_env": "ARK_API_KEY",
       "wire_api": "chat_completions",
-      "max_output_tokens": 2048,
+      "max_output_tokens": 32768,
       "request_config": {
         "temperature": null,
         "top_p": null,
-        "extra_body": {}
+        "extra_body": {},
+        "max_output_tokens": 32768
       },
       "candidate": true,
       "judge_eligible": false,
@@ -772,5 +783,6 @@
         }
       }
     }
-  ]
+  ],
+  "runtime_envelope_note": "D-054: the FINAL V1 candidate generation ceiling is 32768 tokens for every candidate slot. Judges keep a separate 16384-token ceiling because the live Qwen+DeepSeek and DeepSeek+GLM judge routes already returned valid structured verdicts and there is no evidence judge generation needs 32768. 2048 caused systemic reasoning truncation, DeepSeek exhausted 8192, and D-053 showed DeepSeek IF-03 and GLM IF-03 could exhaust 16384. 32768 is final: there is no adaptive per-case budget and no further automatic escalation. A candidate that reaches 32768 with finish_reason=length and empty final content is a genuine candidate failure for V1."
 }

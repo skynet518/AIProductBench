@@ -1604,3 +1604,139 @@ leaderboard, no Pareto ranking. The frozen dataset is unchanged (manifest
 `6b450383e528a5a0a6b813112f96182a3625c04c948839fc551c8ded63da513c`), the judge
 mapping and rubric are unchanged, and no credentials or result artifacts are
 committed.
+
+---
+
+## D-053 — Reasoning-model runtime envelope revision
+**Date:** 2026-09-11
+
+**Context.** The first official V1 benchmark attempt
+(`results/official_run_v1_20260911T075351Z`) was aborted and retained as
+diagnostic evidence with status **ABORTED_RUNTIME_ENVELOPE**: 150 candidate
+attempts, 134 completed candidate responses, 0 judge calls, metered spend
+7.20081125 CNY. The HTTP calls themselves succeeded; the failure mode was
+structural. Multiple reasoning models returned HTTP 200 with
+`finish_reason = length` and **empty final content**, because provider-side
+hidden reasoning consumed the entire generation envelope. 2048 tokens was
+insufficient across several families, and DeepSeek proved that even its prior
+8192-token budget could be exhausted. Fifteen of the sixteen failed candidate
+units were this exact mode; the sixteenth was a client read timeout after a
+909-second triple-timeout on a case whose legitimate sibling responses needed
+up to 297.6 seconds.
+
+**Decision.** The generation ceiling is infrastructure headroom, not a benchmark
+quality constraint. V1 therefore standardises a **maximum output envelope of
+16384 tokens for all ten candidate slots and for every judge role**, replacing
+the previous mixed 2048 / 8192 ceilings, and a **client read timeout of 600
+seconds**. The timeout is only the maximum network/runtime allowance; benchmark
+latency measurement is unchanged. Moonshot/Kimi calls are issued **one at a
+time** (`max in-flight = 1`) because this provider account returns a
+concurrency-limit 429 when two Kimi requests are in flight. Global paid
+concurrency stays at 6 and the default per-provider limit at 2, with the
+existing bounded rate-limit backoff.
+
+**Registry revision.** `data/models_v1.json` moves to
+`v1-registry-2026-09-11.2`, with `max_output_tokens` and
+`request_config.max_output_tokens` set to 16384 on all ten slots. The registry
+snapshot builder now records `max_output_tokens`, so the runtime envelope is
+visible in the snapshot hash. New canonical hash:
+`992baf5717f8e947448cb4eeb6df53088a88a8516d82c897ad57ea6d3138fcee`. The pricing
+snapshot is **unchanged** (`v1-pricing-2026-09-11.1`,
+`9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42`): the runtime
+budget is not a pricing field.
+
+**Targeted validation (D-053 §8/§9).** Exactly the 16 previously failed candidate
+units were re-run under the revised envelope, under a 5 CNY ceiling, with no
+judges. The provider adapters now also record `finish_reason`, so an exhausted
+envelope is distinguishable from an answer.
+
+| unit | previous failure | result at 16384 |
+| --- | --- | --- |
+| `deepseek_flagship` PR-07 | empty final content | **PASS** — `finish_reason=stop`, 777 chars, 10489 output / 10049 reasoning tokens, 151.3 s |
+| `deepseek_flagship` IF-03 | empty final content | **STILL FAILS** — `finish_reason=length`, 16385 output / 16385 reasoning tokens, 0 chars |
+| `glm_flagship` IF-03 | empty final content | **STILL FAILS** — `finish_reason=length`, 16384 output / 16328 reasoning tokens, 0 chars |
+
+Thirteen further units were not dispatched: the harness reserves a per-call
+upper bound before every paid call, and the remaining headroom under the 5 CNY
+validation ceiling was smaller than those reservations (notably Kimi at ~3.31
+CNY per call). They are listed explicitly in the validation artifact.
+
+**Consequence (open).** Validation **FAILED** its pass condition: at least two
+previous generation-budget failures still return `finish_reason=length` with
+empty final content at 16384. Per the approved policy, **no automatic escalation
+to 32768 is permitted**, the D-053 validation was not declared passed, and the
+runtime/config/tooling changes remain **uncommitted** pending external review.
+The twelve remaining generation-budget failures and the Qwen transport unit are
+still unvalidated at the revised envelope. A model that exhausts 16384 and
+returns no final answer retains that as a real candidate failure.
+
+**Cost observation.** A single 16384-envelope spiral costs roughly 0.44 CNY on
+DeepSeek Pro at peak pricing, and the frozen retry policy repeats such a call
+three times before recording the failure — relevant to full-run cost planning.
+
+**Scope.** No case, prompt, criterion, deterministic check, rubric, judge-family
+mapping, pricing, FX, or model-slot change. The dataset semantic manifest is
+unchanged. The aborted run remains gitignored diagnostic evidence and is never
+presented as an official result; its spend is reported separately from official
+candidate-cost metrics.
+
+---
+
+## D-054 — Final candidate generation envelope
+**Date:** 2026-09-11
+
+**Context.** D-053 raised the envelope to 16384 and validated only three units
+before its 5 CNY ceiling stopped dispatch. That validation showed DeepSeek Pro
+PR-07 recovering, but DeepSeek Pro IF-03 and GLM flagship IF-03 exhausting the
+full 16384 budget on reasoning and returning empty final content. 16384 was
+therefore not sufficient, and twelve previously failing units remained
+unvalidated at that revision.
+
+**Decision.** The **final V1 candidate generation envelope is 32768 tokens** for
+all ten candidate slots. Judges keep a **separate 16384-token generation
+envelope**: the live Qwen+DeepSeek and DeepSeek+GLM judge routes already return
+valid structured verdicts and there is no evidence judge generation needs
+32768. Candidate and judge execution are distinct roles with distinct envelopes,
+recorded separately in run provenance. The client read timeout remains 600
+seconds, global paid concurrency remains 6 with default per-provider 2, and
+Moonshot/Kimi remains limited to one in-flight call. **32768 is final**: there is
+no adaptive per-case budget and no further automatic escalation. A candidate
+that reaches 32768 with `finish_reason = length` and empty final content is a
+genuine candidate failure for V1.
+
+**Registry revision.** `v1-registry-2026-09-11.3`; all ten slots carry
+`max_output_tokens = 32768` and `request_config.max_output_tokens = 32768`, and
+the three judge-eligible slots carry `judge_max_output_tokens = 16384`. The
+registry snapshot records both envelopes. Canonical hash:
+`259b02adb05f73ab2d800c8f41d9b2608b8eddb17ae97e9d3f31ecff79409eab`. The pricing
+snapshot is unchanged (`v1-pricing-2026-09-11.1`,
+`9f7af42243e5e0b78b1776934de5483f0e3e650765a19dd929e78af10aa15c42`).
+
+**Validation.** All sixteen previously failed candidate units were attempted
+under the final homogeneous configuration, across two bounded passes in one
+validation directory (no completed unit was ever re-run). Cumulative validation
+spend 5.15086572 CNY of the authorized 20 CNY. Result: **13 PASS, 2
+REAL_MODEL_FAILURE, 1 TRANSIENT_RUNTIME_FAILURE, 0 other**.
+
+| outcome | units |
+| --- | --- |
+| PASS | DeepSeek Pro IF-03 / PR-07 / PR-09 / PR-10; Kimi K3 IF-03 / PR-06 / PR-07; MiniMax-M3 BC-01 / BC-10 / PR-05 / PR-07 / PR-08 / PR-09 |
+| REAL_MODEL_FAILURE | MiniMax-M3 IF-03 (`finish_reason=length`, 32768 output / 32768 reasoning, 0 chars); GLM flagship IF-03 (`finish_reason=length`, 32768 output / 32607 reasoning, 0 chars) |
+| TRANSIENT_RUNTIME_FAILURE | Qwen Max IF-03 (three 601 s read timeouts after two passes) |
+
+**Reading of the evidence.** 2048 caused systemic reasoning truncation; DeepSeek
+also exhausted 8192; D-053 recovered DeepSeek PR-07 at 16384 but showed DeepSeek
+Pro and GLM flagship could still exhaust 16384; at 32768 thirteen of the sixteen
+units produce real answers, including DeepSeek IF-03 and all three Kimi units.
+The two remaining truncations are isolated, single-unit model failures on the
+same case (IF-03), one per family, and are recorded as candidate failures rather
+than as an infrastructure defect — exactly the distinction this revision was
+meant to draw. The remaining Qwen Max IF-03 timeout is a client-allowance
+observation, not a truncation, and the 600 s allowance is fixed by policy; it is
+flagged for the result Gate.
+
+**Scope.** No case, prompt, criterion, deterministic check, rubric, judge-family
+mapping, pricing, FX, or model-slot change. The dataset semantic manifest is
+unchanged. The aborted first official run remains gitignored diagnostic
+evidence, and its spend remains experimental/aborted-run spend, excluded from
+official candidate-cost metrics.

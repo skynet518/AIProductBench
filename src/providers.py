@@ -64,25 +64,34 @@ def _endpoint(model: dict) -> str:
     return f"{base_url}/chat/completions"
 
 
-def effective_request_config(model: dict) -> dict:
+def effective_request_config(model: dict, *, role: str = "candidate") -> dict:
     """The effective request configuration recorded in run artifacts.
 
     There is no universal temperature override: sampling parameters are sent
     only when a model's `request_config` explicitly specifies them, so every
     model keeps its provider-default/recommended reasoning behavior.
+
+    Candidate execution and judge execution are separate roles (D-054): a model
+    that serves both roles keeps the candidate generation ceiling for candidate
+    calls and the judge generation ceiling for judge calls.
     """
     config_block = model.get("request_config") or {}
+    max_output_tokens = config_block.get("max_output_tokens") or model.get(
+        "max_output_tokens", 2048
+    )
+    if role == "judge":
+        max_output_tokens = model.get("judge_max_output_tokens") or max_output_tokens
     return {
         "temperature": config_block.get("temperature"),
         "top_p": config_block.get("top_p"),
-        "max_output_tokens": config_block.get("max_output_tokens")
-        or model.get("max_output_tokens", 2048),
+        "max_output_tokens": max_output_tokens,
         "extra_body": dict(config_block.get("extra_body") or {}),
+        "role": role,
     }
 
 
-def _build_payload(model: dict, messages: list[dict]) -> dict:
-    config_block = effective_request_config(model)
+def _build_payload(model: dict, messages: list[dict], *, role: str = "candidate") -> dict:
+    config_block = effective_request_config(model, role=role)
     if model["wire_api"] == "responses":
         payload = {
             "model": resolve_model_id(model),
@@ -144,6 +153,21 @@ def _extract_text_and_usage(data: dict, wire_api: str) -> tuple[str, dict]:
     }
 
 
+def _extract_finish_reason(data: dict, wire_api: str):
+    """Provider-reported stop reason, when the wire API exposes one.
+
+    D-053 needs this to distinguish "the model answered" from "the generation
+    envelope was exhausted" without ever reading hidden reasoning text.
+    """
+    if wire_api == "responses":
+        details = data.get("incomplete_details") or {}
+        return details.get("reason") or data.get("status")
+    choices = data.get("choices") or []
+    if choices and isinstance(choices[0], dict):
+        return choices[0].get("finish_reason")
+    return None
+
+
 # Status codes that will not succeed on retry. 402 Payment Required is a
 # deterministic billing failure, so it is never retried.
 _FATAL_STATUS = {400, 401, 402, 403, 404, 422}
@@ -179,11 +203,12 @@ def chat(
     *,
     at: dt.datetime | None = None,
     fx_snapshot: dict | None = None,
+    role: str = "candidate",
 ) -> dict:
     """Call a model once and return text, latency, usage, and cost."""
     api_key = resolve_api_key(model)
     url = _endpoint(model)
-    payload = _build_payload(model, messages)
+    payload = _build_payload(model, messages, role=role)
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -221,7 +246,13 @@ def chat(
                 else:
                     text, usage = _extract_text_and_usage(data, model["wire_api"])
                     if not text:
-                        last_error = "provider returned an empty response"
+                        finish_reason = _extract_finish_reason(data, model["wire_api"])
+                        last_error = (
+                            "provider returned an empty response "
+                            f"(finish_reason={finish_reason}, "
+                            f"output_tokens={usage.get('output_tokens')}, "
+                            f"reasoning_tokens={usage.get('reasoning_tokens')})"
+                        )
                     else:
                         cost = pricing.price_call(
                             model,
@@ -233,6 +264,10 @@ def chat(
                         )
                         return {
                             "text": text,
+                            "role": role,
+                            "finish_reason": _extract_finish_reason(
+                                data, model["wire_api"]
+                            ),
                             "latency_ms": latency_ms,
                             "model_key": model["key"],
                             "model_id": resolve_model_id(model),
