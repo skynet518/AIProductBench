@@ -325,10 +325,44 @@ Open items:
    available.
 2. Add explicit official documentation URLs for model IDs and pricing metadata
    where still marked `requires_official_verification`.
-3. Improve public presentation: README, Chinese README, visualizations, GitHub
-   Release, repository metadata, and profile integration.
-4. Define any future benchmark expansion as V1.1, V2, or another explicit
+3. Define any future benchmark expansion as V1.1, V2, or another explicit
    versioned scope.
+
+The V1.0.0 GitHub publishing and presentation scope is complete: the English
+and Simplified Chinese READMEs, both result visualizations, formal GitHub
+Release and `v1.0.0` tag, repository description and Topics, GitHub Profile
+README integration, and first-position pinned repository have all been
+verified. These are no longer open items.
+
+---
+
+## CONTEXT CONFLICT — RESOLVED LOCALLY
+
+**Aligned:** 2026-09-14
+
+The previous local checkout and earlier handoff text lagged the published
+GitHub state. That conflict is now resolved:
+
+- local `main` has been fast-forwarded to remote `main` at `e8af421`
+- V1.0.0 is published and remains frozen
+- the formal GitHub Release and `v1.0.0` tag exist
+- `README.zh-CN.md` and both result visualizations are published
+- repository description and Topics are complete
+- GitHub Profile README integration is complete
+- AIProductBench is the first pinned repository on the public profile
+
+This working copy now reflects the verified state. Publishing this handoff
+correction to GitHub still requires a separate commit and push.
+
+The read-only `github_v1_final_consistency_audit` found no remaining required
+item in its audited publishing/presentation scope. The former instructions to
+add the Chinese README, visualizations, formal Release/tag, repository metadata,
+or Profile integration are superseded and must not be treated as current work.
+
+This resolution does not close the separate post-release items above: human
+calibration, official source URLs, and explicit V1.1/V2 scope decisions remain
+open. It also does not authorize a benchmark rerun or any change to frozen V1
+semantics or canonical release artifacts.
 
 ---
 
@@ -353,19 +387,12 @@ Do not imply otherwise in public documentation.
 
 The benchmark itself is complete.
 
-The immediate next phase is:
+The V1.0.0 GitHub publishing and external presentation phase is complete.
 
-**Post-release presentation and documentation polish.**
-
-Priority order:
-
-1. maintain release-document consistency
-2. improve the public README first-screen experience
-3. add `README.zh-CN.md`
-4. add benchmark result visualizations
-5. create the formal GitHub V1 release / tag
-6. improve repository metadata and Topics
-7. integrate AIProductBench CN into the GitHub profile
+The next product action, if approved, belongs to version planning: define the
+smallest explicit V1.1 scope and its release gates before any implementation.
+Human calibration and official-source provenance are the leading candidates;
+neither is a V1.0.0 release blocker.
 
 Do not reopen benchmark engineering work unless a real V1 defect is discovered
 or a new benchmark version is explicitly approved.
