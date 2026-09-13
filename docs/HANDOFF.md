@@ -336,7 +336,7 @@ verified. These are no longer open items.
 
 ---
 
-## CONTEXT CONFLICT — RESOLVED LOCALLY
+## CONTEXT CONFLICT — RESOLVED
 
 **Aligned:** 2026-09-14
 
@@ -351,8 +351,8 @@ GitHub state. That conflict is now resolved:
 - GitHub Profile README integration is complete
 - AIProductBench is the first pinned repository on the public profile
 
-This working copy now reflects the verified state. Publishing this handoff
-correction to GitHub still requires a separate commit and push.
+This working copy and the GitHub remote now reflect the verified state. The
+handoff correction has been committed and pushed to GitHub.
 
 The read-only `github_v1_final_consistency_audit` found no remaining required
 item in its audited publishing/presentation scope. The former instructions to
